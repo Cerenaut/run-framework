@@ -1,27 +1,28 @@
 # Running AGIEF (end to end)
 
-This README describes the use of  ```/bin/run/run-framework.py```.
+This README describes the use of  ```/scripts/run-framework/run-framework.py```.
 It is a python script that is used to run and interact with the framework covering aspects such as generating input files, launching infrastrcture on AWS, running those experiments (locally or on AWS) and exporting the output. 
 
 Setup and installation are required:
 - [Setup](#markdown-header-setup)
 - [Installation Instructions](#markdown-header-intallation-instructions)
 
-The components of the AGIEF system also have scripts where necessary, with their own READMEs. They can be found under ```/bin``` in the relevant subfolder, in the code repo.
+AGIEF is in a separate repository named 'agi'. The components of AGIEF have their own run scripts, with their own READMEs. They can be found under ```/bin``` in the relevant subfolder, in the agi code repo.
+
+The necessary experiment files are in another repo named 'experiment definitions'.
 
 The system is shown graphically [here](https://docs.google.com/drawings/d/1zBIRn2o5c29C8w1IUUh38syWOqL4EiedtEpPHkgxDko/edit).
 
+Note: All scripts (here and in 'agi') utilise environmental variables defined in a 'variables' file. Every script begins by sourcing this file. ```/resources/variables-template.sh``` is an example with explanations of each variable. You can modify that file, or create your own instead. 
+*IMPORTANT:* Then set the ENV variable ```VARIABLES_FILE``` to it using the full path.
 
-## Setup AGIEF
-- get the latest [code](https://github.com/ProjectAGI/agi) and [experiment definitions](https://github.com/ProjectAGI/experiment-definitions) from github
-- setup python script (instructions in the next section)
-- build code (```/bin/node_coordinator/build.sh```)
-- ensure values in your variables file are correct, in specifically the location of code ```$AGI_HOME``` and the particular experiment ```$AGI_RUN_HOME```
-
-Note: ```$AGI_HOME``` should refer to the location of you repo 'agi', and ```$AGI_RUN_HOME``` should refer to the location of your specific experiment in 'experiment-definitions' (e.g. ```$AGI_RUN_HOME/classifier```).
-
-Note: all scripts utilise ```/bin/variables.sh```
-You can modify that file, or create your own instead (place it in ```/bin``` and set the ENV variable ```VARIABLES_FILE``` to it - name only, no path).
+## Setup Environment
+- get the latest latest
+	- [code](https://github.com/ProjectAGI/agi) and 
+	- [experiment definitions](https://github.com/ProjectAGI/experiment-definitions)
+- setup your python environment (instructions in the next section)
+- ensure values in your variables.sh file are correct
+- build the framework (```agi/bin/node_coordinator/build.sh```)
 
 
 ## Installation Instructions
