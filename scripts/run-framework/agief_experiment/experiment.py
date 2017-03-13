@@ -8,13 +8,12 @@ import subprocess
 
 
 class Experiment:
-
     log = False
 
     prefix_base = None
     prefix_modifier = ""
     prefix_delimiter = None
-    experiments_def_filename = None     # the filename of the experiment definition (usually experiments.json)
+    experiments_def_filename = None  # the filename of the experiment definition (usually experiments.json)
 
     # environment variables
     agi_exp_home = "AGI_EXP_HOME"
@@ -59,7 +58,7 @@ class Experiment:
         variables_file = self.variables_filepath()
 
         if variables_file == "" or variables_file is None:
-            print "WARNING: unable to locate variables file." \
+            print "WARNING: unable to locate variables file."
 
         if self.log and self.logfine:
             print "experiment:filepath_from_env_variable: variables file = " + variables_file
@@ -250,16 +249,17 @@ class Experiment:
                 exit(1)
 
             # get the containing folder, and it's parent folder
-            full_dirname = os.path.dirname(os.path.normpath(base_filepath))      # full dirname
-            full_parentpath, dirname = os.path.split(full_dirname)      # take just the last part - next subfolder up
-            parent_dirname = os.path.basename(full_parentpath)          # take just the last part - subfolder
+            full_dirname = os.path.dirname(os.path.normpath(base_filepath))  # full dirname
+            full_parentpath, dirname = os.path.split(full_dirname)  # take just the last part - next subfolder up
+            parent_dirname = os.path.basename(full_parentpath)  # take just the last part - subfolder
 
             if dirname != "output" and parent_dirname != "output":
                 filename = utils.append_before_ext(base_filename, "_" + self.prefix())
                 filepath = self.inputfile(filename)
-                utils.create_folder(filepath)   # create path if it doesn't exist
-                shutil.copyfile(base_filepath, filepath)     # create new input files with prefix in the name
-                utils.replace_in_file(template_prefix, self.prefix(), filepath)      # search replace contents for PREFIX and replace with 'prefix'
+                utils.create_folder(filepath)  # create path if it doesn't exist
+                shutil.copyfile(base_filepath, filepath)  # create new input files with prefix in the name
+                utils.replace_in_file(template_prefix, self.prefix(),
+                                      filepath)  # search replace contents for PREFIX and replace with 'prefix'
                 filenames.append(filepath)
             else:
                 filenames.append(base_filepath)
@@ -271,3 +271,62 @@ class Experiment:
         dir_path = os.path.dirname(os.path.realpath(__file__))
         variables_file = os.getenv(self.variables_file, dir_path + '/../../variables.sh')
         return variables_file
+
+    def output_names_from_input_names(self, entity_filepath, data_filepaths):
+        """ Create the filenames for export, from the input filenames """
+
+        entity_filename = os.path.basename(entity_filepath)
+        data_filename = os.path.basename(data_filepaths[0])
+
+        new_entity_file = "exported_" + entity_filename
+        new_data_file = "exported_" + data_filename
+
+        out_entity_file_path = self.outputfile(new_entity_file)
+        out_data_file_path = self.outputfile(new_data_file)
+
+        return out_entity_file_path, out_data_file_path
+
+    def upload_results(self, cloud, compute_node, export_compute):
+        ### Upload the results of the experiment to the cloud storage (s3) ###
+
+        # upload /input folder (contains input files entity.json, data.json)
+        """
+
+        :param compute_node: the compute node doing the compute
+        :param export_compute: boolean, indicates if export is conducted on the compute node itself
+        :type cloud: Cloud
+        :type compute_node: Compute
+        """
+        folder_path = self.inputfile("")
+        cloud.upload_experiment_s3(self.prefix(),
+                                   "input",
+                                   folder_path)
+
+        # upload experiments definition file (if it exists)
+        cloud.upload_experiment_s3(self.prefix(),
+                                   self.experiments_def_filename,
+                                   self.experiment_def_file())
+
+        # upload log4j configuration file that was used
+        log_filename = "log4j2.log"
+
+        if compute_node.remote:
+            cloud.remote_upload_runfilename_s3(compute_node.host, compute_node.keypath, self.prefix(), log_filename)
+        else:
+            log_filepath = self.runpath(log_filename)
+            cloud.upload_experiment_s3(self.prefix(),
+                                       log_filename,
+                                       log_filepath)
+
+        # upload /output files (entity.json, data.json and experiment-info.txt)
+
+        if compute_node.remote and export_compute:
+            # remote upload of /output/[prefix] folder
+            cloud.remote_upload_output_s3(compute_node.host, compute_node.keypath, self.prefix())
+
+        # this is also important even if 'export_compute', as experiment-info.txt is in the /output folder on the
+        # machine THIS (python script) is running on
+        folder_path = self.outputfile("")
+        cloud.upload_experiment_s3(self.prefix(),
+                                   "output",
+                                   folder_path)

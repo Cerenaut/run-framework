@@ -13,6 +13,8 @@ class Compute:
     log = False
     host = "localhost"
     port = 8491
+    remote = False
+    keypath = None
 
     def __init__(self, log):
         self.log = log

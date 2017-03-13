@@ -33,10 +33,10 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     The input files specified by params ('entity_file' and 'data_file')
     have parameters modified, which are described in parameters 'param_description'
 
-    :param entity_file:
-    :param data_file:
+    :param entity_filepath:
+    :param data_filepaths:
     :param compute_data_filepaths:      data files on the compute machine, relative to run folder
-    :param param_description:
+    :param sweep_param_vals:
     :return:
     """
 
@@ -70,15 +70,7 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     _compute_node.run_experiment(_experiment)
 
     if is_export:
-        entity_filename = os.path.basename(entity_filepath)
-        data_filename = os.path.basename(data_filepaths[0])
-
-        new_entity_file = "exported_" + entity_filename
-        new_data_file = "exported_" + data_filename
-
-        out_entity_file_path = _experiment.outputfile(new_entity_file)
-        out_data_file_path = _experiment.outputfile(new_data_file)
-
+        out_entity_file_path, out_data_file_path = _experiment.output_names_from_input_names(entity_filepath, data_filepaths)
         _compute_node.export_experiment(_experiment.entity_with_prefix("experiment"),
                                         out_entity_file_path,
                                         out_data_file_path)
@@ -92,49 +84,9 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     if (launch_mode is LaunchMode.per_experiment) and args.launch_compute:
         shutdown_compute(task_arn)
 
-    if is_upload:
+    if is_upload_results:
+        _experiment.upload_results(_cloud, _compute_node)
 
-        # upload /input folder (contains input files entity.json, data.json)
-        folder_path = _experiment.inputfile("")
-        _cloud.upload_experiment_s3(_experiment.prefix(),
-                                    "input",
-                                    folder_path)
-
-        # upload experiments definition file (if it exists)
-        _cloud.upload_experiment_s3(_experiment.prefix(),
-                                    _experiment.experiments_def_filename,
-                                    _experiment.experiment_def_file())
-
-        # upload log4j configuration file that was used
-        log_filename = "log4j2.log"
-
-        if is_aws:
-            cmd = "../remote/remote-upload-runfilename.sh " + " " + _experiment.prefix() + " " + log_filename + " " + _compute_node.host + " " + remote_keypath
-            utils.run_bashscript_repeat(cmd, 3, 3, verbose=log)
-        else:
-            log_filepath = _experiment.runpath(log_filename)
-            _cloud.upload_experiment_s3(_experiment.prefix(),
-                                        log_filename,
-                                        log_filepath)
-
-        # upload /output files (entity.json, data.json and experiment-info.txt)
-        if is_export_compute:
-            # remote upload of /output/[prefix] folder
-            folder = _experiment.outputfile_remote()
-            cmd = "../remote/remote-upload-output.sh " + " " + _experiment.prefix() + " " + _compute_node.host + " " + remote_keypath
-            utils.run_bashscript_repeat(cmd, 3, 3, verbose=log)
-
-            # experiment-info.txt : upload the contents of the /output folder on the machine THIS (python script)
-            # is running on
-            folder_path = _experiment.outputfile("")
-            _cloud.upload_experiment_s3(_experiment.prefix(),
-                                        "output",
-                                        folder_path)
-        else:
-            folder_path = _experiment.outputfile("")
-            _cloud.upload_experiment_s3(_experiment.prefix(),
-                                        "output",
-                                        folder_path)
 
 def setup_parameter_sweepers(param_sweep, val_sweepers):
     """
@@ -340,7 +292,7 @@ def launch_compute_aws_ecs(task_name):
         print "ERROR: you must specify a Task Name to run on aws-ecs"
         exit(1)
 
-    task_arn = _cloud.run_task_ecs(task_name)
+    task_arn = _cloud.ecs_run_task(task_name)
     _compute_node.wait_up()
     return task_arn
 
@@ -352,7 +304,8 @@ def launch_compute_remote_docker():
     """
 
     print "launching Compute on AWS (on ec2 using run-in-docker.sh)"
-    _cloud.launch_compute_docker(_compute_node.host, remote_keypath)
+
+    _cloud.remote_docker_launch_compute(_compute_node.host, _compute_node.keypath)
     _compute_node.wait_up()
 
 
@@ -391,13 +344,13 @@ def launch_compute_local(main_class=""):
 
 
 def launch_compute(use_ecs=False):
-    """ Launch Compute locally or on AWS. Return task arn if on AWS """
+    """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
 
     print "....... Launch Compute"
 
     task_arn = None
 
-    if is_aws:
+    if _compute_node.remote:
         if use_ecs:
             task_arn = launch_compute_aws_ecs(args.task_name)
         else:
@@ -420,7 +373,7 @@ def shutdown_compute(task_arn):
 
     # note that task may be set up to terminate once compute has been terminated
     if is_aws and (task_arn is not None):
-        _cloud.stop_task_ecs(task_arn)
+        _cloud.ecs_stop_task(task_arn)
 
 
 def generate_input_files_locally():
@@ -446,18 +399,22 @@ def setup_arg_parsing():
                              'before exporting the experimental input files entities.json and data.json. ')
 
     # main program flow
-    parser.add_argument('--step_aws', dest='aws', action='store_true',
-                        help='Run AWS instances to run Compute. Then InstanceId and Task need to be specified.')
+    parser.add_argument('--step_remote', dest='remote_type',
+                        help='Run Compute on remote machine. This parameter can specify "simple" or "aws". '
+                             'If "AWS", then launch remote machine on AWS '
+                             '(then --instanceid or --amiid needs to be specified).'
+                             'Requires setting key path with --ssh_keypath')
     parser.add_argument('--exps_file', dest='exps_file', required=False,
                         help='Run experiments, defined in the file that is set with this parameter.'
                              'Filename is within AGI_RUN_HOME that defines the '
                              'experiments to run (with parameter sweeps) in json format (default=%(default)s).')
     parser.add_argument('--step_sync', dest='sync', action='store_true',
-                        help='Sync the code and run folder (relevant for --step_aws). i.e. copy from local machine to '
-                             'ec2. Requires setting key path with --ec2_keypath')
+                        help='Sync the code and run folder. Copy from local machine to remote. '
+                             'Requires setting --step_remote and key path with --ssh_keypath')
     parser.add_argument('--step_sync_s3_prefix', dest='sync_s3_prefix', required=False,
-                        help='Sync the code and run folder (relevant for --step_aws). i.e. download relevant output '
-                             'files from a previous phase determined by prefix, to the ec2 machine.')
+                        help='Sync output files. Download relevant output '
+                             'files from a previous phase determined by prefix, to the remote machine.'
+                             'Requires setting --step_remote and key path with --ssh_keypath')
     parser.add_argument('--step_compute', dest='launch_compute', action='store_true',
                         help='Launch the Compute node.')
     parser.add_argument('--step_shutdown', dest='shutdown', action='store_true',
@@ -467,7 +424,6 @@ def setup_arg_parsing():
     parser.add_argument('--step_export_compute', dest='export_compute', action='store_true',
                         help='Compute should export entity tree and data at the end of each experiment '
                              '- i.e. saved on the Compute node.')
-
     parser.add_argument('--step_upload', dest='upload', action='store_true',
                         help='Upload exported entity tree and data at the end of each experiment.')
 
@@ -484,7 +440,7 @@ def setup_arg_parsing():
                         help='Compute node is launched once at the start (and shutdown at the end if you use '
                              '--step_shutdown. Otherwise, it is launched and shut per experiment.')
 
-    # aws details
+    # aws/remote details
     parser.add_argument('--instanceid', dest='instanceid', required=False,
                         help='Instance ID of the ec2 container instance - to start an ec2 instance, use this OR ami id,'
                              ' not both.')
@@ -496,9 +452,9 @@ def setup_arg_parsing():
                              '(default=%(default)s).')
     parser.add_argument('--task_name', dest='task_name', required=False,
                         help='The name of the ecs task (default=%(default)s).')
-    parser.add_argument('--ec2_keypath', dest='ec2_keypath', required=False,
-                        help='Path to the private key for the ecs ec2 instance, '
-                             'used for syncing over ssh (default=%(default)s).')
+    parser.add_argument('--ssh_keypath', dest='ssh_keypath', required=False,
+                        help='Path to the private key for the remote machine, '
+                             'used for comms over ssh (default=%(default)s).')
     parser.add_argument('--pg_instance', dest='pg_instance', required=False,
                         help='Instance ID of the Postgres ec2 instance (default=%(default)s). '
                              'If you want to use a running postgres instance, just specify the host (e.g. localhost). '
@@ -510,7 +466,8 @@ def setup_arg_parsing():
     parser.set_defaults(port="8491")
     parser.set_defaults(pg_instance="localhost")
     parser.set_defaults(task_name="mnist-spatial-task:10")
-    parser.set_defaults(ec2_keypath=utils.filepath_from_env_variable(".ssh/ecs-key.pem", "HOME"))
+    parser.set_defaults(ssh_keypath=utils.filepath_from_env_variable(".ssh/ecs-key.pem", "HOME"))
+    parser.set_defaults(remote_type="local")        # i.e. not remote
     parser.set_defaults(ami_ram='6')
 
     return parser.parse_args()
@@ -535,14 +492,17 @@ if __name__ == '__main__':
     if log:
         print "LOG: Arguments: ", args
 
-    is_aws = args.aws
-    is_export = args.export
-    is_export_compute = args.export_compute
-    is_upload = args.upload
-    remote_keypath = args.ec2_keypath
+    _compute_node = compute.Compute(log)
+    _cloud = cloud.Cloud(log)
+    if args.exps_file:
+        _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
+
+    is_export = args.export                     # export from Compute node via API to local machine
+    is_export_compute = args.export_compute     # export from Compute node to a file on Compute node
+    is_upload_results = args.upload
     sync_s3_prefix = args.sync_s3_prefix
 
-    if is_upload and not (is_export or is_export_compute):
+    if is_upload_results and not (is_export or is_export_compute):
         print "WARNING: Uploading experiment to S3 is enabled, but 'export experiment' is not, so the most " \
               "important files (output entity.json and data.json) will be missing"
 
@@ -551,17 +511,34 @@ if __name__ == '__main__':
     else:
         launch_mode = LaunchMode.per_experiment
 
+    is_aws = False
+    if args.remote_type != "local":
+        if args.remote_type == "aws":
+            is_aws = True
+        _compute_node.remote = True
+        if args.ssh_keypath:
+            _compute_node.keypath = args.ssh_keypath
+
     if args.amiid and args.instanceid:
         print "ERROR: Both the AMI ID and EC2 Instance ID have been specified. Use just one to specify how to get " \
               "a running ec2 instance"
-        if args.aws:
-            print "--- in any case, aws has not been set, so they have no effect"
         exit(1)
 
-    _compute_node = compute.Compute(log)
-    _cloud = cloud.Cloud(log)
-    if args.exps_file:
-        _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
+    if not is_aws and (args.amiid or args.instanceid):
+        print "ERROR: amiid or instanceid was specified, but AWS has not been set, so they have no effect."
+        exit(1)
+
+    if args.ssh_keypath and not _compute_node.remote:
+        print "WARNING: a keypath has been set, but we're not running on a remote machine (arg: step_remote). " \
+              "It will have no effect."
+
+    if (args.sync or args.sync_s3_prefix) and not _compute_node.remote:
+        print "ERROR: Syncing is meaningless unless you're running on a remote machine (use param --step_remote)"
+        exit(1)
+
+    if args.exps_file and not args.launch_compute:
+        print "WARNING: You have elected to run experiment without launching a Compute node. For success, you'll" \
+              "have to have one running already, or use param --step_compute)"
 
     # 1) Generate input files
     if args.main_class:
@@ -583,14 +560,14 @@ if __name__ == '__main__':
     if is_aws:
         # start Compute ec2 either from instanceid or amiid
         if args.instanceid:
-            ips = _cloud.run_ec2(args.instanceid)
+            ips = _cloud.ec2_start_from_instanceid(args.instanceid)
             instance_id = args.instanceid
         else:
-            ips, instance_id = _cloud.launch_from_ami_ec2('run-fwk auto', args.amiid, int(args.ami_ram))
+            ips, instance_id = _cloud.ec2_start_from_ami('run-fwk auto', args.amiid, int(args.ami_ram))
 
         # start DB ec2, from instanceid
         if args.pg_instance and is_pg_ec2:
-            ips_pg = _cloud.run_ec2(args.pg_instance)
+            ips_pg = _cloud.ec2_start_from_instanceid(args.pg_instance)
         else:
             ips_pg = {'ip_private': args.pg_instance}
 
@@ -604,32 +581,25 @@ if __name__ == '__main__':
     _compute_node.host = ips['ip_public']
     _compute_node.port = args.port
 
-    # TEMPORARY HACK
+    # TEMPORARY HACK for ECS
     # Set the DB_HOST environment variable
     if args.pg_instance:
         os.putenv("DB_HOST", ips_pg['ip_private'])
 
     # 3) Sync code and run-home
     if args.sync:
-        if not args.aws:
-            print "ERROR: Syncing is meaningless unless you're running aws (use param --step_aws)"
-            exit(1)
-        _cloud.sync_experiment_rsync(_compute_node.host, remote_keypath)
+        _cloud.sync_experiment(_compute_node.host, _compute_node.keypath)
 
     # 3.5) Sync data from S3 (typically used to download output files from a previous experiment to be used as input)
     if sync_s3_prefix:
-        _cloud.sync_experiment_s3(sync_s3_prefix, _compute_node.host, remote_keypath)
+        _cloud.remote_download_output(sync_s3_prefix, _compute_node.host, _compute_node.keypath)
 
-    # 4) Launch Compute (on AWS or locally) - *** IF Mode == 'Per Session' ***
+    # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
     if (launch_mode is LaunchMode.per_session) and args.launch_compute:
         launch_compute()
 
-    # 5) Run experiments
+    # 5) Run experiments (includes per experiment 'export results' and 'upload results')
     if args.exps_file:
-        if not args.launch_compute:
-            print "WARNING: Running experiment is meaningless unless you're already running the Compute node" \
-                  "(use param --step_compute)"
-
         run_sweeps()
 
     # 6) Shutdown framework
@@ -640,7 +610,7 @@ if __name__ == '__main__':
 
         # Shutdown infrastructure
         if is_aws:
-            _cloud.stop_ec2(instance_id)
+            _cloud.ec2_stop(instance_id)
 
             if is_pg_ec2:
-                _cloud.stop_ec2(args.pg_instance)
+                _cloud.ec2_stop(args.pg_instance)
