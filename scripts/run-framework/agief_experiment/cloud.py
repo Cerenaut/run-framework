@@ -20,7 +20,7 @@ class Cloud:
     def __init__(self, log):
         self.log = log
 
-    def sync_experiment(self, host, keypath):
+    def sync_experiment(self, remote):
         """
         Sync experiment from this machine to remote machine
         Assumes there exists a private key for the given ec2 instance, at keypath
@@ -28,24 +28,28 @@ class Cloud:
 
         print "....... Use remote-sync-experiment.sh to rsync relevant folders."
 
-        cmd = "../remote/remote-sync-experiment.sh " + host + " " + keypath
+        cmd = "../remote/remote-sync-experiment.sh " + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
 
-    def remote_download_output(self, prefix, host, keypath):
-        """ Download /output/prefix folder from remote storage (s3) to remote machine. """
+    def remote_download_output(self, prefix, remote):
+        """ Download /output/prefix folder from remote storage (s3) to remote machine. 
+        :param remote:
+        :param prefix:
+        :type remote_node: RemoteNode
+        """
 
         print "....... Use remote-download-output.sh to copy /output files from s3 (typically input and data files) " \
               "with prefix = " + prefix + ", to remote machine."
 
-        cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + host + " " + keypath
+        cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
 
-    def remote_docker_launch_compute(self, host, keypath):
+    def remote_docker_launch_compute(self, remote):
         """ Assumes there exists a private key for the given ec2 instance, at keypath """
 
         print "....... Use remote-run.sh to launch compute node in a docker container on a remote host."
 
-        cmd = "../remote/remote-run.sh " + host + " " + keypath
+        cmd = "../remote/remote-run.sh " + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
 
     def ecs_run_task(self, task_name):
@@ -252,14 +256,12 @@ class Cloud:
                     filekey = os.path.join(key, file)
                     self.upload_file_s3(bucket_name, filekey, filepath, self.log)
 
-    def remote_upload_runfilename_s3(self, host, keypath, prefix, dest_name):
-        cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name + " " \
-              + host + " " + keypath
+    def remote_upload_runfilename_s3(self, remote, prefix, dest_name):
+        cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
 
-    def remote_upload_output_s3(self, host, keypath, prefix):
-        cmd = "../remote/remote-upload-output.sh " + " " + prefix + " " + host + " " \
-              + keypath
+    def remote_upload_output_s3(self, remote, prefix):
+        cmd = "../remote/remote-upload-output.sh " + remote.host_key_user_variables()
 
         utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
 

@@ -13,16 +13,16 @@ fi
 
 host=$1
 keyfile=${2:-$HOME/.ssh/ecs-key.pem}
+user=${3:-ec2-user}
+remote_variables_file=${4:-/home/ec2-user/agief-project/variables/variables-ec2.sh}
 
-
-echo "Using keyfile = " $keyfile
 echo "Using host = " $host
+echo "Using keyfile = " $keyfile
+echo "Using user = " $user
+echo "Using remote_variables_file = " $remote_variables_file
 
-
-# WARNING: hardcoded path on remote machine in shell commands below (to be run on remote host via ssh)
-
-ssh -v -i $keyfile ec2-user@${host} -o 'StrictHostKeyChecking no' 'bash -s' <<'ENDSSH' 
-	export VARIABLES_FILE="/home/ec2-user/agief-project/variables/variables-ec2.sh"
+ssh -v -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' VARIABLES_FILE=$remote_variables_file 'bash -s' <<'ENDSSH' 
+	export VARIABLES_FILE=$VARIABLES_FILE
 	source $VARIABLES_FILE
 	cd $AGI_HOME/bin/node_coordinator
 	./run-in-docker.sh -d

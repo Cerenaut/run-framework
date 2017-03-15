@@ -10,17 +10,25 @@ import utils
 
 class Compute:
 
-    log = False
-    host = "localhost"
-    port = 8491
-    remote = False
-    keypath = None
+    def __init__(self,
+                 log=False,
+                 port=8491,
+                 remote_node=None):
 
-    def __init__(self, log):
+        """ If remote_node is unspecified, then assumes use of a local Compute node """
+
         self.log = log
+        self.port = port
+        self.remote_node = remote_node
+
+    def remote(self):
+        if self.remote_node is not None:
+            return True
+        else:
+            return False
 
     def base_url(self):
-        return utils.getbaseurl(self.host, self.port)
+        return utils.getbaseurl(self.remote_node.host, self.port)
 
     def wait_till_param(self, entity_name, param_path, value):
         """
@@ -43,7 +51,7 @@ class Compute:
 
             # if not self.log:
             #     utils.restart_line()
-            print "Try = [%d]%s" % (i, age_string)    # add a comma at the end to remove newline
+            print "Try = [%d]%s" % (i, age_string)  # add a comma at the end to remove newline
 
             try:
                 param_dic = {'entity': entity_name}
@@ -144,7 +152,7 @@ class Compute:
             return
 
         for filepath in filepaths:
-            payload = {'type': import_type, 'file': filepath }
+            payload = {'type': import_type, 'file': filepath}
             response = requests.get(self.base_url() + '/import-local', params=payload)
 
             if self.log:
@@ -225,7 +233,7 @@ class Compute:
 
             if version is None:
                 # utils.restart_line()
-                print "Try = [%d / 120]" % i      # add comma at the end to remove newline
+                print "Try = [%d / 120]" % i  # add comma at the end to remove newline
                 time.sleep(wait_period)
             else:
                 break
@@ -344,5 +352,3 @@ class Compute:
                 print "Error connecting to agief to retrieve the version."
 
         return version
-
-

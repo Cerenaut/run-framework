@@ -3,6 +3,7 @@ import os
 import subprocess
 from enum import Enum
 
+from agief_experiment import remote_node
 from agief_experiment import compute
 from agief_experiment import cloud
 from agief_experiment import experiment
@@ -305,7 +306,7 @@ def launch_compute_remote_docker():
 
     print "launching Compute on AWS (on ec2 using run-in-docker.sh)"
 
-    _cloud.remote_docker_launch_compute(_compute_node.host, _compute_node.keypath)
+    _cloud.remote_docker_launch_compute(_compute_node.remote_node)
     _compute_node.wait_up()
 
 
@@ -427,13 +428,18 @@ def setup_arg_parsing():
     parser.add_argument('--step_upload', dest='upload', action='store_true',
                         help='Upload exported entity tree and data at the end of each experiment.')
 
-    # how to reach the Compute
+    # how to reach the Compute node
     parser.add_argument('--host', dest='host', required=False,
                         help='Host where the Compute node will be running (default=%(default)s). '
                              'THIS IS IGNORED IF RUNNING ON AWS (in which case the IP of the instance '
                              'specified by the Instance ID is used)')
     parser.add_argument('--port', dest='port', required=False,
                         help='Port where the Compute node will be running (default=%(default)s).')
+    parser.add_argument('--user', dest='user', required=False,
+                        help='If remote, the "user" on the remote Compute node (default=%(default)s).')
+    parser.add_argument('--remote_variables_file', dest='remote_variables_file', required=False,
+                        help='If remote, the path to the remote VARIABLES_FILE to use on the remote Compute node '
+                             '(default=%(default)s).')
 
     # launch mode
     parser.add_argument('--launch_per_session', dest='launch_per_session', action='store_true',
@@ -462,12 +468,15 @@ def setup_arg_parsing():
 
     parser.add_argument('--logging', dest='logging', action='store_true', help='Turn logging on.')
 
+    parser.set_defaults(remote_type="local")  # i.e. not remote
     parser.set_defaults(host="localhost")
     parser.set_defaults(port="8491")
+    parser.set_defaults(user="ec2-user")
+    parser.set_defaults(remote_variables_file="/home/ec2-user/agief-project/variables/variables-ec2.sh")
     parser.set_defaults(pg_instance="localhost")
     parser.set_defaults(task_name="mnist-spatial-task:10")
     parser.set_defaults(ssh_keypath=utils.filepath_from_env_variable(".ssh/ecs-key.pem", "HOME"))
-    parser.set_defaults(remote_type="local")        # i.e. not remote
+
     parser.set_defaults(ami_ram='6')
 
     return parser.parse_args()
@@ -492,7 +501,6 @@ if __name__ == '__main__':
     if log:
         print "LOG: Arguments: ", args
 
-    _compute_node = compute.Compute(log)
     _cloud = cloud.Cloud(log)
     if args.exps_file:
         _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
@@ -515,9 +523,10 @@ if __name__ == '__main__':
     if args.remote_type != "local":
         if args.remote_type == "aws":
             is_aws = True
-        _compute_node.remote = True
-        if args.ssh_keypath:
-            _compute_node.keypath = args.ssh_keypath
+        remote_node = remote_node.RemoteNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file)
+        _compute_node = compute.Compute(log, args.port, remote_node)
+    else:
+        _compute_node = compute.Compute(log, args.port)
 
     if args.amiid and args.instanceid:
         print "ERROR: Both the AMI ID and EC2 Instance ID have been specified. Use just one to specify how to get " \
@@ -528,11 +537,11 @@ if __name__ == '__main__':
         print "ERROR: amiid or instanceid was specified, but AWS has not been set, so they have no effect."
         exit(1)
 
-    if args.ssh_keypath and not _compute_node.remote:
+    if args.ssh_keypath and not _compute_node.remote():
         print "WARNING: a keypath has been set, but we're not running on a remote machine (arg: step_remote). " \
               "It will have no effect."
 
-    if (args.sync or args.sync_s3_prefix) and not _compute_node.remote:
+    if (args.sync or args.sync_s3_prefix) and not _compute_node.remote():
         print "ERROR: Syncing is meaningless unless you're running on a remote machine (use param --step_remote)"
         exit(1)
 
@@ -542,8 +551,9 @@ if __name__ == '__main__':
 
     # 1) Generate input files
     if args.main_class:
+        remote_node = remote_node.RemoteNode()
+        _compute_node = compute.Compute(log=log, port=args.port, remote_node=remote_node)
         _compute_node.host = args.host
-        _compute_node.port = args.port
         launch_compute_local(args.main_class)
         generate_input_files_locally()
         _compute_node.terminate()
@@ -554,6 +564,7 @@ if __name__ == '__main__':
     ips_pg = {'ip_public': None, 'ip_private': None}
     instance_id = None
 
+    is_pg_ec2 = False
     if args.pg_instance:
         is_pg_ec2 = (args.pg_instance[:2] == 'i-')
 
@@ -588,11 +599,11 @@ if __name__ == '__main__':
 
     # 3) Sync code and run-home
     if args.sync:
-        _cloud.sync_experiment(_compute_node.host, _compute_node.keypath)
+        _cloud.sync_experiment(_compute_node.remote_node)
 
     # 3.5) Sync data from S3 (typically used to download output files from a previous experiment to be used as input)
     if sync_s3_prefix:
-        _cloud.remote_download_output(sync_s3_prefix, _compute_node.host, _compute_node.keypath)
+        _cloud.remote_download_output(sync_s3_prefix, _compute_node.remote_node)
 
     # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
     if (launch_mode is LaunchMode.per_session) and args.launch_compute:

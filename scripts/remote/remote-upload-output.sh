@@ -14,16 +14,17 @@ fi
 prefix=$1
 host=$2
 keyfile=${3:-$HOME/.ssh/ecs-key.pem}
+user=${4:-ec2-user}
+remote_variables_file=${5:-/home/ec2-user/agief-project/variables/variables-ec2.sh}
 
 echo "Using prefix = " $prefix
 echo "Using host = " $host
 echo "Using keyfile = " $keyfile
+echo "Using user = " $user
+echo "Using remote_variables_file = " $remote_variables_file
 
-
-# WARNING: hardcoded path on remote machine in shell commands below (to be run on remote host via ssh)
-
-ssh -v -i $keyfile ec2-user@${host} -o 'StrictHostKeyChecking no' prefix=$prefix 'bash -s' <<'ENDSSH' 
-	export VARIABLES_FILE="/home/ec2-user/agief-project/variables/variables-ec2.sh"
+ssh -v -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix=$prefix VARIABLES_FILE=$remote_variables_file 'bash -s' <<'ENDSSH' 
+	export VARIABLES_FILE=$VARIABLES_FILE
 	source $VARIABLES_FILE
 
 	upload_folder=$AGI_RUN_HOME/output/$prefix
