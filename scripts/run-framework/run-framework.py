@@ -3,7 +3,7 @@ import os
 import subprocess
 from enum import Enum
 
-from agief_experiment import remote_node
+from agief_experiment import host_node
 from agief_experiment import compute
 from agief_experiment import cloud
 from agief_experiment import experiment
@@ -306,11 +306,11 @@ def launch_compute_remote_docker():
 
     print "launching Compute on AWS (on ec2 using run-in-docker.sh)"
 
-    _cloud.remote_docker_launch_compute(_compute_node.remote_node)
+    _cloud.remote_docker_launch_compute(_compute_node.host_node)
     _compute_node.wait_up()
 
 
-def launch_compute_local(main_class=""):
+def launch_compute_local(main_class="", run_in_docker=True):
     """ Launch Compute locally. Hang till Compute is up and running.
 
     If main_class is specified, then use run-demo.sh,
@@ -318,6 +318,7 @@ def launch_compute_local(main_class=""):
     WARNING: In this case, the properties file used is hardcoded to node.properties
     WARNING: and the prefix used is the global variable PREFIX
 
+    :param run_in_docker:
     :param main_class:
     :return:
     """
@@ -325,7 +326,11 @@ def launch_compute_local(main_class=""):
     print "launching Compute locally"
     print "NOTE: generating run_stdout.log and run_stderr.log (in the current folder)"
 
-    cmd = _experiment.agi_binpath("/node_coordinator/run.sh")
+    if run_in_docker:
+        cmd = _experiment.agi_binpath("/node_coordinator/run-in-docker.sh -d")
+    else:
+        cmd = _experiment.agi_binpath("/node_coordinator/run.sh")
+
     if main_class is not "":
         cmd = _experiment.agi_binpath("/node_coordinator/run-demo.sh")
         cmd = cmd + " node.properties " + main_class + " " + TEMPLATE_PREFIX
@@ -351,13 +356,13 @@ def launch_compute(use_ecs=False):
 
     task_arn = None
 
-    if _compute_node.remote:
+    if _compute_node.remote():
         if use_ecs:
             task_arn = launch_compute_aws_ecs(args.task_name)
         else:
             launch_compute_remote_docker()
     else:
-        launch_compute_local()
+        launch_compute_local(run_in_docker=is_local_docker)
 
     version = _compute_node.version()
     print "Running Compute version: " + version
@@ -404,7 +409,8 @@ def setup_arg_parsing():
                         help='Run Compute on remote machine. This parameter can specify "simple" or "aws". '
                              'If "AWS", then launch remote machine on AWS '
                              '(then --instanceid or --amiid needs to be specified).'
-                             'Requires setting key path with --ssh_keypath')
+                             'Requires setting key path with --ssh_keypath'
+                             '(default= % (default)s)')
     parser.add_argument('--exps_file', dest='exps_file', required=False,
                         help='Run experiments, defined in the file that is set with this parameter.'
                              'Filename is within AGI_RUN_HOME that defines the '
@@ -446,6 +452,10 @@ def setup_arg_parsing():
                         help='Compute node is launched once at the start (and shutdown at the end if you use '
                              '--step_shutdown. Otherwise, it is launched and shut per experiment.')
 
+    parser.add_argument('--no_docker', dest='no_docker', action='store_true',
+                        help='If set, then DO NOT launch in a docker container. Applies to LOCAL usage only. '
+                             '(default=%(default)s). ')
+
     # aws/remote details
     parser.add_argument('--instanceid', dest='instanceid', required=False,
                         help='Instance ID of the ec2 container instance - to start an ec2 instance, use this OR ami id,'
@@ -476,8 +486,8 @@ def setup_arg_parsing():
     parser.set_defaults(pg_instance="localhost")
     parser.set_defaults(task_name="mnist-spatial-task:10")
     parser.set_defaults(ssh_keypath=utils.filepath_from_env_variable(".ssh/ecs-key.pem", "HOME"))
-
     parser.set_defaults(ami_ram='6')
+    parser.set_defaults(local_docker=True)
 
     return parser.parse_args()
 
@@ -501,6 +511,18 @@ if __name__ == '__main__':
     if log:
         print "LOG: Arguments: ", args
 
+    # 1) Generate input files
+    if args.main_class:
+        host_node = host_node.HostNode()
+        _compute_node = compute.Compute(host_node=host_node, port=args.port, log=log)
+        _compute_node.host = args.host
+        launch_compute_local(args.main_class)
+        generate_input_files_locally()
+        _compute_node.terminate()
+        exit(1)
+
+    # *) all other use cases (non Generate input files)
+
     _cloud = cloud.Cloud(log)
     if args.exps_file:
         _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
@@ -508,6 +530,7 @@ if __name__ == '__main__':
     is_export = args.export                     # export from Compute node via API to local machine
     is_export_compute = args.export_compute     # export from Compute node to a file on Compute node
     is_upload_results = args.upload
+    is_local_docker = args.local_docker
     sync_s3_prefix = args.sync_s3_prefix
 
     if is_upload_results and not (is_export or is_export_compute):
@@ -523,10 +546,11 @@ if __name__ == '__main__':
     if args.remote_type != "local":
         if args.remote_type == "aws":
             is_aws = True
-        remote_node = remote_node.RemoteNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file)
-        _compute_node = compute.Compute(log, args.port, remote_node)
+        host_node = host_node.HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file)
     else:
-        _compute_node = compute.Compute(log, args.port)
+        host_node = host_node.HostNode(args.host, args.user)
+
+    _compute_node = compute.Compute(host_node, args.port, log)
 
     if args.amiid and args.instanceid:
         print "ERROR: Both the AMI ID and EC2 Instance ID have been specified. Use just one to specify how to get " \
@@ -549,15 +573,6 @@ if __name__ == '__main__':
         print "WARNING: You have elected to run experiment without launching a Compute node. For success, you'll" \
               "have to have one running already, or use param --step_compute)"
 
-    # 1) Generate input files
-    if args.main_class:
-        remote_node = remote_node.RemoteNode()
-        _compute_node = compute.Compute(log=log, port=args.port, remote_node=remote_node)
-        _compute_node.host = args.host
-        launch_compute_local(args.main_class)
-        generate_input_files_locally()
-        _compute_node.terminate()
-        exit(1)
 
     # 2) Setup infrastructure (on AWS or nothing to do locally)
     ips = {'ip_public': args.host, 'ip_private': None}
@@ -589,7 +604,7 @@ if __name__ == '__main__':
 
         ips_pg = {'ip_public': args.pg_instance, 'ip_private': args.pg_instance}
 
-    _compute_node.host = ips['ip_public']
+    _compute_node.host_node.host = ips['ip_public']
     _compute_node.port = args.port
 
     # TEMPORARY HACK for ECS
@@ -599,11 +614,11 @@ if __name__ == '__main__':
 
     # 3) Sync code and run-home
     if args.sync:
-        _cloud.sync_experiment(_compute_node.remote_node)
+        _cloud.sync_experiment(_compute_node.host_node)
 
     # 3.5) Sync data from S3 (typically used to download output files from a previous experiment to be used as input)
     if sync_s3_prefix:
-        _cloud.remote_download_output(sync_s3_prefix, _compute_node.remote_node)
+        _cloud.remote_download_output(sync_s3_prefix, _compute_node.host_node)
 
     # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
     if (launch_mode is LaunchMode.per_session) and args.launch_compute:
