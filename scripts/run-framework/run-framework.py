@@ -511,6 +511,9 @@ if __name__ == '__main__':
     if log:
         print "LOG: Arguments: ", args
 
+    if args.exps_file:
+        _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
+
     # 1) Generate input files
     if args.main_class:
         host_node = host_node.HostNode()
@@ -524,8 +527,6 @@ if __name__ == '__main__':
     # *) all other use cases (non Generate input files)
 
     _cloud = cloud.Cloud(log)
-    if args.exps_file:
-        _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
 
     is_export = args.export                     # export from Compute node via API to local machine
     is_export_compute = args.export_compute     # export from Compute node to a file on Compute node
