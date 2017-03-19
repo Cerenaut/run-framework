@@ -195,6 +195,11 @@ def run_sweeps():
 
     exps_filename = _experiment.experiment_def_file()
 
+    if not os.path.exists(exps_filename):
+        print "ERROR: Experiment file does not exist at: " + exps_filename
+        print "Cannot continue."
+        exit(1)
+
     with open(exps_filename) as exps_file:
         filedata = json.load(exps_file)
 

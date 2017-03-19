@@ -51,7 +51,10 @@ python run-framework.py --exps_file experiments-phase1.json --step_gen_input io.
 5. PHASE 1b : Run compute step:
 ===============================================================================
 
-python run-framework.py --exps_file experiments-phase1.json --step_compute --step_export
+(run on localhost)
+
+python run-framework.py --exps_file experiments-phase1.json --step_compute --step_export_compute --step_upload
+
 
 
 
