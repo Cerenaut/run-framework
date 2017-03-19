@@ -287,16 +287,15 @@ class Experiment:
         return out_entity_file_path, out_data_file_path
 
     def upload_results(self, cloud, compute_node, export_compute):
-        ### Upload the results of the experiment to the cloud storage (s3) ###
-
-        # upload /input folder (contains input files entity.json, data.json)
-        """
+        """ Upload the results of the experiment to the cloud storage (s3)
 
         :param compute_node: the compute node doing the compute
         :param export_compute: boolean, indicates if export is conducted on the compute node itself
         :type cloud: Cloud
         :type compute_node: Compute
         """
+
+        # upload /input folder (contains input files entity.json, data.json)
         folder_path = self.inputfile("")
         cloud.upload_experiment_s3(self.prefix(),
                                    "input",

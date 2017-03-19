@@ -86,7 +86,7 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
         shutdown_compute(task_arn)
 
     if is_upload_results:
-        _experiment.upload_results(_cloud, _compute_node)
+        _experiment.upload_results(_cloud, _compute_node, is_export_compute)
 
 
 def setup_parameter_sweepers(param_sweep, val_sweepers):
