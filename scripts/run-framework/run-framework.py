@@ -571,14 +571,14 @@ if __name__ == '__main__':
         print "WARNING: a keypath has been set, but we're not running on a remote machine (arg: step_remote). " \
               "It will have no effect."
 
-    if (args.sync or args.sync_s3_prefix) and not _compute_node.remote():
-        print "ERROR: Syncing is meaningless unless you're running on a remote machine (use param --step_remote)"
+    if args.sync and not _compute_node.remote():
+        print "ERROR: Syncing experiment is meaningless unless you're running on a " \
+              "remote machine (use param --step_remote)"
         exit(1)
 
     if args.exps_file and not args.launch_compute:
         print "WARNING: You have elected to run experiment without launching a Compute node. For success, you'll" \
               "have to have one running already, or use param --step_compute)"
-
 
     # 2) Setup infrastructure (on AWS or nothing to do locally)
     ips = {'ip_public': args.host, 'ip_private': None}

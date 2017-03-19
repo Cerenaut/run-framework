@@ -309,8 +309,8 @@ class Experiment:
         # upload log4j configuration file that was used
         log_filename = "log4j2.log"
 
-        if compute_node.remote:
-            cloud.remote_upload_runfilename_s3(compute_node.remote, self.prefix(), log_filename)
+        if compute_node.remote():
+            cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), log_filename)
         else:
             log_filepath = self.runpath(log_filename)
             cloud.upload_experiment_s3(self.prefix(),
@@ -319,9 +319,9 @@ class Experiment:
 
         # upload /output files (entity.json, data.json and experiment-info.txt)
 
-        if compute_node.remote and export_compute:
+        if compute_node.remote() and export_compute:
             # remote upload of /output/[prefix] folder
-            cloud.remote_upload_output_s3(compute_node.remote, self.prefix())
+            cloud.remote_upload_output_s3(compute_node.host_node, self.prefix())
 
         # this is also important even if 'export_compute', as experiment-info.txt is in the /output folder on the
         # machine THIS (python script) is running on

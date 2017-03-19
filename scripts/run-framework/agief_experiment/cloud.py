@@ -256,13 +256,13 @@ class Cloud:
                     filekey = os.path.join(key, file)
                     self.upload_file_s3(bucket_name, filekey, filepath, self.log)
 
-    def remote_upload_runfilename_s3(self, remote, prefix, dest_name):
-        cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name + remote.host_key_user_variables()
+    def remote_upload_runfilename_s3(self, host_node, prefix, dest_name):
+        cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name \
+              + host_node.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
 
-    def remote_upload_output_s3(self, remote, prefix):
-        cmd = "../remote/remote-upload-output.sh " + remote.host_key_user_variables()
-
+    def remote_upload_output_s3(self, host_node, prefix):
+        cmd = "../remote/remote-upload-output.sh " + prefix + " " + host_node.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
 
     def upload_file_s3(self, bucket_name, key, source_filepath, log=False):
