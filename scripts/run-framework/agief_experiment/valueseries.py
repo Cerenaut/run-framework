@@ -1,5 +1,6 @@
 import numpy
 
+
 class ValueSeries:
     series = []
     idx = 0

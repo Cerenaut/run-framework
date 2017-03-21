@@ -71,7 +71,8 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     _compute_node.run_experiment(_experiment)
 
     if is_export:
-        out_entity_file_path, out_data_file_path = _experiment.output_names_from_input_names(entity_filepath, data_filepaths)
+        out_entity_file_path, out_data_file_path = _experiment.output_names_from_input_names(entity_filepath,
+                                                                                             data_filepaths)
         _compute_node.export_experiment(_experiment.entity_with_prefix("experiment"),
                                         out_entity_file_path,
                                         out_data_file_path)
@@ -248,7 +249,8 @@ def run_sweeps():
                     if reset:
                         is_sweeping = False
                     else:
-                        run_parameterset(exp_entity_filepath, exp_data_filepaths, exp_ll_data_filepaths, sweep_param_vals)
+                        run_parameterset(exp_entity_filepath, exp_data_filepaths, exp_ll_data_filepaths,
+                                         sweep_param_vals)
 
 
 def set_dataset(exps_file):
@@ -492,7 +494,6 @@ def setup_arg_parsing():
     parser.set_defaults(task_name="mnist-spatial-task:10")
     parser.set_defaults(ssh_keypath=utils.filepath_from_env_variable(".ssh/ecs-key.pem", "HOME"))
     parser.set_defaults(ami_ram='6')
-    parser.set_defaults(local_docker=True)
 
     return parser.parse_args()
 
@@ -533,10 +534,10 @@ if __name__ == '__main__':
 
     _cloud = cloud.Cloud(log)
 
-    is_export = args.export                     # export from Compute node via API to local machine
-    is_export_compute = args.export_compute     # export from Compute node to a file on Compute node
+    is_export = args.export  # export from Compute node via API to local machine
+    is_export_compute = args.export_compute  # export from Compute node to a file on Compute node
     is_upload_results = args.upload
-    is_local_docker = args.local_docker
+    is_local_docker = args.no_docker
     sync_s3_prefix = args.sync_s3_prefix
 
     if is_upload_results and not (is_export or is_export_compute):

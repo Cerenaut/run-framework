@@ -31,17 +31,17 @@ class Cloud:
         cmd = "../remote/remote-sync-experiment.sh " + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
 
-    def remote_download_output(self, prefix, remote):
+    def remote_download_output(self, prefix, host_node):
         """ Download /output/prefix folder from remote storage (s3) to remote machine. 
-        :param remote:
+        :param host_node:
         :param prefix:
-        :type remote_node: RemoteNode
+        :type host_node: RemoteNode
         """
 
         print "....... Use remote-download-output.sh to copy /output files from s3 (typically input and data files) " \
               "with prefix = " + prefix + ", to remote machine."
 
-        cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + remote.host_key_user_variables()
+        cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + host_node.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
 
     def remote_docker_launch_compute(self, remote):
@@ -117,6 +117,7 @@ class Cloud:
 
     def ec2_start_from_ami(self, name, ami_id, min_ram):
         """
+        :param name:
         :param ami_id: ami id
         :param min_ram: (integer), minimum ram to allocate to ec2 instance
         :return: ip addresses: public and private, and instance id
@@ -194,7 +195,6 @@ class Cloud:
         ips = self.ec2_wait_till_running(instance_id)
         return ips, instance_id
 
-
     def ec2_wait_till_running(self, instance_id):
         """
         :return: the instance AWS public and private ip addresses
@@ -248,13 +248,13 @@ class Cloud:
         key = "experiment-output/" + prefix + "/" + dest_name
 
         if os.path.isfile(source_filepath):
-            self.upload_file_s3(bucket_name, key, source_filepath, self.log)
+            self.upload_file_s3(bucket_name, key, source_filepath)
         else:
             for root, dirs, files in os.walk(source_filepath):
                 for file in files:
                     filepath = os.path.join(source_filepath, file)
                     filekey = os.path.join(key, file)
-                    self.upload_file_s3(bucket_name, filekey, filepath, self.log)
+                    self.upload_file_s3(bucket_name, filekey, filepath)
 
     def remote_upload_runfilename_s3(self, host_node, prefix, dest_name):
         cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name \
@@ -265,7 +265,7 @@ class Cloud:
         cmd = "../remote/remote-upload-output.sh " + prefix + " " + host_node.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
 
-    def upload_file_s3(self, bucket_name, key, source_filepath, log=False):
+    def upload_file_s3(self, bucket_name, key, source_filepath):
 
         if not os.path.exists(source_filepath):
             print "WARNING: file does not exist, cannot upload: " + source_filepath

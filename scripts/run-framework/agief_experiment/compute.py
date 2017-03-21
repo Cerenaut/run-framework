@@ -171,7 +171,8 @@ class Compute:
 
     def export_root_entity(self, filepath, root_entity, export_type, is_compute_save=False):
         """
-        export the subtree specified by root entity - either we save locally, or specify the Compute node to save it itself
+        Export the subtree specified by root entity - either we save locally,
+        or specify the Compute node to save it itself
         :param filepath: if specified, then receive a string
         :param root_entity:
         :param export_type:
@@ -218,7 +219,6 @@ class Compute:
         print "....... Wait till framework has started (try every " + str(wait_period) + " seconds),   at = " \
               + self.base_url()
 
-        version = None
         i = 0
         while True:
             i += 1
@@ -253,10 +253,12 @@ class Compute:
         payload = {'entity': entity_name, 'path': param_path, 'value': value}
         response = requests.post(self.base_url() + '/config', params=payload)
         if self.log:
-            print "LOG: set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path + ", value = " + value
+            print "LOG: set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path + ", value = "\
+                  + value
             print "LOG: response = ", response
 
-    def set_parameter_inputfile(self, entity_filepath, entity_name, param_path, value):
+    @staticmethod
+    def set_parameter_inputfile(entity_filepath, entity_name, param_path, value):
         """
         Set parameter at 'param_path' for entity 'entity_name', in the input file specified by 'entity_filepath'
 

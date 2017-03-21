@@ -69,6 +69,7 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period, verbose=False):
         print "run_bashscript_repeat, running cmd = " + cmd
 
     success = False
+    exit_status = 0
     for i in range(1, max_repeats + 1):
         child = subprocess.Popen(cmd,
                                  shell=True,
@@ -101,7 +102,7 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period, verbose=False):
         exit(1)
 
 
-def check_validity(files, log=False):
+def check_validity(files):
     """ Check validity of files, and exit if they do not exist or not specified """
 
     is_valid = True

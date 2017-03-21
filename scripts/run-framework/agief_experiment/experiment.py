@@ -137,7 +137,8 @@ class Experiment:
     def inputfile_base(self, filename):
         """
         Return the full path to the base inputfile specified by simple filename (AGI_EXP_HOME/input/filename)
-        The base input file will be used to generate input files specific to the experiment (i.e. replace generic prefix with actual prefix)
+        The base input file will be used to generate input files specific to the experiment
+        (i.e. replace generic prefix with actual prefix)
         """
         return self.filepath_from_exp_variable("input/" + filename, self.agi_exp_home)
 
@@ -157,7 +158,8 @@ class Experiment:
 
     def outputfile_remote(self, filename=""):
         """
-        Return the full path to the output file if it was exported/saved on remote machine, that is to be created by this experiment,
+        Return the full path to the output file if it was exported/saved on remote machine,
+        that is to be created by this experiment,
         specified by simple filename (AGI_RUN_HOME/output/prefix/filename)
         """
         return self.filepath_from_exp_variable("output/" + self.prefix() + "/" + filename, self.agi_run_home)
@@ -234,7 +236,8 @@ class Experiment:
         Base input files are located in:  'experiment-folder/input'
         Experiment input files are located in subfolder:   'experiment-folder/input/prefix'
 
-        :param filenames:  array of filenames (not full path) to be copied and prefix changed internally
+        :param base_filenames: array of filenames (not full path) to be copied and prefix changed internally
+        :param template_prefix:
         :return: array of modified filepaths (full path)
         """
 
