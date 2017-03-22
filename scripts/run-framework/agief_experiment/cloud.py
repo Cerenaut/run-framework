@@ -1,5 +1,6 @@
 import boto3
 import os
+import zipfile
 import botocore
 import utils
 
@@ -254,6 +255,17 @@ class Cloud:
                 for file in files:
                     filepath = os.path.join(source_filepath, file)
                     filekey = os.path.join(key, file)
+
+                    # Compress output files only
+                    if dest_name == 'output':
+                        zipf = zipfile.ZipFile(filepath + '.zip', 'w', zipfile.ZIP_DEFLATED)
+                        zipf.write(filepath)
+                        zipf.close()
+
+                        # Rename filename and key before upload
+                        filepath = filepath + '.zip'
+                        filekey = filekey + '.zip'
+
                     self.upload_file_s3(bucket_name, filekey, filepath)
 
     def remote_upload_runfilename_s3(self, host_node, prefix, dest_name):
