@@ -253,6 +253,10 @@ class Cloud:
         else:
             for root, dirs, files in os.walk(source_filepath):
                 for file in files:
+                    # Skip existing zip files
+                    if file.endswith('.zip'):
+                        continue
+
                     filepath = os.path.join(source_filepath, file)
                     filekey = os.path.join(key, file)
 
