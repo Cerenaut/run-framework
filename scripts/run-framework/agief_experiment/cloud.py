@@ -139,7 +139,7 @@ class Cloud:
             print "ERROR: cannot create an ec2 instance with that much RAM"
             exit(1)
 
-        print "............. RAM to be allocated: " + str(ram_allocated) + "GB RAM"
+        print "............. RAM to be allocated: " + str(ram_allocated) + " GB RAM"
 
         ec2 = boto3.resource('ec2')
         subnet = ec2.Subnet(self.subnet_id)
@@ -217,7 +217,7 @@ class Cloud:
         ip_private = instance.private_ip_address
 
         print "Instance is up and running ..."
-        self.print_ec2_info(instance_id)
+        self.print_ec2_info(instance)
 
         return {'ip_public': ip_public, 'ip_private': ip_private}
 
@@ -226,7 +226,7 @@ class Cloud:
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
 
-        self.print_ec2_info(instance_id)
+        self.print_ec2_info(instance)
 
         response = instance.stop()
 
@@ -294,13 +294,10 @@ class Cloud:
             print response
 
     @staticmethod
-    def print_ec2_info(instance_id):
-
-        ec2 = boto3.resource('ec2')
-        instance = ec2.Instance(instance_id)
+    def print_ec2_info(instance):
 
         print "Instance details."
-        print " -- Public IP address is: ", instance.ip_public
-        print " -- Private IP address is: ", instance.ip_private
-        print " -- id is: ", str(instance_id)
+        print " -- Public IP address is: ", instance.public_ip_address
+        print " -- Private IP address is: ", instance.private_ip_address
+        print " -- id is: ", str(instance.instance_id)
 
