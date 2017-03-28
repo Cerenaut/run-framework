@@ -330,6 +330,10 @@ class Experiment:
         # this is also important even if 'export_compute', as experiment-info.txt is in the /output folder on the
         # machine THIS (python script) is running on
         folder_path = self.outputfile("")
+
+        # Compress output data file
+        utils.compress_file_in_folder('data.json', folder_path)
+
         cloud.upload_experiment_s3(self.prefix(),
                                    "output",
                                    folder_path)
