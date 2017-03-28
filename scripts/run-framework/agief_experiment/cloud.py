@@ -128,13 +128,18 @@ class Cloud:
         instance_type = None      # minimum size, 15GB on machine, leaves 13GB for compute
         if min_ram < 6:
             instance_type = 'm4.large'      # 8
+            ram_allocated = 8
         elif min_ram < 13:
             instance_type = 'r3.large'      # 15.25
+            ram_allocated = 15.25
         elif min_ram < 28:
             instance_type = 'r3.xlarge'     # 30.5
+            ram_allocated = 30.5
         else:
             print "ERROR: cannot create an ec2 instance with that much RAM"
             exit(1)
+
+        print "............. RAM to be allocated: " + str(ram_allocated) + "GB RAM"
 
         ec2 = boto3.resource('ec2')
         subnet = ec2.Subnet(self.subnet_id)
@@ -211,9 +216,8 @@ class Cloud:
         ip_public = instance.public_ip_address
         ip_private = instance.private_ip_address
 
-        print "Instance is up and running."
-        print "Instance public IP address is: ", ip_public
-        print "Instance private IP address is: ", ip_private
+        print "Instance is up and running ..."
+        self.print_ec2_info(instance_id)
 
         return {'ip_public': ip_public, 'ip_private': ip_private}
 
@@ -222,11 +226,7 @@ class Cloud:
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
 
-        ip_public = instance.public_ip_address
-        ip_private = instance.private_ip_address
-
-        print "Instance public IP address is: ", ip_public
-        print "Instance private IP address is: ", ip_private
+        self.print_ec2_info(instance_id)
 
         response = instance.stop()
 
@@ -292,3 +292,15 @@ class Cloud:
 
         if self.log:
             print response
+
+    @staticmethod
+    def print_ec2_info(instance_id):
+
+        ec2 = boto3.resource('ec2')
+        instance = ec2.Instance(instance_id)
+
+        print "Instance details."
+        print " -- Public IP address is: ", instance.ip_public
+        print " -- Private IP address is: ", instance.ip_private
+        print " -- id is: ", str(instance_id)
+
