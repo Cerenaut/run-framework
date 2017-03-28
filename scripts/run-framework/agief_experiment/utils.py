@@ -1,6 +1,7 @@
 import subprocess
 import os
 import errno
+import zipfile
 import fileinput
 import sys
 import time
@@ -117,3 +118,33 @@ def check_validity(files):
             break
 
     return is_valid
+
+def compress_file(source_filepath):
+    """
+    Compress the specified file
+    :param source_filepath: the path to the file to be compressed
+    :return:
+    """
+
+    if os.path.isfile(source_filepath) and os.path.exists(source_filepath):
+        zipf = zipfile.ZipFile(source_filepath + '.zip', 'w', zipfile.ZIP_DEFLATED)
+        zipf.write(source_filepath)
+        zipf.close()
+    else:
+        print "ERROR: compress_file(), this file is not valid: " + source_filepath
+
+def compress_file_in_folder(name, source_path):
+    """
+    Find and compress a file inside specified directory
+    :param name: name of the file to compress
+    :param source_path: the source folder where file to be compressed is located
+    :return:
+    """
+
+    if os.path.isdir(source_path) and os.path.exists(source_path):
+        for root, dirs, files in os.walk(source_path):
+            if name in files:
+                filepath = os.path.join(root, name)
+                compress_file(filepath)
+    else:
+        print "ERROR: compress_file_in_folder(), this folder is not valid: " + source_path
