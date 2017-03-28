@@ -2,6 +2,7 @@ import json
 
 import utils
 import os
+import zipfile
 import datetime
 import shutil
 import subprocess
@@ -332,3 +333,22 @@ class Experiment:
         cloud.upload_experiment_s3(self.prefix(),
                                    "output",
                                    folder_path)
+
+    def upload_experiment(self, cloud, prefix, dest_name, source_path):
+        """
+        Upload experiment to s3.
+        :param prefix: experiment prefix (used in the full name of uploaded bucket)
+        :param dest_name: the name for the eventual uploaded s3 object (it can be file or folder)
+        :param source_filepath: the file or folder to be uploaded
+        :return:
+        """
+
+        print "...... Uploading experiment to S3"
+
+        bucket_name = "agief-project"
+        key = "experiment-output/" + prefix + "/" + dest_name
+
+        if os.path.isfile(source_path):
+            cloud.upload_file_s3(bucket_name, key, source_path)
+        else:
+            cloud.upload_folder_s3(bucket_name, key, source_path)
