@@ -281,6 +281,23 @@ class Cloud:
         cmd = "../remote/remote-upload-output.sh " + prefix + " " + host_node.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
 
+    def upload_folder_s3(self, bucket_name, key, source_folderpath):
+
+        if not os.path.exists(source_folderpath):
+            print "WARNING: folder does not exist, cannot upload: " + source_folderpath
+            return
+
+        if not os.path.isdir(source_folderpath):
+            print "WARNING: path is not a folder, cannot upload: " + source_folderpath
+            return
+
+        for root, dirs, files in os.walk(source_folderpath):
+            for file in files:
+                filepath = os.path.join(source_folderpath, file)
+                filekey = os.path.join(key, file)
+
+                self.upload_file_s3(bucket_name, filekey, filepath)
+
     def upload_file_s3(self, bucket_name, key, source_filepath):
 
         if not os.path.exists(source_filepath):
