@@ -120,10 +120,6 @@ def check_validity(files):
     return is_valid
 
 
-def setenv(var_name, value):
-    os.environ[var_name] = str(value)
-
-
 def get_entityfile_config(entity, log=False):
     """ 
         Get the config field straight out of an exported Entity, and turn it into valid JSON 

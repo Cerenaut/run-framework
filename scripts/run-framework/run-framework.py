@@ -60,10 +60,11 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     with open(info_filepath, 'w') as data:
         data.write(info)
 
-    # export prefix to an environment variable
+    # save prefix to an environment variable
     prefix = _experiment.prefix()
-    utils.setenv("AGIEF_PREFIX", prefix)
-    print "exported AGIEF_PREFIX to value", prefix
+    print "Save prefix to prefix.txt"
+    with open("prefix.txt", "w") as prefix_file:
+        prefix_file.write(prefix)
 
     is_valid = utils.check_validity([entity_filepath]) and utils.check_validity(data_filepaths)
 

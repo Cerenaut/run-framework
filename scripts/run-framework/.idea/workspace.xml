@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="cdbf74c1-7433-48b8-909d-d4f75fc32c36" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/agief_experiment/compute.py" afterPath="$PROJECT_DIR$/agief_experiment/compute.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/agief_experiment/utils.py" afterPath="$PROJECT_DIR$/agief_experiment/utils.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/run-framework.py" afterPath="$PROJECT_DIR$/run-framework.py" />
     </list>
@@ -23,8 +21,8 @@
       <file leaf-file-name="run-framework.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/run-framework.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="221">
-              <caret line="41" column="71" lean-forward="true" selection-start-line="41" selection-start-column="71" selection-end-line="41" selection-end-column="71" />
+            <state relative-caret-position="272">
+              <caret line="67" column="0" lean-forward="true" selection-start-line="67" selection-start-column="0" selection-end-line="67" selection-end-column="0" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -32,11 +30,21 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="subprocess.py" pinned="false" current-in-tab="false">
+        <entry file="file:///usr/local/Cellar/python/2.7.13/Frameworks/Python.framework/Versions/2.7/lib/python2.7/subprocess.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="511">
+              <caret line="329" column="8" lean-forward="false" selection-start-line="329" selection-start-column="8" selection-end-line="329" selection-end-column="8" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="experiment.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/agief_experiment/experiment.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-272">
-              <caret line="23" column="16" lean-forward="false" selection-start-line="23" selection-start-column="16" selection-end-line="23" selection-end-column="16" />
+            <state relative-caret-position="258">
+              <caret line="225" column="42" lean-forward="false" selection-start-line="225" selection-start-column="42" selection-end-line="225" selection-end-column="42" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -59,8 +67,8 @@
       <file leaf-file-name="utils.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/agief_experiment/utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="351">
-              <caret line="80" column="43" lean-forward="false" selection-start-line="80" selection-start-column="43" selection-end-line="80" selection-end-column="43" />
+            <state relative-caret-position="414">
+              <caret line="86" column="52" lean-forward="true" selection-start-line="86" selection-start-column="52" selection-end-line="86" selection-end-column="52" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -91,14 +99,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>launch_compute</find>
-      <find>/remote</find>
-      <find>args.sync</find>
-      <find>host</find>
-      <find>remote</find>
-      <find>.port</find>
-      <find>is_remote</find>
-      <find>remote()</find>
       <find>Compute</find>
       <find>isfile</find>
       <find>upload_experim</find>
@@ -121,6 +121,14 @@
       <find>AGIEF_PRO</find>
       <find>AGIEF_PR</find>
       <find>dumps</find>
+      <find>POpen</find>
+      <find>su</find>
+      <find>subr</find>
+      <find>sub</find>
+      <find>subpro</find>
+      <find>subproc</find>
+      <find>subproces</find>
+      <find>subprocess</find>
     </findStrings>
     <dirStrings>
       <dir>$PROJECT_DIR$</dir>
@@ -139,8 +147,8 @@
         <option value="$PROJECT_DIR$/agief_experiment/valueseries.py" />
         <option value="$PROJECT_DIR$/agief_experiment/cloud.py" />
         <option value="$PROJECT_DIR$/agief_experiment/experiment.py" />
-        <option value="$PROJECT_DIR$/agief_experiment/utils.py" />
         <option value="$PROJECT_DIR$/agief_experiment/compute.py" />
+        <option value="$PROJECT_DIR$/agief_experiment/utils.py" />
         <option value="$PROJECT_DIR$/run-framework.py" />
       </list>
     </option>
@@ -500,7 +508,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/run-framework.py</url>
-          <line>348</line>
+          <line>349</line>
           <option name="timeStamp" value="40" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -521,16 +529,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/agief_experiment/utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1485">
-          <caret line="104" column="24" lean-forward="false" selection-start-line="104" selection-start-column="24" selection-end-line="104" selection-end-column="24" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/agief_experiment/host_node.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
@@ -948,26 +946,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/agief_experiment/experiment.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-272">
-          <caret line="23" column="16" lean-forward="false" selection-start-line="23" selection-start-column="16" selection-end-line="23" selection-end-column="16" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/agief_experiment/utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="351">
-          <caret line="80" column="43" lean-forward="false" selection-start-line="80" selection-start-column="43" selection-end-line="80" selection-end-column="43" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/agief_experiment/compute.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="143">
@@ -978,10 +956,38 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/agief_experiment/experiment.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="258">
+          <caret line="225" column="42" lean-forward="false" selection-start-line="225" selection-start-column="42" selection-end-line="225" selection-end-column="42" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/agief_experiment/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="414">
+          <caret line="86" column="52" lean-forward="true" selection-start-line="86" selection-start-column="52" selection-end-line="86" selection-end-column="52" />
+          <folding>
+            <element signature="e#0#11#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/Cellar/python/2.7.13/Frameworks/Python.framework/Versions/2.7/lib/python2.7/subprocess.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="511">
+          <caret line="329" column="8" lean-forward="false" selection-start-line="329" selection-start-column="8" selection-end-line="329" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/run-framework.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="41" column="71" lean-forward="true" selection-start-line="41" selection-start-column="71" selection-end-line="41" selection-end-column="71" />
+        <state relative-caret-position="272">
+          <caret line="67" column="0" lean-forward="true" selection-start-line="67" selection-start-column="0" selection-end-line="67" selection-end-column="0" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
