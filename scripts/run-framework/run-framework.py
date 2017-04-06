@@ -27,12 +27,21 @@ Assumptions:
 """
 
 
-def log_config():
+def log_results_config():
     config = _compute_node.get_entity_config(_experiment.entity_with_prefix("experiment"))
-    print "\n================================================"
-    print "Experiment.config:"
-    print json.dumps(config, indent=4)
-    print "================================================\n"
+
+    reporting_key = "reportingEntityName"
+    if reporting_key in config:
+        entity_name = config[reporting_key]
+
+        config = _compute_node.get_entity_config(entity_name)
+
+        print "\n================================================"
+        print "Experiment.config:"
+        print json.dumps(config, indent=4)
+        print "================================================\n"
+    else:
+        print "WARNING: No reportingEntityName has been specified in Experiment config."
 
 
 def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sweep_param_vals):
@@ -84,8 +93,8 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
 
     _compute_node.run_experiment(_experiment)
 
-    # log results expressed in Experiment entity config
-    log_config()
+    # log results expressed in the appropriate entity config
+    log_results_config()
 
     if is_export:
         out_entity_file_path, out_data_file_path = _experiment.output_names_from_input_names(entity_filepath,

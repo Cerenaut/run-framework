@@ -64,6 +64,7 @@ The steps are:
 ```sh
 python run-framework.py --exps_file experiments.json --step_gen_input io.agi.framework.demo.mnist.DeepMNISTDemo
 python run-framework.py --exps_file experiments-phase1.json --step_gen_input io.agi.framework.demo.papers.KSparseDemo
+python run-framework.py --exps_file experiments-phase1.json --step_gen_input io.agi.framework.demo.papers.ClassifyFeaturesDemo
 ```
 
 ### aws ecs and aws postgres (don't export or upload results), shutdown instances afterwards
