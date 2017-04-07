@@ -91,7 +91,7 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
 
     set_dataset(_experiment.experiment_def_file())
 
-    # _compute_node.run_experiment(_experiment)
+    _compute_node.run_experiment(_experiment)
 
     # log results expressed in the appropriate entity config
     log_results_config()
