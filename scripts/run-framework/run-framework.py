@@ -31,13 +31,13 @@ def log_results_config():
     config = _compute_node.get_entity_config(_experiment.entity_with_prefix("experiment"))
 
     reporting_key = "reportingEntityName"
-    if reporting_key in config:
-        entity_name = config[reporting_key]
+    if 'value' in config and reporting_key in config['value']:
+        entity_name = config['value'][reporting_key]
 
         config = _compute_node.get_entity_config(entity_name)
 
         print "\n================================================"
-        print "Experiment.config:"
+        print "Reporting Entity Config:"
         print json.dumps(config, indent=4)
         print "================================================\n"
     else:
@@ -91,7 +91,7 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
 
     set_dataset(_experiment.experiment_def_file())
 
-    _compute_node.run_experiment(_experiment)
+    # _compute_node.run_experiment(_experiment)
 
     # log results expressed in the appropriate entity config
     log_results_config()
