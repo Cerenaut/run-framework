@@ -69,12 +69,6 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     with open(info_filepath, 'w') as data:
         data.write(info)
 
-    # save prefix to an environment variable
-    prefix = _experiment.prefix()
-    print "Save prefix to prefix.txt"
-    with open("prefix.txt", "w") as prefix_file:
-        prefix_file.write(prefix)
-
     is_valid = utils.check_validity([entity_filepath]) and utils.check_validity(data_filepaths)
 
     if not is_valid:
@@ -92,6 +86,8 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     set_dataset(_experiment.experiment_def_file())
 
     _compute_node.run_experiment(_experiment)
+
+    _experiment.remember_prefix()
 
     # log results expressed in the appropriate entity config
     log_results_config()
@@ -660,6 +656,7 @@ if __name__ == '__main__':
     # 5) Run experiments (includes per experiment 'export results' and 'upload results')
     if args.exps_file:
         run_sweeps()
+        _experiment.persist_prefix_history()
 
     # 6) Shutdown framework
     if args.shutdown:

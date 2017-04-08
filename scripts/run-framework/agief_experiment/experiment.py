@@ -8,12 +8,6 @@ import subprocess
 
 
 class Experiment:
-    log = False
-
-    prefix_base = None
-    prefix_modifier = ""
-    prefix_delimiter = None
-    experiments_def_filename = None  # the filename of the experiment definition (usually experiments.json)
 
     # environment variables
     agi_exp_home = "AGI_EXP_HOME"
@@ -24,12 +18,14 @@ class Experiment:
     variables_file = "VARIABLES_FILE"
 
     def __init__(self, log, prefix, prefix_delimiter, experiments_def_filename):
-        self.logfine = False
         self.log = log
         self.prefix_base = prefix
-        self.prefix_modifier = ""
         self.prefix_delimiter = prefix_delimiter
         self.experiments_def_filename = experiments_def_filename
+
+        self.prefixes_history = ""
+        self.logfine = False
+        self.prefix_modifier = ""
 
     def info(self, sweep_param_vals):
 
@@ -332,3 +328,13 @@ class Experiment:
         cloud.upload_experiment_s3(self.prefix(),
                                    "output",
                                    folder_path)
+
+    def remember_prefix(self):
+        self.prefixes_history += self.prefix() + "\n"
+
+    def persist_prefix_history(self, filename="prefixes.txt"):
+        """ Save prefix history to a file """
+
+        print "....... Save prefix history to " + filename
+        with open(filename, "w") as prefix_file:
+            prefix_file.write(self.prefixes_history)
