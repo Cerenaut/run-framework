@@ -323,9 +323,6 @@ class Experiment:
 
         # upload /output files (entity.json, data.json and experiment-info.txt)
 
-        # Compress output data file
-        utils.compress_folder_contents(folder_path, 'data')
-
         if compute_node.remote() and export_compute:
             # remote upload of /output/[prefix] folder
             cloud.remote_upload_output_s3(compute_node.host_node, self.prefix())
@@ -333,6 +330,9 @@ class Experiment:
         # this is also important even if 'export_compute', as experiment-info.txt is in the /output folder on the
         # machine THIS (python script) is running on
         folder_path = self.outputfile("")
+
+        # Compress output data file
+        utils.compress_folder_contents(folder_path, 'data')
 
         cloud.upload_experiment_s3(self.prefix(),
                                    "output",
