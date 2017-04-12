@@ -30,6 +30,13 @@ ssh -v -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix=$prefix 
 	upload_folder=$AGI_RUN_HOME/output/$prefix
 	echo "Calculated upload-folder = " $upload_folder
 
+	output_big_folder=$AGI_RUN_HOME/output-big/
+	cmd="mkdir -p $output_big_folder"
+
+	cmd="matching_files=( $(find $upload_folder -name '*data*') )"
+	cmd="zip $upload_folder/data.zip ${matching_files[1]}"
+	cmd="mv ${matching_files[1]} $output_big_folder"
+
 	cmd="aws s3 cp $upload_folder s3://agief-project/experiment-output/$prefix/output --recursive"
 	echo $cmd >> remote-upload-cmd.log
 	eval $cmd >> remote-upload-stdout.log 2>> remote-upload-stderr.log
