@@ -158,9 +158,9 @@ def compress_folder_contents(source_path, name=None):
     else:
         print "ERROR: compress_file_in_folder(), this folder is not valid: " + source_path
 
-def find_file_by_name(source_path, name):
+def match_file_by_name(source_path, name):
     """
-    Finds a file with a matching name to the one provided inside the specified
+    Looks for a file with a matching name to the one provided inside the specified
     source directory. It then returns the filepath for that file.
     :param source_path: the source folder where the file is located
     :param name: name or partial name of the file to match
@@ -173,9 +173,9 @@ def find_file_by_name(source_path, name):
             if matching_files:
                 return os.path.abspath(root + "/" + matching_files[0])
             else:
-                print "ERROR: find_file_by_name(), no matching files found in: " + source_path
+                print "ERROR: match_file_by_name(), no matching files found in: " + source_path
     else:
-        print "ERROR: find_file_by_name(), this folder is not valid: " + source_path
+        print "ERROR: match_file_by_name(), this folder is not valid: " + source_path
 
 
 def move_file(source_filepath, dest_path, create_dest=False):
