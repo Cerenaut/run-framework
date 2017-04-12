@@ -1,3 +1,4 @@
+import json
 import subprocess
 import os
 import errno
@@ -191,8 +192,37 @@ def move_file(source_filepath, dest_path, create_dest=False):
     else:
         print "ERROR: move_file(), the source file path is not valid: " + source_filepath
 
+def get_entityfile_config(entity, log=False):
+    """ 
+        Get the config field straight out of an exported Entity, and turn it into valid JSON 
+        NOTE: Works with Import/Export API, which does not treat config string as a valid json string
+    """
+
+    config_str = entity["config"]
+
+    if log:
+        print "LOG: Raw configStr   = " + config_str
+
+    # configStr = configStr.replace("\\\"", "\"")       --> don't need this anymore, depends on python behaviour
+    config = json.loads(config_str)
+
+    return config
 
 
+def set_entityfile_config(entity, config, log=False):
+    """ 
+        Get a valid json config string, and put it back in the exported entity in a way that can be Imported 
+        i.e. with escape characters so that it is a dumb string
+        
+        NOTE: Works with Import/Export API, which does not treat config string as a valid json string 
+    """
 
 
+    # put the escape characters back in the config str and write back to file
+    config_str = json.dumps(config)
+    # configStr = configStr.replace("\"", "\\\"")       --> don't need this anymore, depends on python behaviour
 
+    if log:
+        print "LOG: Modified configStr   = " + config_str
+
+    entity["config"] = config_str

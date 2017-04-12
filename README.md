@@ -64,6 +64,7 @@ The steps are:
 ```sh
 python run-framework.py --exps_file experiments.json --step_gen_input io.agi.framework.demo.mnist.DeepMNISTDemo
 python run-framework.py --exps_file experiments-phase1.json --step_gen_input io.agi.framework.demo.papers.KSparseDemo
+python run-framework.py --exps_file experiments-phase1.json --step_gen_input io.agi.framework.demo.papers.ClassifyFeaturesDemo
 ```
 
 ### aws ecs and aws postgres (don't export or upload results), shutdown instances afterwards
@@ -80,6 +81,9 @@ python run-framework.py --logging --step_aws --exps_file experiments.json --step
 ```sh
 python run-framework.py --logging --exps_file experiments.json --step_compute --host localhost --port 8491 --pg_instance localhost
 ```
+
+### local agief (running in node mode), no db, no export or upload
+python run-framework.py --exps_file experiments-phase1.json --step_compute
 
 ### local agief (running in node mode i.e. no postgres required), export the output files, upload them to S3
 python run-framework.py --exps_file experiments.json --step_compute --step_export --step_upload --host localhost --port 8491

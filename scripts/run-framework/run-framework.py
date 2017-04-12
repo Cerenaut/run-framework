@@ -27,6 +27,23 @@ Assumptions:
 """
 
 
+def log_results_config():
+    config = _compute_node.get_entity_config(_experiment.entity_with_prefix("experiment"))
+
+    reporting_key = "reportingEntityName"
+    if 'value' in config and reporting_key in config['value']:
+        entity_name = config['value'][reporting_key]
+
+        config = _compute_node.get_entity_config(entity_name)
+
+        print "\n================================================"
+        print "Reporting Entity Config:"
+        print json.dumps(config, indent=4)
+        print "================================================\n"
+    else:
+        print "WARNING: No reportingEntityName has been specified in Experiment config."
+
+
 def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sweep_param_vals):
     """
     Import input files
@@ -43,8 +60,8 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
 
     print "........ Run parameter set."
 
+    # print and save experiment info
     info = _experiment.info(sweep_param_vals)
-
     print info
 
     info_filepath = _experiment.outputfile("experiment-info.txt")
@@ -70,18 +87,23 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
 
     _compute_node.run_experiment(_experiment)
 
+    _experiment.remember_prefix()
+
+    # log results expressed in the appropriate entity config
+    log_results_config()
+
     if is_export:
         out_entity_file_path, out_data_file_path = _experiment.output_names_from_input_names(entity_filepath,
                                                                                              data_filepaths)
-        _compute_node.export_experiment(_experiment.entity_with_prefix("experiment"),
-                                        out_entity_file_path,
-                                        out_data_file_path)
+        _compute_node.export_subtree(_experiment.entity_with_prefix("experiment"),
+                                     out_entity_file_path,
+                                     out_data_file_path)
 
     if is_export_compute:
-        _compute_node.export_experiment(_experiment.entity_with_prefix("experiment"),
-                                        _experiment.outputfile_remote(),
-                                        _experiment.outputfile_remote(),
-                                        True)
+        _compute_node.export_subtree(_experiment.entity_with_prefix("experiment"),
+                                     _experiment.outputfile_remote(),
+                                     _experiment.outputfile_remote(),
+                                     True)
 
     if (launch_mode is LaunchMode.per_experiment) and args.launch_compute:
         shutdown_compute(task_arn)
@@ -396,7 +418,7 @@ def generate_input_files_locally():
     data_file_path = data_file_paths[0]
 
     root_entity = _experiment.entity_with_prefix("experiment")
-    _compute_node.export_experiment(root_entity, entity_file_path, data_file_path)
+    _compute_node.export_subtree(root_entity, entity_file_path, data_file_path)
 
 
 def setup_arg_parsing():
@@ -634,6 +656,7 @@ if __name__ == '__main__':
     # 5) Run experiments (includes per experiment 'export results' and 'upload results')
     if args.exps_file:
         run_sweeps()
+        _experiment.persist_prefix_history()
 
     # 6) Shutdown framework
     if args.shutdown:

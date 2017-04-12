@@ -27,11 +27,24 @@ class Compute:
     def base_url(self):
         return utils.getbaseurl(self.host_node.host, self.port)
 
+    def get_entity_config(self, entity_name):
+        param_dic = {'entity': entity_name}
+        r = requests.get(self.base_url() + '/config', params=param_dic)
+
+        if self.log:
+            print "LOG: Get config: /config with params " + json.dumps(param_dic) + ", response = ", r
+            print "  LOG: response text = ", r.text
+            print "  LOG: url: ", r.url
+
+        config = r.json()
+        return config
+
     def wait_till_param(self, entity_name, param_path, value):
         """
         Return when the the config parameter has achieved the value specified
         entity = name of entity, param_path = path to parameter, delimited by '.'
         """
+
         wait_period = 10
         age = None
         i = 0
@@ -51,17 +64,11 @@ class Compute:
             print "Try = [%d]%s" % (i, age_string)  # add a comma at the end to remove newline
 
             try:
-                param_dic = {'entity': entity_name}
-                r = requests.get(self.base_url() + '/config', params=param_dic)
+                config = self.get_entity_config(entity_name)
 
-                if self.log:
-                    print "LOG: Get config: /config with params " + json.dumps(param_dic) + ", response = ", r
-                    print "  LOG: response text = ", r.text
-                    print "  LOG: url: ", r.url
-
-                if r.json()['value'] is not None:
-                    age = dpath.util.get(r.json(), 'value.age', '.')
-                    parameter = dpath.util.get(r.json(), 'value.' + param_path, '.')
+                if config['value'] is not None:
+                    age = dpath.util.get(config, 'value.age', '.')
+                    parameter = dpath.util.get(config, 'value.' + param_path, '.')
                     if parameter == value:
                         if self.log:
                             print "LOG: ... parameter: " + entity_name + "." + param_path + ", has achieved value: " + \
@@ -200,9 +207,9 @@ class Compute:
             with open(filepath, 'w') as data_file:
                 data_file.write(json.dumps(output_json, indent=4))
 
-    def export_experiment(self, root_entity, entity_filepath, data_filepath, is_export_compute=False):
+    def export_subtree(self, root_entity, entity_filepath, data_filepath, is_export_compute=False):
         """
-        Export the full experiment state from the running instance of AGIEF
+        Export the full state of a subtree from the running instance of AGIEF
         that consists of entity graph and the data
         """
 
@@ -296,14 +303,7 @@ class Compute:
             print "CANNOT CONTINUE"
             exit(1)
 
-        # get the config field, and turn it into valid JSON
-        config_str = entity["config"]
-
-        if log_debug:
-            print "LOG: Raw configStr   = " + config_str
-
-        # configStr = configStr.replace("\\\"", "\"")       --> don't need this anymore, depends on python behaviour
-        config = json.loads(config_str)
+        config = utils.get_entityfile_config(entity, log_debug)
 
         if log_debug:
             print "LOG: config(t)   = " + json.dumps(config, indent=4)
@@ -313,14 +313,7 @@ class Compute:
         if log_debug:
             print "LOG: config(t+1) = " + json.dumps(config, indent=4)
 
-        # put the escape characters back in the config str and write back to file
-        config_str = json.dumps(config)
-        # configStr = configStr.replace("\"", "\\\"")       --> don't need this anymore, depends on python behaviour
-
-        if log_debug:
-            print "LOG: Modified configStr   = " + config_str
-
-        entity["config"] = config_str
+        utils.set_entityfile_config(entity, config, log_debug)
 
         # write back to file
         with open(entity_filepath, 'w') as data_file:
