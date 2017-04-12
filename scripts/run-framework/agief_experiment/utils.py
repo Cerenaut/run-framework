@@ -133,28 +133,18 @@ def compress_file(source_filepath):
     else:
         print "ERROR: compress_file(), this file is not valid: " + source_filepath
 
-def compress_folder_contents(source_path, name=None):
+def compress_folder_contents(source_path):
     """
-    Compress all files in the specified folder or find a specific file in the
-    folder to compress
+    Compress all files in the specified folder
     :param source_path: the source folder where the contents will be compressed
-    :param name: (optional) if specified only this file will be compressed
     :return:
     """
 
     if os.path.isdir(source_path) and os.path.exists(source_path):
         for root, dirs, files in os.walk(source_path):
-            if name is not None:
-                matching_files = [s for s in files if name in s]
-                filename = matching_files[0]
-
-                if filename in files:
-                    filepath = os.path.join(root, filename)
-                    compress_file(filepath)
-            else:
-                for filename in files:
-                    filepath = os.path.join(root, filename)
-                    compress_file(filepath)
+            for filename in files:
+                filepath = os.path.join(root, filename)
+                compress_file(filepath)
     else:
         print "ERROR: compress_file_in_folder(), this folder is not valid: " + source_path
 
