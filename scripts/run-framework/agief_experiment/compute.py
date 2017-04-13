@@ -39,7 +39,7 @@ class Compute:
         config = r.json()
         return config
 
-    def wait_till_param(self, entity_name, param_path, value):
+    def wait_till_param(self, entity_name, param_path, value, max_tries=-1):
         """
         Return when the the config parameter has achieved the value specified
         entity = name of entity, param_path = path to parameter, delimited by '.'
@@ -52,6 +52,11 @@ class Compute:
         print "... Waiting for param to achieve value (try every " + str(wait_period) + "s): " + entity_name + \
               "." + param_path + " = " + str(value)
 
+        def print_age(i, age_string):
+            # if not self.log:
+            #     utils.restart_line()
+            print "Try = [%d]%s" % (i, age_string)  # add a comma at the end to remove newline
+
         while True:
             i += 1
 
@@ -59,14 +64,18 @@ class Compute:
             if age is not None:
                 age_string = ", " + entity_name + ".age = " + str(age)
 
-            # if not self.log:
-            #     utils.restart_line()
-            print "Try = [%d]%s" % (i, age_string)  # add a comma at the end to remove newline
+            if 0 < max_tries < i:
+                print_age(i, age_string)
+                print "ERROR: tried " + str(max_tries) + " times, without success. AGIEF is not responding, so EXITING"
+                exit(1)
+
+            if i % 5 == 0:
+                print_age(i, age_string)
 
             try:
                 config = self.get_entity_config(entity_name)
 
-                if config['value'] is not None:
+                if 'value' in config:
                     age = dpath.util.get(config, 'value.age', '.')
                     parameter = dpath.util.get(config, 'value.' + param_path, '.')
                     if parameter == value:
@@ -74,6 +83,9 @@ class Compute:
                             print "LOG: ... parameter: " + entity_name + "." + param_path + ", has achieved value: " + \
                                   str(value) + "."
                         break
+            except KeyError:
+                print "KeyError Exception"
+                print "WARNING: trying to access a keypath in config object, that DOES NOT exist!"
             except requests.exceptions.ConnectionError:
                 print "Oops, ConnectionError exception"
             except requests.exceptions.RequestException:
@@ -81,6 +93,9 @@ class Compute:
 
             time.sleep(wait_period)  # sleep for n seconds
 
+        # successfully reached value
+        if i % 5 != 0:
+            print_age(i, age_string)
         print "   -> success, parameter reached value" + age_string
 
     def import_experiment(self, entity_filepath=None, data_filepaths=None):
@@ -296,7 +311,7 @@ class Compute:
             break
 
         if not entity:
-            print "ERROR: Could not find an entity in the input file matching the entity name specified in the " \
+            print "\nERROR: Could not find an entity in the input file matching the entity name specified in the " \
                   "experiment file in field 'file-entities'."
             print "\tEntity input file: " + entity_filepath
             print "\tEntity name: " + entity_name
@@ -308,7 +323,14 @@ class Compute:
         if log_debug:
             print "LOG: config(t)   = " + json.dumps(config, indent=4)
 
-        dpath.util.set(config, param_path, value, '.')
+        changed = dpath.util.set(config, param_path, value, '.')
+
+        if changed == 0:
+            print "\nERROR: Could not set the config in entity at param path."
+            print "\tEntity = " + entity_name
+            print "\tParam_path = " + param_path
+            print "CANNOT CONTINUE"
+            exit(1)
 
         if log_debug:
             print "LOG: config(t+1) = " + json.dumps(config, indent=4)

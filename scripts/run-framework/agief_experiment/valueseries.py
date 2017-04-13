@@ -1,10 +1,7 @@
 import numpy
 
-
 class ValueSeries:
-    series = []
-    idx = 0
-    overflow = False
+    REPEAT_CHAR = "*"
 
     def __init__(self, series):
         self.idx = 0
@@ -30,10 +27,14 @@ class ValueSeries:
         """ Iterate through If the value exceeds the maximum, then return false """
 
         if not self.overflow:
-            self.idx += 1
+            next_idx = self.idx + 1
 
-            if self.idx >= len(self.series):
+            if next_idx >= len(self.series):
                 self.idx = 0
                 self.overflow = True
+            elif self.series[next_idx] == self.REPEAT_CHAR:
+                pass    # don't advance, stay on the last value if it is followed by the repeat char (e.g. '*')
+            else:
+                self.idx = next_idx
 
         return self.overflow

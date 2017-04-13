@@ -26,6 +26,8 @@ Assumptions:
 - The VARIABLES_FILE is used for env variables
 """
 
+DISABLE_RUN_FOR_DEBUG = False
+
 
 def log_results_config():
     config = _compute_node.get_entity_config(_experiment.entity_with_prefix("experiment"))
@@ -85,7 +87,8 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
 
     set_dataset(_experiment.experiment_def_file())
 
-    _compute_node.run_experiment(_experiment)
+    if not DISABLE_RUN_FOR_DEBUG:
+        _compute_node.run_experiment(_experiment)
 
     _experiment.remember_prefix()
 
@@ -541,6 +544,10 @@ if __name__ == '__main__':
 
     if args.exps_file:
         _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
+    else:
+        # an instantiated object is still necessary for things such as getting paths to ENV variables defined in
+        # variables file. This could be improved by making them static or breaking that out into another class.
+        _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, "")
 
     # 1) Generate input files
     if args.main_class:

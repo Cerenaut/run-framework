@@ -88,5 +88,5 @@ python run-framework.py --exps_file experiments-phase1.json --step_compute
 ### local agief (running in node mode i.e. no postgres required), export the output files, upload them to S3
 python run-framework.py --exps_file experiments.json --step_compute --step_export --step_upload --host localhost --port 8491
 
-### just run framework, don't import/export or run experiment
-python run-framework.py --step_compute --host localhost --port 8491
+### just run framework locally, don't import/export or run experiment
+python run-framework.py --step_compute --launch_per_session

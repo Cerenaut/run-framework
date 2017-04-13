@@ -145,7 +145,6 @@ def set_entityfile_config(entity, config, log=False):
         NOTE: Works with Import/Export API, which does not treat config string as a valid json string 
     """
 
-
     # put the escape characters back in the config str and write back to file
     config_str = json.dumps(config)
     # configStr = configStr.replace("\"", "\\\"")       --> don't need this anymore, depends on python behaviour
