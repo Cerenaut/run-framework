@@ -43,11 +43,16 @@ class Compute:
         """
         Return when the the config parameter has achieved the value specified
         entity = name of entity, param_path = path to parameter, delimited by '.'
+        
+        If there are too many connection errors, exit the whole program.
         """
+
+        max_connection_error = 20
 
         wait_period = 10
         age = None
         i = 0
+        connection_error_count = 0
 
         print "... Waiting for param to achieve value (try every " + str(wait_period) + "s): " + entity_name + \
               "." + param_path + " = " + str(value)
@@ -66,7 +71,13 @@ class Compute:
 
             if 0 < max_tries < i:
                 print_age(i, age_string)
-                print "ERROR: tried " + str(max_tries) + " times, without success. AGIEF is not responding, so EXITING"
+                print "ERROR: Tried " + str(max_tries) + " times, without success, AGIEF is considered hung."
+                print "CANNOT CONTINUE"
+                exit(1)
+
+            if connection_error_count > max_connection_error:
+                print "ERROR: too many connection errors: " + str(max_connection_error)
+                print "CANNOT CONTINUE"
                 exit(1)
 
             if i % 5 == 0:
@@ -88,14 +99,14 @@ class Compute:
                 print "WARNING: trying to access a keypath in config object, that DOES NOT exist!"
             except requests.exceptions.ConnectionError:
                 print "Oops, ConnectionError exception"
+                connection_error_count += 1
             except requests.exceptions.RequestException:
                 print "Oops, request exception"
 
             time.sleep(wait_period)  # sleep for n seconds
 
         # successfully reached value
-        if i % 5 != 0:
-            print_age(i, age_string)
+        print_age(i, age_string)
         print "   -> success, parameter reached value" + age_string
 
     def import_experiment(self, entity_filepath=None, data_filepaths=None):
