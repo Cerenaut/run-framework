@@ -28,7 +28,7 @@ Assumptions:
 - The VARIABLES_FILE is used for env variables
 """
 
-DISABLE_RUN_FOR_DEBUG = True
+DISABLE_RUN_FOR_DEBUG = False
 
 
 def log_results_config():
@@ -668,7 +668,6 @@ if __name__ == '__main__':
     # try to run experiment, and if fails with exception, still shut down infrastructure
     failed = False
     try:
-        raise Exception("test excpetion")
         _compute_node.host_node.host = ips['ip_public']
         _compute_node.port = args.port
 
