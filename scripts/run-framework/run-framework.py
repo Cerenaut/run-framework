@@ -1,6 +1,8 @@
 import json
 import os
 import subprocess
+
+import dpath
 from enum import Enum
 
 from agief_experiment import host_node
@@ -26,22 +28,40 @@ Assumptions:
 - The VARIABLES_FILE is used for env variables
 """
 
-DISABLE_RUN_FOR_DEBUG = False
+DISABLE_RUN_FOR_DEBUG = True
 
 
 def log_results_config():
-    config = _compute_node.get_entity_config(_experiment.entity_with_prefix("experiment"))
+    config_exp = _compute_node.get_entity_config(_experiment.entity_with_prefix("experiment"))
 
-    reporting_key = "reportingEntityName"
-    if 'value' in config and reporting_key in config['value']:
-        entity_name = config['value'][reporting_key]
-
+    reporting_name_key = "reportingEntityName"
+    reporting_path_key = "reportingEntityConfigPath"
+    if 'value' in config_exp and reporting_name_key in config_exp['value']:
+        # get the reporting entity's config
+        entity_name = config_exp['value'][reporting_name_key]
         config = _compute_node.get_entity_config(entity_name)
 
-        print "\n================================================"
-        print "Reporting Entity Config:"
-        print json.dumps(config, indent=4)
-        print "================================================\n"
+        # get the relevant param, or if not there, show the whole config
+        report = None
+        try:
+            if reporting_path_key in config_exp['value']:
+                param_path = config_exp['value'][reporting_path_key]
+                report = dpath.util.get(config, 'value.' + param_path, '.')
+            else:
+                print "WARNING: No reporting entity config path found in experiment config."
+        except KeyError:
+            print "KeyError Exception"
+            print "WARNING: trying to access path '" + param_path + "' at config.value, but it DOES NOT exist!"
+        if report is None:
+            print "\n================================================"
+            print "Reporting Entity Config:"
+            print json.dumps(config, indent=4)
+            print "================================================\n"
+        else:
+            print "\n================================================"
+            print "Reporting Entity Config Path (" + entity_name + "-Config.value." + param_path + "):"
+            print report
+            print "================================================\n"
     else:
         print "WARNING: No reportingEntityName has been specified in Experiment config."
 
@@ -71,47 +91,53 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     with open(info_filepath, 'w') as data:
         data.write(info)
 
-    is_valid = utils.check_validity([entity_filepath]) and utils.check_validity(data_filepaths)
+    failed = False
+    try:
+        is_valid = utils.check_validity([entity_filepath]) and utils.check_validity(data_filepaths)
 
-    if not is_valid:
-        print "ERROR: One of the input files are not valid:"
-        print entity_filepath
-        print json.dumps(data_filepaths)
-        exit(1)
+        if not is_valid:
+            msg = "ERROR: One of the input files are not valid:\n"
+            msg += entity_filepath + "\n"
+            msg += json.dumps(data_filepaths)
+            raise Exception(msg)
 
-    if (launch_mode is LaunchMode.per_experiment) and args.launch_compute:
-        task_arn = launch_compute()
+        if (launch_mode is LaunchMode.per_experiment) and args.launch_compute:
+            task_arn = launch_compute()
 
-    _compute_node.import_experiment(entity_filepath, data_filepaths)
-    _compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
+        _compute_node.import_experiment(entity_filepath, data_filepaths)
+        _compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
 
-    set_dataset(_experiment.experiment_def_file())
+        set_dataset(_experiment.experiment_def_file())
 
-    if not DISABLE_RUN_FOR_DEBUG:
-        _compute_node.run_experiment(_experiment)
+        if not DISABLE_RUN_FOR_DEBUG:
+            _compute_node.run_experiment(_experiment)
 
-    _experiment.remember_prefix()
+        _experiment.remember_prefix()
 
-    # log results expressed in the appropriate entity config
-    log_results_config()
+        # log results expressed in the appropriate entity config
+        log_results_config()
 
-    if is_export:
-        out_entity_file_path, out_data_file_path = _experiment.output_names_from_input_names(entity_filepath,
-                                                                                             data_filepaths)
-        _compute_node.export_subtree(_experiment.entity_with_prefix("experiment"),
-                                     out_entity_file_path,
-                                     out_data_file_path)
+        if is_export:
+            out_entity_file_path, out_data_file_path = _experiment.output_names_from_input_names(entity_filepath,
+                                                                                                 data_filepaths)
+            _compute_node.export_subtree(_experiment.entity_with_prefix("experiment"),
+                                         out_entity_file_path,
+                                         out_data_file_path)
 
-    if is_export_compute:
-        _compute_node.export_subtree(_experiment.entity_with_prefix("experiment"),
-                                     _experiment.outputfile_remote(),
-                                     _experiment.outputfile_remote(),
-                                     True)
+        if is_export_compute:
+            _compute_node.export_subtree(_experiment.entity_with_prefix("experiment"),
+                                         _experiment.outputfile_remote(),
+                                         _experiment.outputfile_remote(),
+                                         True)
+    except Exception as e:
+        failed = True
+        print "ERROR: Experiment failed for some reason, shut down Compute and continue."
+        print e
 
     if (launch_mode is LaunchMode.per_experiment) and args.launch_compute:
         shutdown_compute(task_arn)
 
-    if is_upload_results:
+    if not failed and is_upload_results:
         _experiment.upload_results(_cloud, _compute_node, is_export_compute)
 
 
@@ -222,9 +248,8 @@ def run_sweeps():
     exps_filename = _experiment.experiment_def_file()
 
     if not os.path.exists(exps_filename):
-        print "ERROR: Experiment file does not exist at: " + exps_filename
-        print "Cannot continue."
-        exit(1)
+        msg = "ERROR: Experiment file does not exist at: " + exps_filename
+        raise Exception(msg)
 
     with open(exps_filename) as exps_file:
         filedata = json.load(exps_file)
@@ -322,8 +347,7 @@ def launch_compute_aws_ecs(task_name):
     print "launching Compute on AWS-ECS"
 
     if task_name is None:
-        print "ERROR: you must specify a Task Name to run on aws-ecs"
-        exit(1)
+        raise Exception("ERROR: you must specify a Task Name to run on aws-ecs")
 
     task_arn = _cloud.ecs_run_task(task_name)
     _compute_node.wait_up()
@@ -640,30 +664,42 @@ if __name__ == '__main__':
 
         ips_pg = {'ip_public': args.pg_instance, 'ip_private': args.pg_instance}
 
-    _compute_node.host_node.host = ips['ip_public']
-    _compute_node.port = args.port
+    # infrastructure has been started
+    # try to run experiment, and if fails with exception, still shut down infrastructure
+    failed = False
+    try:
+        raise Exception("test excpetion")
+        _compute_node.host_node.host = ips['ip_public']
+        _compute_node.port = args.port
 
-    # TEMPORARY HACK for ECS
-    # Set the DB_HOST environment variable
-    if args.pg_instance:
-        os.putenv("DB_HOST", ips_pg['ip_private'])
+        # TEMPORARY HACK for ECS
+        # Set the DB_HOST environment variable
+        if args.pg_instance:
+            os.putenv("DB_HOST", ips_pg['ip_private'])
 
-    # 3) Sync code and run-home
-    if args.sync:
-        _cloud.sync_experiment(_compute_node.host_node)
+        # 3) Sync code and run-home
+        if args.sync:
+            _cloud.sync_experiment(_compute_node.host_node)
 
-    # 3.5) Sync data from S3 (typically used to download output files from a previous experiment to be used as input)
-    if sync_s3_prefix:
-        _cloud.remote_download_output(sync_s3_prefix, _compute_node.host_node)
+        # 3.5) Sync data from S3 (typically used to download output files from a previous experiment to be used as input)
+        if sync_s3_prefix:
+            _cloud.remote_download_output(sync_s3_prefix, _compute_node.host_node)
 
-    # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
-    if (launch_mode is LaunchMode.per_session) and args.launch_compute:
-        launch_compute()
+        # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
+        if (launch_mode is LaunchMode.per_session) and args.launch_compute:
+            launch_compute()
 
-    # 5) Run experiments (includes per experiment 'export results' and 'upload results')
-    if args.exps_file:
-        run_sweeps()
-        _experiment.persist_prefix_history()
+        # 5) Run experiments (includes per experiment 'export results' and 'upload results')
+        if args.exps_file:
+            run_sweeps()
+            _experiment.persist_prefix_history()
+
+    except Exception as e:
+        failed = True
+        print "ERROR: Something failed running sweeps generally. " \
+              "If the error occurred in a specific parameter set it should have been caught there." \
+              "Attempt to shut down infrastructure if running, and exit."
+        print e
 
     # 6) Shutdown framework
     if args.shutdown:
@@ -677,3 +713,6 @@ if __name__ == '__main__':
 
             if is_pg_ec2:
                 _cloud.ec2_stop(args.pg_instance)
+
+    if failed:
+        exit(1)

@@ -71,14 +71,12 @@ class Compute:
 
             if 0 < max_tries < i:
                 print_age(i, age_string)
-                print "ERROR: Tried " + str(max_tries) + " times, without success, AGIEF is considered hung."
-                print "CANNOT CONTINUE"
-                exit(1)
+                msg = "ERROR: Tried " + str(max_tries) + " times, without success, AGIEF is considered hung."
+                raise Exception(msg)
 
             if connection_error_count > max_connection_error:
-                print "ERROR: too many connection errors: " + str(max_connection_error)
-                print "CANNOT CONTINUE"
-                exit(1)
+                msg = "ERROR: too many connection errors: " + str(max_connection_error)
+                raise Exception(msg)
 
             if i % 5 == 0:
                 print_age(i, age_string)
@@ -129,8 +127,7 @@ class Compute:
 
         if is_entity_file:
             if not os.path.isfile(entity_filepath):
-                print "ERROR: entity file does not exist. CANNOT CONTINUE"
-                exit(1)
+                raise Exception("ERROR: entity file does not exist.")
 
             with open(entity_filepath, 'rb') as entity_data_file:
                 files = {'entity-file': entity_data_file}
@@ -144,8 +141,7 @@ class Compute:
         if is_data_files:
             for data_filepath in data_filepaths:
                 if not os.path.isfile(data_filepath):
-                    print "ERROR: data file does not exist. CANNOT CONTINUE"
-                    exit(1)
+                    raise Exception("ERROR: data file does not exist.")
 
                 with open(data_filepath, 'rb') as data_data_file:
                     files = {'data-file': data_data_file}
@@ -256,8 +252,7 @@ class Compute:
         while True:
             i += 1
             if i > 120:
-                print "\nError: could not start framework, cannot continue."
-                exit(1)
+                raise Exception("Error: could not start framework.")
 
             version = self.version(True)
 
@@ -322,12 +317,11 @@ class Compute:
             break
 
         if not entity:
-            print "\nERROR: Could not find an entity in the input file matching the entity name specified in the " \
-                  "experiment file in field 'file-entities'."
-            print "\tEntity input file: " + entity_filepath
-            print "\tEntity name: " + entity_name
-            print "CANNOT CONTINUE"
-            exit(1)
+            msg = "\nERROR: Could not find an entity in the input file matching the entity name specified in the " \
+                  "experiment file in field 'file-entities'.\n"
+            msg += "\tEntity input file: " + entity_filepath + "\n"
+            msg += "\tEntity name: " + entity_name
+            raise Exception(msg)
 
         config = utils.get_entityfile_config(entity, log_debug)
 
@@ -337,11 +331,10 @@ class Compute:
         changed = dpath.util.set(config, param_path, value, '.')
 
         if changed == 0:
-            print "\nERROR: Could not set the config in entity at param path."
-            print "\tEntity = " + entity_name
-            print "\tParam_path = " + param_path
-            print "CANNOT CONTINUE"
-            exit(1)
+            msg = "\nERROR: Could not set the config in entity at param path.\n"
+            msg += "\tEntity = " + entity_name + "\n"
+            msg += "\tParam_path = " + param_path
+            raise Exception(msg)
 
         if log_debug:
             print "LOG: config(t+1) = " + json.dumps(config, indent=4)

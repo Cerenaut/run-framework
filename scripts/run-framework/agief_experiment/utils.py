@@ -98,9 +98,9 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period, verbose=False):
         time.sleep(wait_period)
 
     if not success:
-        print "ERROR: was not able run shell command: " + cmd
-        print " Exit status = " + str(exit_status)
-        exit(1)
+        msg = "ERROR: was not able run shell command: " + cmd + "\n"
+        msg += " Exit status = " + str(exit_status)
+        raise Exception(msg)
 
 
 def check_validity(files):
