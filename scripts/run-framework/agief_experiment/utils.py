@@ -2,6 +2,7 @@ import json
 import subprocess
 import os
 import errno
+import zipfile
 import fileinput
 import sys
 import time
@@ -119,6 +120,77 @@ def check_validity(files):
 
     return is_valid
 
+def compress_file(source_filepath):
+    """
+    Compress the specified file
+    :param source_filepath: the path to the file to be compressed
+    :return:
+    """
+
+    if os.path.isfile(source_filepath) and os.path.exists(source_filepath):
+        zipf = zipfile.ZipFile(source_filepath + '.zip', 'w', zipfile.ZIP_DEFLATED)
+        zipf.write(source_filepath)
+        zipf.close()
+    else:
+        print "ERROR: compress_file(), this file is not valid: " + source_filepath
+
+def compress_folder_contents(source_path):
+    """
+    Compress all files in the specified folder
+    :param source_path: the source folder where the contents will be compressed
+    :return:
+    """
+
+    if os.path.isdir(source_path) and os.path.exists(source_path):
+        for root, dirs, files in os.walk(source_path):
+            for filename in files:
+                filepath = os.path.join(root, filename)
+                compress_file(filepath)
+    else:
+        print "ERROR: compress_file_in_folder(), this folder is not valid: " + source_path
+
+def match_file_by_name(source_path, name):
+    """
+    Looks for a file with a matching name to the one provided inside the specified
+    source directory. It then returns the filepath for that file.
+    :param source_path: the source folder where the file is located
+    :param name: name or partial name of the file to match
+    :return:
+    """
+
+    if os.path.isdir(source_path) and os.path.exists(source_path):
+        for root, dirs, files in os.walk(source_path):
+            matching_files = [s for s in files if name in s]
+            if matching_files:
+                return os.path.abspath(root + "/" + matching_files[0])
+            else:
+                print "ERROR: match_file_by_name(), no matching files found in: " + source_path
+    else:
+        print "ERROR: match_file_by_name(), this folder is not valid: " + source_path
+
+
+def move_file(source_filepath, dest_path, create_dest=False):
+    """
+    Moves a file from the source path to the provided destination path. An optional
+    parameter can be provided to create the destination folder.
+    :param source_filepath: the path to the file that needs to be moved
+    :param dest_path: the destination folder that the file will be moved to
+    :param create_dest: (optional) if specified, the destination folder will be created
+    :return:
+    """
+    if create_dest is True:
+        create_folder(dest_path)
+
+    if os.path.isfile(source_filepath) and os.path.exists(source_filepath):
+        parsed_filepath = os.path.split(source_filepath)
+
+        if os.path.isdir(dest_path) and os.path.exists(dest_path):
+            # Move file from source to destination
+            os.rename(source_filepath, dest_path + "/" + parsed_filepath[1])
+        else:
+            print "ERROR: move_file(), the destination folder is not valid: " + dest_path
+    else:
+        print "ERROR: move_file(), the source file path is not valid: " + source_filepath
 
 def get_entityfile_config(entity, log=False):
     """ 

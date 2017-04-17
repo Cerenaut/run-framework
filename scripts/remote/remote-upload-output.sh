@@ -23,12 +23,19 @@ echo "Using keyfile = " $keyfile
 echo "Using user = " $user
 echo "Using remote_variables_file = " $remote_variables_file
 
-ssh -v -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix=$prefix VARIABLES_FILE=$remote_variables_file 'bash -s' <<'ENDSSH' 
+ssh -v -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix=$prefix VARIABLES_FILE=$remote_variables_file 'bash -s' <<'ENDSSH'
 	export VARIABLES_FILE=$VARIABLES_FILE
 	source $VARIABLES_FILE
 
 	upload_folder=$AGI_RUN_HOME/output/$prefix
 	echo "Calculated upload-folder = " $upload_folder
+
+	output_big_folder=$AGI_RUN_HOME/output-big/
+	mkdir -p $output_big_folder
+
+	matching_files=( $(find $upload_folder -name '*data*') )
+	zip $upload_folder/data.zip ${matching_files[0]}
+	mv ${matching_files[0]} $output_big_folder
 
 	cmd="aws s3 cp $upload_folder s3://agief-project/experiment-output/$prefix/output --recursive"
 	echo $cmd >> remote-upload-cmd.log

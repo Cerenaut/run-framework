@@ -2,6 +2,7 @@ import json
 
 import utils
 import os
+import zipfile
 import datetime
 import shutil
 import subprocess
@@ -296,14 +297,16 @@ class Experiment:
 
         # upload /input folder (contains input files entity.json, data.json)
         folder_path = self.inputfile("")
-        cloud.upload_experiment_s3(self.prefix(),
-                                   "input",
-                                   folder_path)
+        self.upload_experiment(cloud,
+                               self.prefix(),
+                               "input",
+                               folder_path)
 
         # upload experiments definition file (if it exists)
-        cloud.upload_experiment_s3(self.prefix(),
-                                   self.experiments_def_filename,
-                                   self.experiment_def_file())
+        self.upload_experiment(cloud,
+                               self.prefix(),
+                               self.experiments_def_filename,
+                               self.experiment_def_file())
 
         # upload log4j configuration file that was used
         log_filename = "log4j2.log"
@@ -312,9 +315,10 @@ class Experiment:
             cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), log_filename)
         else:
             log_filepath = self.runpath(log_filename)
-            cloud.upload_experiment_s3(self.prefix(),
-                                       log_filename,
-                                       log_filepath)
+            self.upload_experiment(cloud,
+                                   self.prefix(),
+                                   log_filename,
+                                   log_filepath)
 
         # upload /output files (entity.json, data.json and experiment-info.txt)
 
@@ -322,12 +326,44 @@ class Experiment:
             # remote upload of /output/[prefix] folder
             cloud.remote_upload_output_s3(compute_node.host_node, self.prefix())
 
-        # this is also important even if 'export_compute', as experiment-info.txt is in the /output folder on the
-        # machine THIS (python script) is running on
+        # this is also important even if 'export_compute', as experiment-info.txt
+        # is in the /output folder on the machine THIS (python script) is running on
         folder_path = self.outputfile("")
-        cloud.upload_experiment_s3(self.prefix(),
-                                   "output",
-                                   folder_path)
+        folder_path_big = self.filepath_from_exp_variable("output-big/", self.agi_run_home)
+
+        # Locate the output data file
+        output_data_filepath = utils.match_file_by_name(folder_path, 'data')
+
+        # Compress data file
+        utils.compress_file(output_data_filepath)
+
+        # Move uncompressed data file to /output-big folder
+        utils.move_file(output_data_filepath, folder_path_big)
+
+        self.upload_experiment(cloud,
+                               self.prefix(),
+                               "output",
+                               folder_path)
+
+    def upload_experiment(self, cloud, prefix, dest_name, source_path):
+        """
+        Upload experiment to s3.
+        :param prefix: experiment prefix (used in the full name of uploaded bucket)
+        :param dest_name: the name for the eventual uploaded s3 object (it can be file or folder)
+        :param source_path: the file or folder to be uploaded
+        :type cloud: Cloud
+        :return:
+        """
+
+        print "...... Uploading experiment to S3"
+
+        bucket_name = "agief-project"
+        key = "experiment-output/" + prefix + "/" + dest_name
+
+        if os.path.isfile(source_path):
+            cloud.upload_file_s3(bucket_name, key, source_path)
+        else:
+            cloud.upload_folder_s3(bucket_name, key, source_path)
 
     def remember_prefix(self):
         self.prefixes_history += self.prefix() + "\n"
