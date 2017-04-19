@@ -334,11 +334,12 @@ class Experiment:
         # Locate the output data file
         output_data_filepath = utils.match_file_by_name(folder_path, 'data')
 
-        # Compress data file
-        utils.compress_file(output_data_filepath)
+        if output_data_filepath is not None:
+            # Compress data file
+            utils.compress_file(output_data_filepath)
 
-        # Move uncompressed data file to /output-big folder
-        utils.move_file(output_data_filepath, folder_path_big)
+            # Move uncompressed data file to /output-big folder
+            utils.move_file(output_data_filepath, folder_path_big)
 
         self.upload_experiment(cloud,
                                self.prefix(),

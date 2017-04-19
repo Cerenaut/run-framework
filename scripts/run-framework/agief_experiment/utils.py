@@ -163,11 +163,16 @@ def match_file_by_name(source_path, name):
         for root, dirs, files in os.walk(source_path):
             matching_files = [s for s in files if name in s]
             if matching_files:
-                return os.path.abspath(root + "/" + matching_files[0])
+                ret = os.path.abspath(root + "/" + matching_files[0])
+                return ret
             else:
-                print "ERROR: match_file_by_name(), no matching files found in: " + source_path
+                print "WARNING: match_file_by_name(), no matching files found in: " + source_path
+                print "This should only happen if you are running remote via ssh, " \
+                      "and exporting data by saving on compute."
     else:
         print "ERROR: match_file_by_name(), this folder is not valid: " + source_path
+
+    return None
 
 
 def move_file(source_filepath, dest_path, create_dest=False):
