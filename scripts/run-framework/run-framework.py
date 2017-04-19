@@ -243,7 +243,7 @@ def create_all_input_files(TEMPLATE_PREFIX, base_entity_filename, base_data_file
 def run_sweeps():
     """ Perform parameter sweep steps, and run experiment for each step. """
 
-    print "........ Run Sweeps"
+    print "\n........ Run Sweeps"
 
     exps_filename = _experiment.experiment_def_file()
 
@@ -312,7 +312,7 @@ def set_dataset(exps_file):
     :return:
     """
 
-    print "....... Set Dataset"
+    print "\n....... Set Dataset"
 
     with open(exps_file) as data_exps_file:
         data = json.load(data_exps_file)
@@ -408,7 +408,7 @@ def launch_compute_local(main_class="", run_in_docker=True):
 def launch_compute(use_ecs=False):
     """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
 
-    print "....... Launch Compute"
+    print "\n....... Launch Compute"
 
     task_arn = None
 
@@ -429,7 +429,7 @@ def launch_compute(use_ecs=False):
 def shutdown_compute(task_arn):
     """ Close compute: terminate and then if running on AWS, stop the task. """
 
-    print "....... Shutdown System"
+    print "\n....... Shutdown System"
 
     _compute_node.terminate()
 
@@ -696,7 +696,7 @@ if __name__ == '__main__':
     except Exception as e:
         failed = True
         print "ERROR: Something failed running sweeps generally. " \
-              "If the error occurred in a specific parameter set it should have been caught there." \
+              "If the error occurred in a specific parameter set it should have been caught there. " \
               "Attempt to shut down infrastructure if running, and exit."
         print e
 

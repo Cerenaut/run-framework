@@ -355,7 +355,7 @@ class Experiment:
         :return:
         """
 
-        print "...... Uploading experiment to S3"
+        print "\n...... Uploading experiment to S3: prefix = {1}, destination file/folder = {2}, source file/folder = {3}", prefix, dest_name, source_path
 
         bucket_name = "agief-project"
         key = "experiment-output/" + prefix + "/" + dest_name
@@ -371,6 +371,6 @@ class Experiment:
     def persist_prefix_history(self, filename="prefixes.txt"):
         """ Save prefix history to a file """
 
-        print "....... Save prefix history to " + filename
+        print "\n....... Save prefix history to " + filename
         with open(filename, "w") as prefix_file:
             prefix_file.write(self.prefixes_history)

@@ -27,7 +27,7 @@ class Cloud:
         Assumes there exists a private key for the given ec2 instance, at keypath
         """
 
-        print "....... Use remote-sync-experiment.sh to rsync relevant folders."
+        print "\n....... Use remote-sync-experiment.sh to rsync relevant folders."
 
         cmd = "../remote/remote-sync-experiment.sh " + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
@@ -39,7 +39,7 @@ class Cloud:
         :type host_node: RemoteNode
         """
 
-        print "....... Use remote-download-output.sh to copy /output files from s3 (typically input and data files) " \
+        print "\n....... Use remote-download-output.sh to copy /output files from s3 (typically input and data files) " \
               "with prefix = " + prefix + ", to remote machine."
 
         cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + host_node.host_key_user_variables()
@@ -48,7 +48,7 @@ class Cloud:
     def remote_docker_launch_compute(self, remote):
         """ Assumes there exists a private key for the given ec2 instance, at keypath """
 
-        print "....... Use remote-run.sh to launch compute node in a docker container on a remote host."
+        print "\n....... Use remote-run.sh to launch compute node in a docker container on a remote host."
 
         cmd = "../remote/remote-run.sh " + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
@@ -56,7 +56,7 @@ class Cloud:
     def ecs_run_task(self, task_name):
         """ Run task 'task_name' and return the Task ARN """
 
-        print "....... Running task on ecs "
+        print "\n....... Running task on ecs "
         client = boto3.client('ecs')
         response = client.run_task(
             cluster=self.cluster,
@@ -85,7 +85,7 @@ class Cloud:
 
     def ecs_stop_task(self, task_arn):
 
-        print "....... Stopping task on ecs "
+        print "\n....... Stopping task on ecs "
         client = boto3.client('ecs')
 
         response = client.stop_task(
@@ -103,7 +103,7 @@ class Cloud:
         :return: the instance AWS public and private ip addresses
         """
         
-        print "....... Starting ec2 (instance id " + instance_id + ")"
+        print "\n....... Starting ec2 (instance id " + instance_id + ")"
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
         response = instance.start()
@@ -124,7 +124,7 @@ class Cloud:
         :return: ip addresses: public and private, and instance id
         """
 
-        print "....... Launching ec2 from AMI (AMI id " + ami_id + ", with minimum " + str(min_ram) + "GB RAM)"
+        print "\n....... Launching ec2 from AMI (AMI id " + ami_id + ", with minimum " + str(min_ram) + "GB RAM)"
 
         instance_type = None      # minimum size, 15GB on machine, leaves 13GB for compute
         if min_ram < 6:
@@ -140,7 +140,7 @@ class Cloud:
             print "ERROR: cannot create an ec2 instance with that much RAM"
             exit(1)
 
-        print "............. RAM to be allocated: " + str(ram_allocated) + " GB RAM"
+        print "\n............. RAM to be allocated: " + str(ram_allocated) + " GB RAM"
 
         ec2 = boto3.resource('ec2')
         subnet = ec2.Subnet(self.subnet_id)
@@ -223,7 +223,7 @@ class Cloud:
         return {'ip_public': ip_public, 'ip_private': ip_private}
 
     def ec2_stop(self, instance_id):
-        print "...... Closing ec2 instance (instance id " + str(instance_id) + ")"
+        print "\n...... Closing ec2 instance (instance id " + str(instance_id) + ")"
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
 
@@ -233,30 +233,6 @@ class Cloud:
 
         if self.log:
             print "self.log: stop ec2: ", response
-
-    def upload_experiment_s3(self, prefix, dest_name, source_filepath):
-        """
-        Upload experiment to s3.
-        :param prefix: experiment prefix (used in the full name of uploaded bucket)
-        :param dest_name: the name for the eventual uploaded s3 object (it can be file or folder)
-        :param source_filepath: the file or folder to be uploaded
-        :return:
-        """
-
-        print "...... Uploading experiment to S3"
-
-        bucket_name = "agief-project"
-        key = "experiment-output/" + prefix + "/" + dest_name
-
-        if os.path.isfile(source_filepath):
-            self.upload_file_s3(bucket_name, key, source_filepath)
-        else:
-            for root, dirs, files in os.walk(source_filepath):
-                for file in files:
-                    filepath = os.path.join(source_filepath, file)
-                    filekey = os.path.join(key, file)
-
-                    self.upload_file_s3(bucket_name, filekey, filepath)
 
     def remote_upload_runfilename_s3(self, host_node, prefix, dest_name):
         cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name \

@@ -94,3 +94,6 @@ python run-framework.py --exps_file experiments.json --step_compute --step_expor
 
 ### just run framework locally, don't import/export or run experiment
 python run-framework.py --step_compute --launch_per_session
+
+### run full experiment on a remote (already running) machine (in this case, incbox)
+python run-framework.py --step_remote simple --exps_file experiments-phase1.json --step_sync --step_compute --step_export_compute --step_upload --user incubator --host box.x.agi.io --port 8491 --ssh_keypath .ssh/inc-box --remote_variables_file /home/incubator/agief-project/variables/variables-incbox.sh

@@ -113,7 +113,7 @@ class Compute:
         is_entity_file = entity_filepath is not None
         is_data_files = data_filepaths is not None or len(data_filepaths) != 0
 
-        print "....... Import Experiment"
+        print "\n....... Import Experiment"
 
         if not is_entity_file and not is_data_files:
             print "        WARNING: no input files specified (that may be intentional)"
@@ -162,7 +162,7 @@ class Compute:
         :return:
         """
 
-        print "....... Import Data on Compute node into Experiment "
+        print "\n....... Import Data on Compute node into Experiment "
 
         import_type = 'entity'
         if is_data:
@@ -188,7 +188,7 @@ class Compute:
 
     def run_experiment(self, exp):
 
-        print "....... Run Experiment"
+        print "\n....... Run Experiment"
 
         payload = {'entity': exp.entity_with_prefix('experiment'), 'event': 'update'}
         response = requests.get(self.base_url() + '/update', params=payload)
@@ -217,8 +217,11 @@ class Compute:
 
         response = requests.get(self.base_url() + '/export', params=payload)
 
+        if is_compute_save:
+            print "Saved file response: ", response.text
+
         if self.log:
-            # print "LOG: Export entity file, response text = ", response.text
+            # print "Exported entity file, response text = ", response.text
             print "  LOG: response = ", response
             print "  LOG: response url = ", response.url
 
@@ -235,7 +238,7 @@ class Compute:
         that consists of entity graph and the data
         """
 
-        print "....... Export Experiment"
+        print "\n....... Export Experiment"
         if self.log:
             print "Exporting data for root entity: " + root_entity
 
@@ -245,7 +248,7 @@ class Compute:
     def wait_up(self):
         wait_period = 3
 
-        print "....... Wait till framework has started (try every " + str(wait_period) + " seconds),   at = " \
+        print "\n....... Wait till framework has started (try every " + str(wait_period) + " seconds),   at = " \
               + self.base_url()
 
         i = 0
@@ -266,7 +269,7 @@ class Compute:
         print "\n  - framework is up, running version: " + version
 
     def terminate(self):
-        print "...... Terminate framework"
+        print "\n...... Terminate framework"
         response = requests.get(self.base_url() + '/stop')
 
         if self.log:

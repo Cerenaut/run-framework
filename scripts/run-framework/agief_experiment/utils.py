@@ -149,6 +149,7 @@ def compress_folder_contents(source_path):
     else:
         print "ERROR: compress_file_in_folder(), this folder is not valid: " + source_path
 
+
 def match_file_by_name(source_path, name):
     """
     Looks for a file with a matching name to the one provided inside the specified
