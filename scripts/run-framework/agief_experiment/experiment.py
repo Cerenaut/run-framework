@@ -323,6 +323,7 @@ class Experiment:
         # upload /output files (entity.json, data.json and experiment-info.txt)
 
         if compute_node.remote() and export_compute:
+            print "--- Upload from exported file on remote machine."
             # remote upload of /output/[prefix] folder
             cloud.remote_upload_output_s3(compute_node.host_node, self.prefix())
 
@@ -356,7 +357,8 @@ class Experiment:
         :return:
         """
 
-        print "\n...... Uploading experiment to S3: prefix = {1}, destination file/folder = {2}, source file/folder = {3}", prefix, dest_name, source_path
+        print "\n...... Uploading experiment to S3: prefix = " + prefix + ", destination file/folder = " + dest_name \
+              + ", source file/folder = " + source_path
 
         bucket_name = "agief-project"
         key = "experiment-output/" + prefix + "/" + dest_name
