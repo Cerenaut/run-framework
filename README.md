@@ -18,7 +18,8 @@ Note: All scripts (here and in 'agi') utilise environmental variables defined in
 
 ## Setup Environment
 - get the latest latest
-	- [code](https://github.com/ProjectAGI/agi) and 
+	- [this code](https://github.com/ProjectAGI/run-framework) and 
+	- [compute code](https://github.com/ProjectAGI/agi) and 
 	- [experiment definitions](https://github.com/ProjectAGI/experiment-definitions)
 - setup your python environment (instructions in the next section)
 - ensure values in your variables.sh file are correct
@@ -41,14 +42,17 @@ This will place the input files in your experiment definitions folder, referred 
 ## Run the framework - experiments
 Use ```run-framework.py```. All of the steps can be run separately, or all together, specified with command line switches. Running ```python run-framework.py --help``` will give you more detail and the optional flags. 
 
+run-framework expects an experiments file. This is a json file that defines what is to be run. An example is shown in ```/resources/experiments-format.json``` and an example is given at ```/experiment-template/experiments.json```.
+
 The experiments can be run locally or on AWS. 
 
 The experiments are run from the run folder ```$AGI_RUN_HOME/[Experiment Name]```, the same folder as the input files. The folder structure and required files are seen in the folder ```$AGI_HOME/resources/run-example```. In particular, ```node.properties``` has essential properties for the java process, and ```/input``` has the data for a run, and ```experiment.json``` defines the parameter sweeps and links to these input files.
 
+
 The steps are:
 
-- [aws] run the ec2 instances (ecs and postgres)
-- launch framework
+- [aws] run the ec2 instances (ecs and if necessary postgres)
+- launch Compute
 - import input files from run-folder
 - [aws] sync code folder (compiled), run-folder to ecs (run-folder has node.properties, log4j xml etc.), and dataset
 - run experiment
