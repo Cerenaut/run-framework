@@ -16,6 +16,12 @@ The system is shown graphically [here](https://docs.google.com/drawings/d/1zBIRn
 Note: All scripts (here and in 'agi') utilise environmental variables defined in a 'variables' file. Every script begins by sourcing this file. ```/resources/variables-template.sh``` is an example with explanations of each variable. You can modify that file, or create your own instead. 
 *IMPORTANT:* Then set the ENV variable ```VARIABLES_FILE``` to it using the full path.
 
+**Note also that:** 
+
+* Be careful to set these correctly. Read the meaning in the comments, of each variable. You use these to set things like the location of your dataset.
+* Also very important is that you may need multiple variables files. There is one for each location that the system is running in. For example, for the experiments that run on Jenkins, there is a variables file on Jenkins, for the EC2 machine, as well as for the Docker container.
+
+
 ## Setup Environment
 - get the latest latest
 	- [this code](https://github.com/ProjectAGI/run-framework) and 
@@ -87,13 +93,21 @@ python run-framework.py --logging --exps_file experiments.json --step_compute --
 ```
 
 ### local agief (running in node mode), no db, no export or upload
+```sh
 python run-framework.py --exps_file experiments-phase1.json --step_compute
+```
 
 ### local agief (running in node mode i.e. no postgres required), export the output files, upload them to S3
+```sh
 python run-framework.py --exps_file experiments.json --step_compute --step_export --step_upload --host localhost --port 8491
+```
 
 ### just run framework locally, don't import/export or run experiment
+```sh
 python run-framework.py --step_compute --launch_per_session
+```
 
 ### run full experiment on a remote (already running) machine (in this case, incbox)
+```sh
 python run-framework.py --step_remote simple --exps_file experiments-phase1.json --step_sync --step_compute --step_export_compute --step_upload --user incubator --host box.x.agi.io --port 8491 --ssh_keypath .ssh/inc-box --remote_variables_file /home/incubator/agief-project/variables/variables-incbox.sh
+```
