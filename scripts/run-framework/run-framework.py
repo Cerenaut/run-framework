@@ -220,7 +220,7 @@ def inc_parameter_set(experiment, compute_node, args, entity_filepath, val_sweep
 
     if args.logging:
         if len(sweep_param_vals):
-            print("LOG: Parameter sweep: " + str(sweep_param_vals))
+            print("LOG: Parameter sweep: ", sweep_param_vals)
 
     if reset is False and len(sweep_param_vals) == 0:
         print("Error: inc_parameter_set() indeterminate state, reset is False, but parameter_description indicates " 
@@ -228,6 +228,12 @@ def inc_parameter_set(experiment, compute_node, args, entity_filepath, val_sweep
         exit(1)
 
     return reset, sweep_param_vals
+
+
+def create_all_input_files(experiment, base_entity_filename, base_data_filenames):
+    experiment.reset_prefix()
+    return (experiment.create_input_files(TEMPLATE_PREFIX, [base_entity_filename])[0],
+            experiment.create_input_files(TEMPLATE_PREFIX, base_data_filenames))
 
 
 def run_sweeps(experiment, compute_node, cloud, args):
@@ -260,30 +266,32 @@ def run_sweeps(experiment, compute_node, cloud, args):
             if 'file-data' in load_local_files:
                 exp_ll_data_filepaths = list(map(experiment.runpath, load_local_files['file-data']))
 
-        exp_entity_filepath = experiment.create_input_files(TEMPLATE_PREFIX, [base_entity_filename])[0]
-        exp_data_filepaths = experiment.create_input_files(TEMPLATE_PREFIX, base_data_filenames)
         run_parameterset_partial = functools.partial(run_parameterset,
                                                      experiment=experiment,
                                                      compute_node=compute_node,
                                                      cloud=cloud,
                                                      args=args,
-                                                     entity_filepath=exp_entity_filepath,
-                                                     data_filepaths=exp_data_filepaths,
                                                      compute_data_filepaths=exp_ll_data_filepaths)
         if 'parameter-sweeps' not in exp_i or len(exp_i['parameter-sweeps']) == 0:
             print("No parameters to sweep, just run once.")
-            experiment.reset_prefix()
-            run_parameterset_partial()
+            exp_entity_filepath, exp_data_filepaths = create_all_input_files(experiment,
+                                                                             base_entity_filename,
+                                                                             base_data_filenames)
+            run_parameterset_partial(entity_filepath=exp_entity_filepath, data_filepaths=exp_data_filepaths)
         else:
             for param_sweep in exp_i['parameter-sweeps']:  # array of sweep definitions
                 counters = setup_parameter_sweepers(param_sweep)
                 while True:
-                    experiment.reset_prefix()
+                    exp_entity_filepath, exp_data_filepaths = create_all_input_files(experiment,
+                                                                                     base_entity_filename,
+                                                                                     base_data_filenames)
                     reset, sweep_param_vals = inc_parameter_set(experiment, compute_node, args,
                                                                 exp_entity_filepath, counters)
                     if reset:
                         break
-                    run_parameterset_partial(sweep_param_vals=sweep_param_vals)
+                    run_parameterset_partial(entity_filepath=exp_entity_filepath,
+                                             data_filepaths=exp_data_filepaths,
+                                             sweep_param_vals=sweep_param_vals)
 
 
 def set_dataset(experiment, compute_node):
