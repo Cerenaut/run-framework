@@ -1,3 +1,5 @@
+from __future__ import print_function
+import functools
 import json
 import os
 import subprocess
@@ -5,12 +7,12 @@ import subprocess
 import dpath
 from enum import Enum
 
-from agief_experiment import host_node
-from agief_experiment import compute
-from agief_experiment import cloud
-from agief_experiment import experiment
+from agief_experiment.host_node import HostNode
+from agief_experiment.compute import Compute
+from agief_experiment.cloud import Cloud
+from agief_experiment.experiment import Experiment
 from agief_experiment import utils
-from agief_experiment import valueseries
+from agief_experiment.valueseries import ValueSeries
 
 help_generic = """
 run-framework.py allows you to run each step of the AGIEF (AGI Experimental Framework), locally and on AWS.
@@ -29,20 +31,23 @@ Assumptions:
 """
 
 DISABLE_RUN_FOR_DEBUG = False
+TEMPLATE_PREFIX = "SPAGHETTI"
+PREFIX_DELIMITER = "--"
 
 
-def log_results_config():
-    config_exp = _compute_node.get_entity_config(_experiment.entity_with_prefix("experiment"))
+def log_results_config(experiment, compute_node):
+    config_exp = compute_node.get_entity_config(experiment.entity_with_prefix("experiment"))
 
     reporting_name_key = "reportingEntityName"
     reporting_path_key = "reportingEntityConfigPath"
     if 'value' in config_exp and reporting_name_key in config_exp['value']:
         # get the reporting entity's config
         entity_name = config_exp['value'][reporting_name_key]
-        config = _compute_node.get_entity_config(entity_name)
+        config = compute_node.get_entity_config(entity_name)
 
         # get the relevant param, or if not there, show the whole config
         report = None
+        param_path = None
         try:
             if reporting_path_key in config_exp['value']:
                 param_path = config_exp['value'][reporting_path_key]
@@ -66,13 +71,18 @@ def log_results_config():
         print("WARNING: No reportingEntityName has been specified in Experiment config.")
 
 
-def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sweep_param_vals):
+def run_parameterset(experiment, compute_node, cloud, args, entity_filepath, data_filepaths, compute_data_filepaths,
+                     sweep_param_vals=''):
     """
     Import input files
     Run Experiment and Export experiment
     The input files specified by params ('entity_file' and 'data_file')
     have parameters modified, which are described in parameters 'param_description'
 
+    :param experiment:
+    :param compute_node:
+    :param cloud:
+    :param args:
     :param entity_filepath:
     :param data_filepaths:
     :param compute_data_filepaths:      data files on the compute machine, relative to run folder
@@ -83,15 +93,16 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     print("........ Run parameter set.")
 
     # print and save experiment info
-    info = _experiment.info(sweep_param_vals)
+    info = experiment.info(sweep_param_vals)
     print(info)
 
-    info_filepath = _experiment.outputfile("experiment-info.txt")
+    info_filepath = experiment.outputfile("experiment-info.txt")
     utils.create_folder(info_filepath)
     with open(info_filepath, 'w') as data:
         data.write(info)
 
     failed = False
+    task_arn = None
     try:
         is_valid = utils.check_validity([entity_filepath]) and utils.check_validity(data_filepaths)
 
@@ -101,88 +112,75 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
             msg += json.dumps(data_filepaths)
             raise Exception(msg)
 
-        if (launch_mode is LaunchMode.per_experiment) and args.launch_compute:
-            task_arn = launch_compute()
+        if (LaunchMode.from_args(args) is LaunchMode.per_experiment) and args.launch_compute:
+            task_arn = launch_compute(experiment, compute_node, cloud, args)
 
-        _compute_node.import_experiment(entity_filepath, data_filepaths)
-        _compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
+        compute_node.import_experiment(entity_filepath, data_filepaths)
+        compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
 
-        set_dataset(_experiment.experiment_def_file())
+        set_dataset(experiment, compute_node)
 
         if not DISABLE_RUN_FOR_DEBUG:
-            _compute_node.run_experiment(_experiment)
+            compute_node.run_experiment(experiment)
 
-        _experiment.remember_prefix()
+        experiment.remember_prefix()
 
         # log results expressed in the appropriate entity config
-        log_results_config()
+        log_results_config(experiment, compute_node)
 
-        if is_export:
-            out_entity_file_path, out_data_file_path = _experiment.output_names_from_input_names(entity_filepath,
-                                                                                                 data_filepaths)
-            _compute_node.export_subtree(_experiment.entity_with_prefix("experiment"),
-                                         out_entity_file_path,
-                                         out_data_file_path)
+        if args.export:
+            out_entity_file_path, out_data_file_path = experiment.output_names_from_input_names(entity_filepath,
+                                                                                                data_filepaths)
+            compute_node.export_subtree(experiment.entity_with_prefix("experiment"),
+                                        out_entity_file_path,
+                                        out_data_file_path)
 
-        if is_export_compute:
-            _compute_node.export_subtree(_experiment.entity_with_prefix("experiment"),
-                                         _experiment.outputfile_remote(),
-                                         _experiment.outputfile_remote(),
-                                         True)
+        if args.export_compute:
+            compute_node.export_subtree(experiment.entity_with_prefix("experiment"),
+                                        experiment.outputfile_remote(),
+                                        experiment.outputfile_remote(),
+                                        True)
     except Exception as e:
         failed = True
         print("ERROR: Experiment failed for some reason, shut down Compute and continue.")
         print(e)
 
-    if (launch_mode is LaunchMode.per_experiment) and args.launch_compute:
-        shutdown_compute(task_arn)
+    if task_arn:
+        shutdown_compute(compute_node, cloud, args, task_arn)
 
-    if not failed and is_upload_results:
-        _experiment.upload_results(_cloud, _compute_node, is_export_compute)
+    if not failed and args.upload:
+        experiment.upload_results(cloud, compute_node, args.export_compute)
 
 
-def setup_parameter_sweepers(param_sweep, val_sweepers):
+def setup_parameter_sweepers(param_sweep):
     """
     For each 'param' in a set, get details and setup counter
     The result is an array of counters
     Each counter represents one parameter
-
-    :param param_sweep:
-    :param val_sweepers:
-    :return:
     """
-
-    param_i = 0
+    val_sweepers = []
     for param in param_sweep['parameter-set']:  # set of params for one 'sweep'
-
-        if False:
-            print("LOG: Parameter sweep set part: " + str(param_i))
-            print(json.dumps(param, indent=4))
-        param_i += 1
-
-        entity_name = param['entity-name']
-        param_path = param['parameter-path']
-
-        if 'val-series' in param.keys():
-            val_series = param['val-series']
-            value_series = valueseries.ValueSeries(val_series)
+        if 'val-series' in param:
+            value_series = ValueSeries(param['val-series'])
         else:
-            val_begin = param['val-begin']
-            val_end = param['val-end']
-            val_inc = param['val-inc']
+            value_series = ValueSeries.from_range(minv=param['val-begin'],
+                                                  maxv=param['val-end'],
+                                                  deltav=param['val-inc'])
+        val_sweepers.append({'value-series': value_series,
+                             'entity-name': param['entity-name'],
+                             'param-path': param['parameter-path']})
+    return val_sweepers
 
-            value_series = valueseries.ValueSeries.from_range(val_begin, val_end, val_inc)
 
-        val_sweeper = {'value-series': value_series, 'entity-name': entity_name, 'param-path': param_path}
-        val_sweepers.append(val_sweeper)
-
-
-def inc_parameter_set(entity_filepath, val_sweepers):
+def inc_parameter_set(experiment, compute_node, args, entity_filepath, val_sweepers):
     """
     Iterate through counters, incrementing each parameter in the set
     Set the new values in the input file, and then run the experiment
     First counter to reset, return False
 
+    :param experiment:
+    :param compute_node:
+    :param args:
     :param entity_filepath:
     :param val_sweepers:
     :return: reset (True if any counter has reached above max), description of parameters (string)
@@ -204,26 +202,25 @@ def inc_parameter_set(entity_filepath, val_sweepers):
         overflowed = val_series.overflowed()
 
         if overflowed:
-            if log:
+            if args.logging:
                 print("LOG: Sweeping has concluded for this sweep-set, due to the parameter: " +
                       val_sweeper['entity-name'] + '.' + val_sweeper['param-path'])
             reset = True
             break
 
-        val = val_series.value()
-        set_param = _compute_node.set_parameter_inputfile(entity_filepath,
-                                                          _experiment.entity_with_prefix(val_sweeper['entity-name']),
-                                                          val_sweeper['param-path'],
-                                                          val)
+        set_param = compute_node.set_parameter_inputfile(entity_filepath,
+                                                         experiment.entity_with_prefix(val_sweeper['entity-name']),
+                                                         val_sweeper['param-path'],
+                                                         val_series.value())
         sweep_param_vals.append(set_param)
         val_series.next_val()
 
     if len(sweep_param_vals) == 0:
         print("WARNING: no parameters were changed.")
 
-    if log:
+    if args.logging:
         if len(sweep_param_vals):
-            print("LOG: Parameter sweep: " + sweep_param_vals)
+            print("LOG: Parameter sweep: " + str(sweep_param_vals))
 
     if reset is False and len(sweep_param_vals) == 0:
         print("Error: inc_parameter_set() indeterminate state, reset is False, but parameter_description indicates " 
@@ -233,19 +230,12 @@ def inc_parameter_set(entity_filepath, val_sweepers):
     return reset, sweep_param_vals
 
 
-def create_all_input_files(TEMPLATE_PREFIX, base_entity_filename, base_data_filenames):
-    exp_entity_filepaths = _experiment.create_input_files(TEMPLATE_PREFIX, [base_entity_filename])
-    exp_entity_filepath = exp_entity_filepaths[0]
-    exp_data_filepaths = _experiment.create_input_files(TEMPLATE_PREFIX, base_data_filenames)
-    return exp_entity_filepath, exp_data_filepaths
-
-
-def run_sweeps():
+def run_sweeps(experiment, compute_node, cloud, args):
     """ Perform parameter sweep steps, and run experiment for each step. """
 
     print("\n........ Run Sweeps")
 
-    exps_filename = _experiment.experiment_def_file()
+    exps_filename = experiment.experiment_def_file()
 
     if not os.path.exists(exps_filename):
         msg = "ERROR: Experiment file does not exist at: " + exps_filename
@@ -257,7 +247,7 @@ def run_sweeps():
     for exp_i in filedata['experiments']:
         import_files = exp_i['import-files']  # import files dictionary
 
-        if log:
+        if args.logging:
             print("LOG: Import Files Dictionary = ")
             print("LOG: ", json.dumps(import_files, indent=4))
 
@@ -265,56 +255,47 @@ def run_sweeps():
         base_data_filenames = import_files['file-data']
 
         exp_ll_data_filepaths = []
-        if 'load-local-files' in exp_i.keys():
+        if 'load-local-files' in exp_i:
             load_local_files = exp_i['load-local-files']
-            if 'file-data' in load_local_files.keys():
-                base_ll_data_filenames = load_local_files['file-data']
-                exp_ll_data_filepaths = list(map(_experiment.runpath, base_ll_data_filenames))
+            if 'file-data' in load_local_files:
+                exp_ll_data_filepaths = list(map(experiment.runpath, load_local_files['file-data']))
 
+        exp_entity_filepath = experiment.create_input_files(TEMPLATE_PREFIX, [base_entity_filename])[0]
+        exp_data_filepaths = experiment.create_input_files(TEMPLATE_PREFIX, base_data_filenames)
+        run_parameterset_partial = functools.partial(run_parameterset,
+                                                     experiment=experiment,
+                                                     compute_node=compute_node,
+                                                     cloud=cloud,
+                                                     args=args,
+                                                     entity_filepath=exp_entity_filepath,
+                                                     data_filepaths=exp_data_filepaths,
+                                                     compute_data_filepaths=exp_ll_data_filepaths)
         if 'parameter-sweeps' not in exp_i or len(exp_i['parameter-sweeps']) == 0:
             print("No parameters to sweep, just run once.")
-
-            _experiment.reset_prefix()
-            exp_entity_filepath, exp_data_filepaths = create_all_input_files(TEMPLATE_PREFIX,
-                                                                             base_entity_filename,
-                                                                             base_data_filenames)
-            run_parameterset(exp_entity_filepath, exp_data_filepaths, exp_ll_data_filepaths, "")
+            experiment.reset_prefix()
+            run_parameterset_partial()
         else:
-            param_sweeps = exp_i['parameter-sweeps']
-            for param_sweep in param_sweeps:  # array of sweep definitions
-
-                counters = []
-                setup_parameter_sweepers(param_sweep, counters)
-
-                is_sweeping = True
-                while is_sweeping:
-
-                    _experiment.reset_prefix()
-
-                    exp_entity_filepath, exp_data_filepaths = create_all_input_files(TEMPLATE_PREFIX,
-                                                                                     base_entity_filename,
-                                                                                     base_data_filenames)
-
-                    reset, sweep_param_vals = inc_parameter_set(exp_entity_filepath, counters)
+            for param_sweep in exp_i['parameter-sweeps']:  # array of sweep definitions
+                counters = setup_parameter_sweepers(param_sweep)
+                while True:
+                    experiment.reset_prefix()
+                    reset, sweep_param_vals = inc_parameter_set(experiment, compute_node, args,
+                                                                exp_entity_filepath, counters)
                     if reset:
-                        is_sweeping = False
-                    else:
-                        run_parameterset(exp_entity_filepath, exp_data_filepaths, exp_ll_data_filepaths,
-                                         sweep_param_vals)
+                        break
+                    run_parameterset_partial(sweep_param_vals=sweep_param_vals)
 
 
-def set_dataset(exps_file):
+def set_dataset(experiment, compute_node):
     """
     The dataset can be located in different locations on different machines. The location can be set in the
     experiments definition file (experiments.json). This method parses that file, finds the parameters to set
     relative to the AGI_DATA_HOME env variable, and sets the specified parameters.
-    :param exps_file:
-    :return:
     """
 
     print("\n....... Set Dataset")
 
-    with open(exps_file) as data_exps_file:
+    with open(experiment.experiment_def_file()) as data_exps_file:
         data = json.load(data_exps_file)
 
     for exp_i in data['experiments']:
@@ -327,71 +308,64 @@ def set_dataset(exps_file):
 
             data_paths = ""
             for data_filename in data_filenames_arr:
-                if data_paths is not "":
-                    data_paths += ","  # IMPORTANT - if space added here, additional characters ('+') get added probably due to encoding issues on the request
-                data_paths += _experiment.datapath(data_filename)
+                if data_paths != "":
+                    # IMPORTANT: if space added here, additional characters ('+') get added, probably due to encoding
+                    # issues on the request
+                    data_paths += ","
+                data_paths += experiment.datapath(data_filename)
 
-            _compute_node.set_parameter_db(_experiment.entity_with_prefix(entity_name), param_path, data_paths)
+            compute_node.set_parameter_db(experiment.entity_with_prefix(entity_name), param_path, data_paths)
 
 
-def launch_compute_aws_ecs(task_name):
+def launch_compute_aws_ecs(compute_node, cloud, task_name):
     """
     Launch Compute on AWS ECS (elastic container service).
     Assumes that ECS is setup to have the necessary task, and container instances running.
     Hang till Compute is up and running. Return task arn.
-
-    :param task_name:
-    :return:
     """
 
     print("launching Compute on AWS-ECS")
 
-    if task_name is None:
-        raise Exception("ERROR: you must specify a Task Name to run on aws-ecs")
+    if not task_name:
+        raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
 
-    task_arn = _cloud.ecs_run_task(task_name)
-    _compute_node.wait_up()
+    task_arn = cloud.ecs_run_task(task_name)
+    compute_node.wait_up()
     return task_arn
 
 
-def launch_compute_remote_docker():
+def launch_compute_remote_docker(compute_node, cloud):
     """
     Launch Compute Node on AWS. Assumes there is a running ec2 instance running Docker
     Hang till Compute is up and running.
     """
-
     print("launching Compute on AWS (on ec2 using run-in-docker.sh)")
+    cloud.remote_docker_launch_compute(compute_node.host_node)
+    compute_node.wait_up()
 
-    _cloud.remote_docker_launch_compute(_compute_node.host_node)
-    _compute_node.wait_up()
 
-
-def launch_compute_local(main_class="", run_in_docker=True):
+def launch_compute_local(experiment, compute_node, args, main_class="", run_in_docker=True):
     """ Launch Compute locally. Hang till Compute is up and running.
 
     If main_class is specified, then use run-demo.sh,
     which builds entity graph and data from the relevant Demo project defined by the Main Class.
     WARNING: In this case, the properties file used is hardcoded to node.properties
     WARNING: and the prefix used is the global variable PREFIX
-
-    :param run_in_docker:
-    :param main_class:
-    :return:
     """
 
     print("launching Compute locally")
     print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
 
     if run_in_docker:
-        cmd = _experiment.agi_binpath("/node_coordinator/run-in-docker.sh -d")
+        cmd = experiment.agi_binpath("/node_coordinator/run-in-docker.sh -d")
     else:
-        cmd = _experiment.agi_binpath("/node_coordinator/run.sh")
+        cmd = experiment.agi_binpath("/node_coordinator/run.sh")
 
     if main_class is not "":
-        cmd = _experiment.agi_binpath("/node_coordinator/run-demo.sh")
+        cmd = experiment.agi_binpath("/node_coordinator/run-demo.sh")
         cmd = cmd + " node.properties " + main_class + " " + TEMPLATE_PREFIX
 
-    if log:
+    if args.logging:
         print("Running: " + cmd)
 
     cmd += " > run_stdout.log 2> run_stderr.log "
@@ -402,50 +376,48 @@ def launch_compute_local(main_class="", run_in_docker=True):
                      shell=True,
                      executable="/bin/bash")
 
-    _compute_node.wait_up()
+    compute_node.wait_up()
 
 
-def launch_compute(use_ecs=False):
+# TODO: is this ever called with use_ecs=True?
+def launch_compute(experiment, compute_node, cloud, args, use_ecs=False):
     """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
 
     print("\n....... Launch Compute")
 
     task_arn = None
 
-    if _compute_node.remote():
+    if compute_node.remote():
         if use_ecs:
-            task_arn = launch_compute_aws_ecs(args.task_name)
+            task_arn = launch_compute_aws_ecs(compute_node, cloud, args.task_name)
         else:
-            launch_compute_remote_docker()
+            launch_compute_remote_docker(compute_node, cloud)
     else:
-        launch_compute_local(run_in_docker=is_local_docker)
+        launch_compute_local(experiment, compute_node, args, run_in_docker=args.no_docker)
 
-    version = _compute_node.version()
-    print("Running Compute version: " + version)
+    print("Running Compute version: " + compute_node.version())
 
     return task_arn
 
 
-def shutdown_compute(task_arn):
+def shutdown_compute(compute_node, cloud, args, task_arn):
     """ Close compute: terminate and then if running on AWS, stop the task. """
 
     print("\n....... Shutdown System")
 
-    _compute_node.terminate()
+    compute_node.terminate()
 
     # note that task may be set up to terminate once compute has been terminated
-    if is_aws and (task_arn is not None):
-        _cloud.ecs_stop_task(task_arn)
+    if args.remote_type == "aws" and (task_arn is not None):
+        cloud.ecs_stop_task(task_arn)
 
 
-def generate_input_files_locally():
-    entity_file_path, data_file_paths = _experiment.inputfiles_for_generation()
-
+def generate_input_files_locally(experiment, compute_node):
+    entity_filepath, data_filepaths = experiment.inputfiles_for_generation()
     # write to the first listed data path name
-    data_file_path = data_file_paths[0]
-
-    root_entity = _experiment.entity_with_prefix("experiment")
-    _compute_node.export_subtree(root_entity, entity_file_path, data_file_path)
+    compute_node.export_subtree(root_entity=experiment.entity_with_prefix("experiment"),
+                                entity_filepath=entity_filepath,
+                                data_filepath=data_filepaths[0])
 
 
 def setup_arg_parsing():
@@ -551,81 +523,66 @@ class LaunchMode(Enum):
     per_experiment = 1
     per_session = 2
 
+    @classmethod
+    def from_args(cls, args):
+        return cls.per_session if args.launch_per_session else cls.per_experiment
 
-if __name__ == '__main__':
 
+def main():
     print("------------------------------------------")
     print("----          run-framework           ----")
     print("------------------------------------------")
 
-    TEMPLATE_PREFIX = "SPAGHETTI"
-    PREFIX_DELIMITER = "--"
-
     args = setup_arg_parsing()
-    log = args.logging
-    if log:
+    if args.logging:
         print("LOG: Arguments: ", args)
 
     if args.exps_file:
-        _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
+        experiment = Experiment(args.logging, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
     else:
         # an instantiated object is still necessary for things such as getting paths to ENV variables defined in
         # variables file. This could be improved by making them static or breaking that out into another class.
-        _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, "")
+        experiment = Experiment(args.logging, TEMPLATE_PREFIX, PREFIX_DELIMITER, "")
 
     # 1) Generate input files
     if args.main_class:
-        host_node = host_node.HostNode()
-        _compute_node = compute.Compute(host_node=host_node, port=args.port, log=log)
-        _compute_node.host = args.host
-        launch_compute_local(args.main_class)
-        generate_input_files_locally()
-        _compute_node.terminate()
+        compute_node = Compute(host_node=HostNode(), port=args.port, log=args.logging)
+        compute_node.host = args.host
+        # TODO: is not passing in run_in_docker a bug?
+        launch_compute_local(experiment, compute_node, args, main_class=args.main_class)
+        generate_input_files_locally(experiment, compute_node)
+        compute_node.terminate()
         exit(1)
 
     # *) all other use cases (non Generate input files)
 
-    _cloud = cloud.Cloud(log)
+    cloud = Cloud(args.logging)
 
-    is_export = args.export  # export from Compute node via API to local machine
-    is_export_compute = args.export_compute  # export from Compute node to a file on Compute node
-    is_upload_results = args.upload
-    is_local_docker = args.no_docker
-    sync_s3_prefix = args.sync_s3_prefix
-
-    if is_upload_results and not (is_export or is_export_compute):
+    if args.upload and not (args.export or args.export_compute):
         print("WARNING: Uploading experiment to S3 is enabled, but 'export experiment' is not, so the most "
               "important files (output entity.json and data.json) will be missing")
 
-    if args.launch_per_session:
-        launch_mode = LaunchMode.per_session
-    else:
-        launch_mode = LaunchMode.per_experiment
-
-    is_aws = False
     if args.remote_type != "local":
-        if args.remote_type == "aws":
-            is_aws = True
-        host_node = host_node.HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file)
+        host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file)
     else:
-        host_node = host_node.HostNode(args.host, args.user)
+        host_node = HostNode(args.host, args.user)
 
-    _compute_node = compute.Compute(host_node, args.port, log)
+    compute_node = Compute(host_node, args.port, args.logging)
 
     if args.amiid and args.instanceid:
         print("ERROR: Both the AMI ID and EC2 Instance ID have been specified. Use just one to specify how to get "
               "a running ec2 instance")
         exit(1)
 
-    if not is_aws and (args.amiid or args.instanceid):
+    if not args.remote_type == "aws" and (args.amiid or args.instanceid):
         print("ERROR: amiid or instanceid was specified, but AWS has not been set, so they have no effect.")
         exit(1)
 
-    if args.ssh_keypath and not _compute_node.remote():
+    if args.ssh_keypath and not compute_node.remote():
         print("WARNING: a keypath has been set, but we're not running on a remote machine (arg: step_remote). "
               "It will have no effect.")
 
-    if args.sync and not _compute_node.remote():
+    if args.sync and not compute_node.remote():
         print("ERROR: Syncing experiment is meaningless unless you're running on a "
               "remote machine (use param --step_remote)")
         exit(1)
@@ -639,21 +596,18 @@ if __name__ == '__main__':
     ips_pg = {'ip_public': None, 'ip_private': None}
     instance_id = None
 
-    is_pg_ec2 = False
-    if args.pg_instance:
-        is_pg_ec2 = (args.pg_instance[:2] == 'i-')
-
-    if is_aws:
+    is_pg_ec2 = args.pg_instance and args.pg_instance[:2] == 'i-'
+    if args.remote_type == "aws":
         # start Compute ec2 either from instanceid or amiid
         if args.instanceid:
-            ips = _cloud.ec2_start_from_instanceid(args.instanceid)
+            ips = cloud.ec2_start_from_instanceid(args.instanceid)
             instance_id = args.instanceid
         else:
-            ips, instance_id = _cloud.ec2_start_from_ami('run-fwk auto', args.amiid, int(args.ami_ram))
+            ips, instance_id = cloud.ec2_start_from_ami('run-fwk auto', args.amiid, int(args.ami_ram))
 
         # start DB ec2, from instanceid
         if args.pg_instance and is_pg_ec2:
-            ips_pg = _cloud.ec2_start_from_instanceid(args.pg_instance)
+            ips_pg = cloud.ec2_start_from_instanceid(args.pg_instance)
         else:
             ips_pg = {'ip_private': args.pg_instance}
 
@@ -668,8 +622,8 @@ if __name__ == '__main__':
     # try to run experiment, and if fails with exception, still shut down infrastructure
     failed = False
     try:
-        _compute_node.host_node.host = ips['ip_public']
-        _compute_node.port = args.port
+        compute_node.host_node.host = ips['ip_public']
+        compute_node.port = args.port
 
         # TEMPORARY HACK for ECS
         # Set the DB_HOST environment variable
@@ -678,20 +632,21 @@ if __name__ == '__main__':
 
         # 3) Sync code and run-home
         if args.sync:
-            _cloud.sync_experiment(_compute_node.host_node)
+            cloud.sync_experiment(compute_node.host_node)
 
-        # 3.5) Sync data from S3 (typically used to download output files from a previous experiment to be used as input)
-        if sync_s3_prefix:
-            _cloud.remote_download_output(sync_s3_prefix, _compute_node.host_node)
+        # 3.5) Sync data from S3 (typically used to download output files from a previous experiment to be used as
+        #      input)
+        if args.sync_s3_prefix:
+            cloud.remote_download_output(args.sync_s3_prefix, compute_node.host_node)
 
         # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
-        if (launch_mode is LaunchMode.per_session) and args.launch_compute:
-            launch_compute()
+        if (LaunchMode.from_args(args) is LaunchMode.per_session) and args.launch_compute:
+            launch_compute(experiment, compute_node, cloud, args)
 
         # 5) Run experiments (includes per experiment 'export results' and 'upload results')
         if args.exps_file:
-            run_sweeps()
-            _experiment.persist_prefix_history()
+            run_sweeps(experiment, compute_node, cloud, args)
+            experiment.persist_prefix_history()
 
     except Exception as e:
         failed = True
@@ -702,16 +657,18 @@ if __name__ == '__main__':
 
     # 6) Shutdown framework
     if args.shutdown:
-
-        if launch_mode is LaunchMode.per_session:
-            _compute_node.terminate()
+        if LaunchMode.from_args(args) is LaunchMode.per_session:
+            compute_node.terminate()
 
         # Shutdown infrastructure
-        if is_aws:
-            _cloud.ec2_stop(instance_id)
+        if args.remote_type == "aws":
+            cloud.ec2_stop(instance_id)
 
             if is_pg_ec2:
-                _cloud.ec2_stop(args.pg_instance)
+                cloud.ec2_stop(args.pg_instance)
 
     if failed:
         exit(1)
+
+if __name__ == '__main__':
+    main()
