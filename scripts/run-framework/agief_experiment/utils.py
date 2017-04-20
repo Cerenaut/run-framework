@@ -167,10 +167,8 @@ def match_file_by_name(source_path, name):
                 return ret
             else:
                 print "WARNING: match_file_by_name(), no matching files found in: " + source_path
-                print "This should only happen if you are running remote via ssh, " \
-                      "and exporting data by saving on compute."
     else:
-        print "ERROR: match_file_by_name(), this folder is not valid: " + source_path
+        print "WARNING: match_file_by_name(), this folder is not valid: " + source_path
 
     return None
 

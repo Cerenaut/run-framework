@@ -322,26 +322,31 @@ class Experiment:
 
         # upload /output files (entity.json, data.json and experiment-info.txt)
 
+        folder_path = self.outputfile("")
+
+        # if data was saved on compute, upload data from there
         if compute_node.remote() and export_compute:
             print "--- Upload from exported file on remote machine."
             # remote upload of /output/[prefix] folder
             cloud.remote_upload_output_s3(compute_node.host_node, self.prefix())
+        # otherwise, upload it from here
+        else:
+            folder_path_big = self.filepath_from_exp_variable("output-big/", self.agi_run_home)
 
-        # this is also important even if 'export_compute', as experiment-info.txt
-        # is in the /output folder on the machine THIS (python script) is running on
-        folder_path = self.outputfile("")
-        folder_path_big = self.filepath_from_exp_variable("output-big/", self.agi_run_home)
+            # locate the output data file
+            output_data_filepath = utils.match_file_by_name(folder_path, 'data')
 
-        # Locate the output data file
-        output_data_filepath = utils.match_file_by_name(folder_path, 'data')
+            if output_data_filepath is None:
+                print "WARNING: No data file found. This should only happen if you are running remote via ssh, " \
+                      "and exporting data by saving on compute."
+            else:
+                # Compress data file
+                utils.compress_file(output_data_filepath)
 
-        if output_data_filepath is not None:
-            # Compress data file
-            utils.compress_file(output_data_filepath)
+                # Move uncompressed data file to /output-big folder
+                utils.move_file(output_data_filepath, folder_path_big)
 
-            # Move uncompressed data file to /output-big folder
-            utils.move_file(output_data_filepath, folder_path_big)
-
+        # for both, upload experiment-info.txt on this machine (where script is running)
         self.upload_experiment(cloud,
                                self.prefix(),
                                "output",
