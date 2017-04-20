@@ -48,22 +48,22 @@ def log_results_config():
                 param_path = config_exp['value'][reporting_path_key]
                 report = dpath.util.get(config, 'value.' + param_path, '.')
             else:
-                print "WARNING: No reporting entity config path found in experiment config."
+                print("WARNING: No reporting entity config path found in experiment config.")
         except KeyError:
-            print "KeyError Exception"
-            print "WARNING: trying to access path '" + param_path + "' at config.value, but it DOES NOT exist!"
+            print("KeyError Exception")
+            print("WARNING: trying to access path '" + param_path + "' at config.value, but it DOES NOT exist!")
         if report is None:
-            print "\n================================================"
-            print "Reporting Entity Config:"
-            print json.dumps(config, indent=4)
-            print "================================================\n"
+            print("\n================================================")
+            print("Reporting Entity Config:")
+            print(json.dumps(config, indent=4))
+            print("================================================\n")
         else:
-            print "\n================================================"
-            print "Reporting Entity Config Path (" + entity_name + "-Config.value." + param_path + "):"
-            print report
-            print "================================================\n"
+            print("\n================================================")
+            print("Reporting Entity Config Path (" + entity_name + "-Config.value." + param_path + "):")
+            print(report)
+            print("================================================\n")
     else:
-        print "WARNING: No reportingEntityName has been specified in Experiment config."
+        print("WARNING: No reportingEntityName has been specified in Experiment config.")
 
 
 def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sweep_param_vals):
@@ -80,11 +80,11 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
     :return:
     """
 
-    print "........ Run parameter set."
+    print("........ Run parameter set.")
 
     # print and save experiment info
     info = _experiment.info(sweep_param_vals)
-    print info
+    print(info)
 
     info_filepath = _experiment.outputfile("experiment-info.txt")
     utils.create_folder(info_filepath)
@@ -131,8 +131,8 @@ def run_parameterset(entity_filepath, data_filepaths, compute_data_filepaths, sw
                                          True)
     except Exception as e:
         failed = True
-        print "ERROR: Experiment failed for some reason, shut down Compute and continue."
-        print e
+        print("ERROR: Experiment failed for some reason, shut down Compute and continue.")
+        print(e)
 
     if (launch_mode is LaunchMode.per_experiment) and args.launch_compute:
         shutdown_compute(task_arn)
@@ -156,8 +156,8 @@ def setup_parameter_sweepers(param_sweep, val_sweepers):
     for param in param_sweep['parameter-set']:  # set of params for one 'sweep'
 
         if False:
-            print "LOG: Parameter sweep set part: " + str(param_i)
-            print json.dumps(param, indent=4)
+            print("LOG: Parameter sweep set part: " + str(param_i))
+            print(json.dumps(param, indent=4))
         param_i += 1
 
         entity_name = param['entity-name']
@@ -190,8 +190,8 @@ def inc_parameter_set(entity_filepath, val_sweepers):
     """
 
     if len(val_sweepers) == 0:
-        print "WARNING: in_parameter_set: there are no counters to use to increment the parameter set."
-        print "         Returning without any action. This may have undesirable consequences."
+        print("WARNING: in_parameter_set: there are no counters to use to increment the parameter set.")
+        print("         Returning without any action. This may have undesirable consequences.")
         return True, ""
 
     # inc all counters, and set parameter in entity file
@@ -205,8 +205,8 @@ def inc_parameter_set(entity_filepath, val_sweepers):
 
         if overflowed:
             if log:
-                print "LOG: Sweeping has concluded for this sweep-set, due to the parameter: " + \
-                      val_sweeper['entity-name'] + '.' + val_sweeper['param-path']
+                print("LOG: Sweeping has concluded for this sweep-set, due to the parameter: " +
+                      val_sweeper['entity-name'] + '.' + val_sweeper['param-path'])
             reset = True
             break
 
@@ -219,15 +219,15 @@ def inc_parameter_set(entity_filepath, val_sweepers):
         val_series.next_val()
 
     if len(sweep_param_vals) == 0:
-        print "WARNING: no parameters were changed."
+        print("WARNING: no parameters were changed.")
 
     if log:
         if len(sweep_param_vals):
-            print "LOG: Parameter sweep: ", sweep_param_vals
+            print("LOG: Parameter sweep: " + sweep_param_vals)
 
     if reset is False and len(sweep_param_vals) == 0:
-        print "Error: inc_parameter_set() indeterminate state, reset is False, but parameter_description indicates " \
-              "no parameters have been modified. If there is no sweep to conduct, reset should be True."
+        print("Error: inc_parameter_set() indeterminate state, reset is False, but parameter_description indicates " 
+              "no parameters have been modified. If there is no sweep to conduct, reset should be True.")
         exit(1)
 
     return reset, sweep_param_vals
@@ -243,7 +243,7 @@ def create_all_input_files(TEMPLATE_PREFIX, base_entity_filename, base_data_file
 def run_sweeps():
     """ Perform parameter sweep steps, and run experiment for each step. """
 
-    print "\n........ Run Sweeps"
+    print("\n........ Run Sweeps")
 
     exps_filename = _experiment.experiment_def_file()
 
@@ -258,8 +258,8 @@ def run_sweeps():
         import_files = exp_i['import-files']  # import files dictionary
 
         if log:
-            print "LOG: Import Files Dictionary = "
-            print "LOG: ", json.dumps(import_files, indent=4)
+            print("LOG: Import Files Dictionary = ")
+            print("LOG: ", json.dumps(import_files, indent=4))
 
         base_entity_filename = import_files['file-entities']
         base_data_filenames = import_files['file-data']
@@ -269,10 +269,10 @@ def run_sweeps():
             load_local_files = exp_i['load-local-files']
             if 'file-data' in load_local_files.keys():
                 base_ll_data_filenames = load_local_files['file-data']
-                exp_ll_data_filepaths = map(_experiment.runpath, base_ll_data_filenames)
+                exp_ll_data_filepaths = list(map(_experiment.runpath, base_ll_data_filenames))
 
         if 'parameter-sweeps' not in exp_i or len(exp_i['parameter-sweeps']) == 0:
-            print "No parameters to sweep, just run once."
+            print("No parameters to sweep, just run once.")
 
             _experiment.reset_prefix()
             exp_entity_filepath, exp_data_filepaths = create_all_input_files(TEMPLATE_PREFIX,
@@ -312,7 +312,7 @@ def set_dataset(exps_file):
     :return:
     """
 
-    print "\n....... Set Dataset"
+    print("\n....... Set Dataset")
 
     with open(exps_file) as data_exps_file:
         data = json.load(data_exps_file)
@@ -344,7 +344,7 @@ def launch_compute_aws_ecs(task_name):
     :return:
     """
 
-    print "launching Compute on AWS-ECS"
+    print("launching Compute on AWS-ECS")
 
     if task_name is None:
         raise Exception("ERROR: you must specify a Task Name to run on aws-ecs")
@@ -360,7 +360,7 @@ def launch_compute_remote_docker():
     Hang till Compute is up and running.
     """
 
-    print "launching Compute on AWS (on ec2 using run-in-docker.sh)"
+    print("launching Compute on AWS (on ec2 using run-in-docker.sh)")
 
     _cloud.remote_docker_launch_compute(_compute_node.host_node)
     _compute_node.wait_up()
@@ -379,8 +379,8 @@ def launch_compute_local(main_class="", run_in_docker=True):
     :return:
     """
 
-    print "launching Compute locally"
-    print "NOTE: generating run_stdout.log and run_stderr.log (in the current folder)"
+    print("launching Compute locally")
+    print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
 
     if run_in_docker:
         cmd = _experiment.agi_binpath("/node_coordinator/run-in-docker.sh -d")
@@ -392,7 +392,7 @@ def launch_compute_local(main_class="", run_in_docker=True):
         cmd = cmd + " node.properties " + main_class + " " + TEMPLATE_PREFIX
 
     if log:
-        print "Running: " + cmd
+        print("Running: " + cmd)
 
     cmd += " > run_stdout.log 2> run_stderr.log "
 
@@ -408,7 +408,7 @@ def launch_compute_local(main_class="", run_in_docker=True):
 def launch_compute(use_ecs=False):
     """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
 
-    print "\n....... Launch Compute"
+    print("\n....... Launch Compute")
 
     task_arn = None
 
@@ -421,7 +421,7 @@ def launch_compute(use_ecs=False):
         launch_compute_local(run_in_docker=is_local_docker)
 
     version = _compute_node.version()
-    print "Running Compute version: " + version
+    print("Running Compute version: " + version)
 
     return task_arn
 
@@ -429,7 +429,7 @@ def launch_compute(use_ecs=False):
 def shutdown_compute(task_arn):
     """ Close compute: terminate and then if running on AWS, stop the task. """
 
-    print "\n....... Shutdown System"
+    print("\n....... Shutdown System")
 
     _compute_node.terminate()
 
@@ -554,9 +554,9 @@ class LaunchMode(Enum):
 
 if __name__ == '__main__':
 
-    print "------------------------------------------"
-    print "----          run-framework           ----"
-    print "------------------------------------------"
+    print("------------------------------------------")
+    print("----          run-framework           ----")
+    print("------------------------------------------")
 
     TEMPLATE_PREFIX = "SPAGHETTI"
     PREFIX_DELIMITER = "--"
@@ -564,7 +564,7 @@ if __name__ == '__main__':
     args = setup_arg_parsing()
     log = args.logging
     if log:
-        print "LOG: Arguments: ", args
+        print("LOG: Arguments: ", args)
 
     if args.exps_file:
         _experiment = experiment.Experiment(log, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
@@ -594,8 +594,8 @@ if __name__ == '__main__':
     sync_s3_prefix = args.sync_s3_prefix
 
     if is_upload_results and not (is_export or is_export_compute):
-        print "WARNING: Uploading experiment to S3 is enabled, but 'export experiment' is not, so the most " \
-              "important files (output entity.json and data.json) will be missing"
+        print("WARNING: Uploading experiment to S3 is enabled, but 'export experiment' is not, so the most "
+              "important files (output entity.json and data.json) will be missing")
 
     if args.launch_per_session:
         launch_mode = LaunchMode.per_session
@@ -613,26 +613,26 @@ if __name__ == '__main__':
     _compute_node = compute.Compute(host_node, args.port, log)
 
     if args.amiid and args.instanceid:
-        print "ERROR: Both the AMI ID and EC2 Instance ID have been specified. Use just one to specify how to get " \
-              "a running ec2 instance"
+        print("ERROR: Both the AMI ID and EC2 Instance ID have been specified. Use just one to specify how to get "
+              "a running ec2 instance")
         exit(1)
 
     if not is_aws and (args.amiid or args.instanceid):
-        print "ERROR: amiid or instanceid was specified, but AWS has not been set, so they have no effect."
+        print("ERROR: amiid or instanceid was specified, but AWS has not been set, so they have no effect.")
         exit(1)
 
     if args.ssh_keypath and not _compute_node.remote():
-        print "WARNING: a keypath has been set, but we're not running on a remote machine (arg: step_remote). " \
-              "It will have no effect."
+        print("WARNING: a keypath has been set, but we're not running on a remote machine (arg: step_remote). "
+              "It will have no effect.")
 
     if args.sync and not _compute_node.remote():
-        print "ERROR: Syncing experiment is meaningless unless you're running on a " \
-              "remote machine (use param --step_remote)"
+        print("ERROR: Syncing experiment is meaningless unless you're running on a "
+              "remote machine (use param --step_remote)")
         exit(1)
 
     if args.exps_file and not args.launch_compute:
-        print "WARNING: You have elected to run experiment without launching a Compute node. For success, you'll" \
-              "have to have one running already, or use param --step_compute)"
+        print("WARNING: You have elected to run experiment without launching a Compute node. For success, you'll "
+              "have to have one running already, or use param --step_compute)")
 
     # 2) Setup infrastructure (on AWS or nothing to do locally)
     ips = {'ip_public': args.host, 'ip_private': None}
@@ -659,7 +659,7 @@ if __name__ == '__main__':
 
     elif args.pg_instance:
         if is_pg_ec2:
-            print "ERROR: the pg instance is set to an ec2 instance id, but you are not running AWS."
+            print("ERROR: the pg instance is set to an ec2 instance id, but you are not running AWS.")
             exit(1)
 
         ips_pg = {'ip_public': args.pg_instance, 'ip_private': args.pg_instance}
@@ -695,10 +695,10 @@ if __name__ == '__main__':
 
     except Exception as e:
         failed = True
-        print "ERROR: Something failed running sweeps generally. " \
-              "If the error occurred in a specific parameter set it should have been caught there. " \
-              "Attempt to shut down infrastructure if running, and exit."
-        print e
+        print("ERROR: Something failed running sweeps generally. "
+              "If the error occurred in a specific parameter set it should have been caught there. "
+              "Attempt to shut down infrastructure if running, and exit.")
+        print(e)
 
     # 6) Shutdown framework
     if args.shutdown:
