@@ -387,7 +387,6 @@ def launch_compute_local(experiment, compute_node, args, main_class="", run_in_d
     compute_node.wait_up()
 
 
-# TODO: is this ever called with use_ecs=True?
 def launch_compute(experiment, compute_node, cloud, args, use_ecs=False):
     """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
 
@@ -556,8 +555,7 @@ def main():
     if args.main_class:
         compute_node = Compute(host_node=HostNode(), port=args.port, log=args.logging)
         compute_node.host = args.host
-        # TODO: is not passing in run_in_docker a bug?
-        launch_compute_local(experiment, compute_node, args, main_class=args.main_class)
+        launch_compute_local(experiment, compute_node, args, main_class=args.main_class, run_in_docker=args.no_docker)
         generate_input_files_locally(experiment, compute_node)
         compute_node.terminate()
         exit(1)
