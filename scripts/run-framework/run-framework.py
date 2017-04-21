@@ -2,7 +2,6 @@ from __future__ import print_function
 import functools
 import json
 import os
-import subprocess
 
 import dpath
 from enum import Enum
@@ -31,8 +30,6 @@ Assumptions:
 """
 
 DISABLE_RUN_FOR_DEBUG = False
-TEMPLATE_PREFIX = "SPAGHETTI"
-PREFIX_DELIMITER = "--"
 
 
 def log_results_config(experiment, compute_node):
@@ -113,7 +110,8 @@ def run_parameterset(experiment, compute_node, cloud, args, entity_filepath, dat
             raise Exception(msg)
 
         if (LaunchMode.from_args(args) is LaunchMode.per_experiment) and args.launch_compute:
-            task_arn = launch_compute(experiment, compute_node, cloud, args)
+            task_arn = compute_node.launch(experiment, cloud=cloud, main_class=args.main_class,
+                                           no_local_docker=args.no_docker)
 
         compute_node.import_experiment(entity_filepath, data_filepaths)
         compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
@@ -232,8 +230,8 @@ def inc_parameter_set(experiment, compute_node, args, entity_filepath, val_sweep
 
 def create_all_input_files(experiment, base_entity_filename, base_data_filenames):
     experiment.reset_prefix()
-    return (experiment.create_input_files(TEMPLATE_PREFIX, [base_entity_filename])[0],
-            experiment.create_input_files(TEMPLATE_PREFIX, base_data_filenames))
+    return (experiment.create_input_files(utils.TEMPLATE_PREFIX, [base_entity_filename])[0],
+            experiment.create_input_files(utils.TEMPLATE_PREFIX, base_data_filenames))
 
 
 def run_sweeps(experiment, compute_node, cloud, args):
@@ -323,88 +321,6 @@ def set_dataset(experiment, compute_node):
                 data_paths += experiment.datapath(data_filename)
 
             compute_node.set_parameter_db(experiment.entity_with_prefix(entity_name), param_path, data_paths)
-
-
-def launch_compute_aws_ecs(compute_node, cloud, task_name):
-    """
-    Launch Compute on AWS ECS (elastic container service).
-    Assumes that ECS is setup to have the necessary task, and container instances running.
-    Hang till Compute is up and running. Return task arn.
-    """
-
-    print("launching Compute on AWS-ECS")
-
-    if not task_name:
-        raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
-
-    task_arn = cloud.ecs_run_task(task_name)
-    compute_node.wait_up()
-    return task_arn
-
-
-def launch_compute_remote_docker(compute_node, cloud):
-    """
-    Launch Compute Node on AWS. Assumes there is a running ec2 instance running Docker
-    Hang till Compute is up and running.
-    """
-    print("launching Compute on AWS (on ec2 using run-in-docker.sh)")
-    cloud.remote_docker_launch_compute(compute_node.host_node)
-    compute_node.wait_up()
-
-
-def launch_compute_local(experiment, compute_node, args, main_class="", run_in_docker=True):
-    """ Launch Compute locally. Hang till Compute is up and running.
-
-    If main_class is specified, then use run-demo.sh,
-    which builds entity graph and data from the relevant Demo project defined by the Main Class.
-    WARNING: In this case, the properties file used is hardcoded to node.properties
-    WARNING: and the prefix used is the global variable PREFIX
-    """
-
-    print("launching Compute locally")
-    print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
-
-    if run_in_docker:
-        cmd = experiment.agi_binpath("/node_coordinator/run-in-docker.sh -d")
-    else:
-        cmd = experiment.agi_binpath("/node_coordinator/run.sh")
-
-    if main_class is not "":
-        cmd = experiment.agi_binpath("/node_coordinator/run-demo.sh")
-        cmd = cmd + " node.properties " + main_class + " " + TEMPLATE_PREFIX
-
-    if args.logging:
-        print("Running: " + cmd)
-
-    cmd += " > run_stdout.log 2> run_stderr.log "
-
-    # we can't hold on to the stdout and stderr streams for logging, because it will hang on this line
-    # instead, logging to a file
-    subprocess.Popen(cmd,
-                     shell=True,
-                     executable="/bin/bash")
-
-    compute_node.wait_up()
-
-
-def launch_compute(experiment, compute_node, cloud, args, use_ecs=False):
-    """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
-
-    print("\n....... Launch Compute")
-
-    task_arn = None
-
-    if compute_node.remote():
-        if use_ecs:
-            task_arn = launch_compute_aws_ecs(compute_node, cloud, args.task_name)
-        else:
-            launch_compute_remote_docker(compute_node, cloud)
-    else:
-        launch_compute_local(experiment, compute_node, args, run_in_docker=args.no_docker)
-
-    print("Running Compute version: " + compute_node.version())
-
-    return task_arn
 
 
 def shutdown_compute(compute_node, cloud, args, task_arn):
@@ -544,21 +460,19 @@ def main():
     if args.logging:
         print("LOG: Arguments: ", args)
 
-    if args.exps_file:
-        experiment = Experiment(args.logging, TEMPLATE_PREFIX, PREFIX_DELIMITER, args.exps_file)
-    else:
-        # an instantiated object is still necessary for things such as getting paths to ENV variables defined in
-        # variables file. This could be improved by making them static or breaking that out into another class.
-        experiment = Experiment(args.logging, TEMPLATE_PREFIX, PREFIX_DELIMITER, "")
+    # Even if exps_files is not given, an instantiated Experiment object is still necessary for things such as getting
+    # paths to ENV variables defined in variables file. This could be improved by making them static or breaking that
+    # out into another class.
+    experiment = Experiment(args.logging, experiments_def_filename=args.exps_file if args.exps_file else "")
 
     # 1) Generate input files
     if args.main_class:
         compute_node = Compute(host_node=HostNode(), port=args.port, log=args.logging)
         compute_node.host = args.host
-        launch_compute_local(experiment, compute_node, args, main_class=args.main_class, run_in_docker=args.no_docker)
+        compute_node.launch(experiment, main_class=args.main_class, no_local_docker=args.no_docker)
         generate_input_files_locally(experiment, compute_node)
         compute_node.terminate()
-        exit(1)
+        return
 
     # *) all other use cases (non Generate input files)
 
@@ -647,7 +561,7 @@ def main():
 
         # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
         if (LaunchMode.from_args(args) is LaunchMode.per_session) and args.launch_compute:
-            launch_compute(experiment, compute_node, cloud, args)
+            compute_node.launch(experiment, cloud=cloud, main_class=args.main_class, no_local_docker=args.no_docker)
 
         # 5) Run experiments (includes per experiment 'export results' and 'upload results')
         if args.exps_file:

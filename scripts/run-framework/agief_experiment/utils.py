@@ -8,6 +8,10 @@ import sys
 import time
 
 
+TEMPLATE_PREFIX = "SPAGHETTI"
+PREFIX_DELIMITER = "--"
+
+
 def restart_line():
     sys.stdout.write('\r')
     sys.stdout.flush()

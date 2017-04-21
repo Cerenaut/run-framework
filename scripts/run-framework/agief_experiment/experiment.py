@@ -1,11 +1,10 @@
-import json
-
-import utils
-import os
-import zipfile
 import datetime
+import json
+import os
 import shutil
 import subprocess
+
+import utils
 
 
 class Experiment:
@@ -18,7 +17,8 @@ class Experiment:
     agi_data_exp_home = "AGI_EXP_HOME"
     variables_file = "VARIABLES_FILE"
 
-    def __init__(self, log, prefix, prefix_delimiter, experiments_def_filename):
+    def __init__(self, log, prefix=utils.TEMPLATE_PREFIX, prefix_delimiter=utils.PREFIX_DELIMITER,
+                 experiments_def_filename=""):
         self.log = log
         self.prefix_base = prefix
         self.prefix_delimiter = prefix_delimiter
