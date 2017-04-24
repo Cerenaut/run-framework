@@ -100,6 +100,7 @@ def run_parameterset(experiment, compute_node, cloud, args, entity_filepath, dat
 
     failed = False
     task_arn = None
+    launch_compute = (LaunchMode.from_args(args) is LaunchMode.per_experiment) and args.launch_compute
     try:
         is_valid = utils.check_validity([entity_filepath]) and utils.check_validity(data_filepaths)
 
@@ -109,7 +110,7 @@ def run_parameterset(experiment, compute_node, cloud, args, entity_filepath, dat
             msg += json.dumps(data_filepaths)
             raise Exception(msg)
 
-        if (LaunchMode.from_args(args) is LaunchMode.per_experiment) and args.launch_compute:
+        if launch_compute:
             task_arn = compute_node.launch(experiment, cloud=cloud, main_class=args.main_class,
                                            no_local_docker=args.no_docker)
 
@@ -143,7 +144,7 @@ def run_parameterset(experiment, compute_node, cloud, args, entity_filepath, dat
         print("ERROR: Experiment failed for some reason, shut down Compute and continue.")
         print(e)
 
-    if task_arn:
+    if launch_compute:
         shutdown_compute(compute_node, cloud, args, task_arn)
 
     if not failed and args.upload:
