@@ -6,6 +6,7 @@ import subprocess
 
 import dpath
 from enum import Enum
+from datetime import datetime
 
 from agief_experiment.host_node import HostNode
 from agief_experiment.compute import Compute
@@ -624,6 +625,9 @@ def main():
 
         ips_pg = {'ip_public': args.pg_instance, 'ip_private': args.pg_instance}
 
+    # Record experiment start time
+    exp_start_time = datetime.now()
+
     # infrastructure has been started
     # try to run experiment, and if fails with exception, still shut down infrastructure
     failed = False
@@ -672,6 +676,13 @@ def main():
 
             if is_pg_ec2:
                 cloud.ec2_stop(args.pg_instance)
+
+    # Record experiment end time
+    exp_end_time = datetime.now()
+
+    # Print the experiment runtime in seconds
+    exp_runtime = (exp_end_time - exp_start_time).total_seconds()
+    print("Experiment finished in " + str(exp_runtime) + " seconds.")
 
     if failed:
         exit(1)
