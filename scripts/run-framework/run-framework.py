@@ -541,6 +541,9 @@ def main():
     print("----          run-framework           ----")
     print("------------------------------------------")
 
+    # Record experiment start time
+    exp_start_time = datetime.now()
+
     args = setup_arg_parsing()
     if args.logging:
         print("LOG: Arguments: ", args)
@@ -624,9 +627,6 @@ def main():
             exit(1)
 
         ips_pg = {'ip_public': args.pg_instance, 'ip_private': args.pg_instance}
-
-    # Record experiment start time
-    exp_start_time = datetime.now()
 
     # infrastructure has been started
     # try to run experiment, and if fails with exception, still shut down infrastructure
