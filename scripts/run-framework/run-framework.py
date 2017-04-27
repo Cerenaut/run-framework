@@ -680,9 +680,9 @@ def main():
     # Record experiment end time
     exp_end_time = datetime.now()
 
-    # Print the experiment runtime in seconds
-    exp_runtime = (exp_end_time - exp_start_time).total_seconds()
-    print("Experiment finished in " + str(exp_runtime) + " seconds.")
+    # Print the experiment runtime in d:h:m:s:ms format
+    exp_runtime = utils.format_timedelta(exp_end_time - exp_start_time)
+    print "Experiment finished in %d days, %d hr, %d min, %d s, %d ms." % tuple(exp_runtime)
 
     if failed:
         exit(1)
