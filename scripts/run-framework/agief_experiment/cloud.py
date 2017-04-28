@@ -1,8 +1,8 @@
 import boto3
 import os
-import zipfile
 import botocore
 import utils
+import logging
 
 
 class Cloud:
@@ -39,8 +39,8 @@ class Cloud:
         :type host_node: RemoteNode
         """
 
-        print "\n....... Use remote-download-output.sh to copy /output files from s3 (typically input and data files) " \
-              "with prefix = " + prefix + ", to remote machine."
+        print "\n....... Use remote-download-output.sh to copy /output files from s3 (typically input and data files)" \
+              " with prefix = " + prefix + ", to remote machine."
 
         cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + host_node.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
@@ -127,6 +127,7 @@ class Cloud:
         print "\n....... Launching ec2 from AMI (AMI id " + ami_id + ", with minimum " + str(min_ram) + "GB RAM)"
 
         instance_type = None      # minimum size, 15GB on machine, leaves 13GB for compute
+        ram_allocated = 8
         if min_ram < 6:
             instance_type = 'm4.large'      # 8
             ram_allocated = 8
@@ -237,7 +238,10 @@ class Cloud:
     def remote_upload_runfilename_s3(self, host_node, prefix, dest_name):
         cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name \
               + host_node.host_key_user_variables()
-        utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
+        try:
+            utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
+        except Exception as e:
+            logging.error("Remote Upload Failed   for this file")
 
     def remote_upload_output_s3(self, host_node, prefix):
         cmd = "../remote/remote-upload-output.sh " + prefix + " " + host_node.host_key_user_variables()
@@ -254,9 +258,9 @@ class Cloud:
             return
 
         for root, dirs, files in os.walk(source_folderpath):
-            for file in files:
-                filepath = os.path.join(source_folderpath, file)
-                filekey = os.path.join(key, file)
+            for f in files:
+                filepath = os.path.join(source_folderpath, f)
+                filekey = os.path.join(key, f)
 
                 self.upload_file_s3(bucket_name, filekey, filepath)
 

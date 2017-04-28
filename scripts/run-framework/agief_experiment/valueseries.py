@@ -1,5 +1,6 @@
 import numpy
 
+
 class ValueSeries:
     REPEAT_CHAR = "*"
 
@@ -33,7 +34,7 @@ class ValueSeries:
                 self.idx = 0
                 self.overflow = True
             elif self.series[next_idx] == self.REPEAT_CHAR:
-                pass    # don't advance, stay on the last value if it is followed by the repeat char (e.g. '*')
+                pass  # don't advance, stay on the last value if it is followed by the repeat char (e.g. '*')
             else:
                 self.idx = next_idx
 

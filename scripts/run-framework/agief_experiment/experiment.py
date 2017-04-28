@@ -1,208 +1,49 @@
-import json
-
-import utils
-import os
-import zipfile
-import datetime
-import shutil
 import subprocess
+import functools
+import json
+import os
+
+import datetime
+
+import dpath
+
+from agief_experiment.valueseries import ValueSeries
+from agief_experiment.experimentutils import ExperimentUtils
+from agief_experiment.launchmode import LaunchMode
+from agief_experiment import utils
 
 
 class Experiment:
+    """ 
+        An experiment consists of multiple runs (i.e. parameter sweep), each run is a test of one set of parameters.
+        This class encapsulates functionality related to conducting a parameter sweep with behaviours related to
+        starting and stopping the Compute, starting and stopping the framework and importing exporting data.
+        It does _not_ relate to setting up the infrastructure.
+    """
 
-    # environment variables
-    agi_exp_home = "AGI_EXP_HOME"
-    agi_home = "AGI_HOME"
-    agi_run_home = "AGI_RUN_HOME"
-    agi_data_run_home = "AGI_DATA_RUN_HOME"
-    agi_data_exp_home = "AGI_EXP_HOME"
-    variables_file = "VARIABLES_FILE"
+    TEMPLATE_PREFIX = "SPAGHETTI"
+    PREFIX_DELIMITER = "--"
 
-    def __init__(self, log, prefix, prefix_delimiter, experiments_def_filename):
+    def __init__(self, log, debug_no_run, launch_mode, exps_file):
+        self.exps_file = exps_file
+        self.debug_no_run = debug_no_run
+        self.launch_mode = launch_mode
         self.log = log
-        self.prefix_base = prefix
-        self.prefix_delimiter = prefix_delimiter
-        self.experiments_def_filename = experiments_def_filename
 
+        self.experiment_utils = ExperimentUtils(exps_file)
+
+        self.prefix_base = Experiment.TEMPLATE_PREFIX
         self.prefixes_history = ""
-        self.logfine = False
         self.prefix_modifier = ""
-
-    def info(self, sweep_param_vals):
-
-        message = ""
-        message += "==============================================\n"
-        message += "Experiment Information\n"
-        message += "==============================================\n"
-
-        message += "Datetime: " + datetime.datetime.now().strftime("%y %m %d - %H %M") + "\n"
-        message += "Folder: " + self.experiment_folder() + "\n"
-        message += "Githash: " + self.githash() + "\n"
-        message += "Variables file: " + self.variables_filepath() + "\n"
-        message += "Prefix: " + self.prefix() + "\n"
-        message += "==============================================\n"
-
-        if sweep_param_vals:
-            message += "\nSweep Parameters:"
-            for param_def in sweep_param_vals:
-                message += "\n" + param_def
-            message += "\n"
-
-        return message
-
-    def filepath_from_exp_variable(self, filename, path_env):
-
-        variables_file = self.variables_filepath()
-
-        if variables_file == "" or variables_file is None:
-            print "WARNING: unable to locate variables file."
-
-        if self.log and self.logfine:
-            print "experiment:filepath_from_env_variable: variables file = " + variables_file
-
-        cmd = "source " + variables_file + " && echo $" + path_env
-        output, error = subprocess.Popen(cmd,
-                                         shell=True,
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE,
-                                         executable="/bin/bash").communicate()
-
-        file_path = utils.cleanpath(output, filename)
-        return file_path
-
-    def githash(self):
-        """ return githash of experiment-definitions """
-
-        folder = self.experiment_folder()
-        cmd = "cd " + folder + " && git rev-parse --short HEAD"
-
-        commit, error = subprocess.Popen(cmd,
-                                         shell=True,
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE,
-                                         executable="/bin/bash").communicate()
-
-        return commit
-
-    def inputfiles_for_generation(self):
-
-        base_entity_filename, base_data_filenames = self.input_filenames_from_exp_definitions(False)
-
-        """ Get the input files, with full path, to be generated """
-
-        entity_filename = self.inputfile_base(base_entity_filename)
-
-        data_filenames = []
-        for base_data_filename in base_data_filenames:
-            data_filename = self.inputfile_base(base_data_filename)
-            data_filenames.append(data_filename)
-
-        return entity_filename, data_filenames
-
-    def input_filenames_from_exp_definitions(self, is_import_files):
-        """ Get the input files as defined in the experiments definitions file.
-        i.e. do not compute full path, do not add prefix etc.
-
-        :param is_import_files: boolean to specify whether you want the input files for 'import' or 'generation'
-        :return: entityfilename, datafilenames
-        """
-
-        exps_filename = self.experiment_def_file()
-
-        with open(exps_filename) as exps_file:
-            filedata = json.load(exps_file)
-
-        for exp_i in filedata['experiments']:
-
-            if is_import_files:
-                key = 'import-files'
-            else:
-                key = 'gen-files'
-
-            input_files = exp_i[key]  # import files dictionary
-
-            if self.log:
-                print "LOG: Input Files Dictionary = "
-                print "LOG: ", json.dumps(input_files, indent=4)
-
-            # get experiment file-names, and expand to full path
-            base_entity_filename = input_files['file-entities']
-            base_data_filenames = input_files['file-data']
-
-            return base_entity_filename, base_data_filenames
-
-    def inputfile_base(self, filename):
-        """
-        Return the full path to the base inputfile specified by simple filename (AGI_EXP_HOME/input/filename)
-        The base input file will be used to generate input files specific to the experiment
-        (i.e. replace generic prefix with actual prefix)
-        """
-        return self.filepath_from_exp_variable("input/" + filename, self.agi_exp_home)
-
-    def inputfile(self, filename):
-        """
-        Return the full path to the inputfile that is to be created by this experiment,
-        specified by simple filename (AGI_EXP_HOME/input/prefix/filename).
-        """
-        return self.filepath_from_exp_variable("input/" + self.prefix() + "/" + filename, self.agi_exp_home)
-
-    def outputfile(self, filename=""):
-        """
-        Return the full path to the output file that is to be created by this experiment,
-        specified by simple filename (AGI_EXP_HOME/output/prefix/filename)
-        """
-        return self.filepath_from_exp_variable("output/" + self.prefix() + "/" + filename, self.agi_exp_home)
-
-    def outputfile_remote(self, filename=""):
-        """
-        Return the full path to the output file if it was exported/saved on remote machine,
-        that is to be created by this experiment,
-        specified by simple filename (AGI_RUN_HOME/output/prefix/filename)
-        """
-        return self.filepath_from_exp_variable("output/" + self.prefix() + "/" + filename, self.agi_run_home)
-
-    def outputfile_base(self, filename):
-        """ return the full path to the output file specified by simple filename (AGI_EXP_HOME/output/filename) """
-        return self.filepath_from_exp_variable("output/" + filename, self.agi_exp_home)
-
-    def runpath(self, path):
-        """ return absolute path to a file or folder in the AGI_RUN_HOME/ folder """
-        return self.filepath_from_exp_variable(path, self.agi_run_home)
-
-    def datapath(self, path):
-        """ return the file in the data folder, on the system where compute is running """
-        return self.filepath_from_exp_variable(path, self.agi_data_run_home)
-
-    def experiment_def_file(self):
-        """ return the full path to the experiments definition file """
-        return self.filepath_from_exp_variable(self.experiments_def_filename, self.agi_exp_home)
-
-    def experiment_folder(self):
-        """ return the full path to the experiments folder """
-        return self.filepath_from_exp_variable("", self.agi_exp_home)
-
-    def experiment_path(self, path):
-        """ return the full path to a file in the folder AGI_EXP_HOME """
-        return self.filepath_from_exp_variable(path, self.agi_exp_home)
-
-    def agi_binpath(self, path):
-        """ return absolute path to a file or folder in the AGI_BIN_HOME/ folder """
-        return self.filepath_from_exp_variable(path, self.agi_home + "/bin/")
-
-    def entity_with_prefix(self, entity_name):
-        if self.prefix() is None or self.prefix() == "":
-            return entity_name
-        else:
-            return self.prefix() + self.prefix_delimiter + entity_name
 
     def reset_prefix(self):
 
-        if self.log:
-            print "-------------- RESET_PREFIX -------------"
+        print "-------------- RESET_PREFIX -------------"
 
         use_prefix_file = False
         if use_prefix_file:
-            prefix_filepath = self.filepath_from_exp_variable('prefix.txt', self.agi_exp_home)
+            prefix_filepath = self.experiment_utils.filepath_from_exp_variable('prefix.txt',
+                                                                               ExperimentUtils.agi_exp_home)
 
             if not os.path.isfile(prefix_filepath) or not os.path.exists(prefix_filepath):
                 print """WARNING ****   no prefix.txt file could be found,
@@ -222,69 +63,424 @@ class Experiment:
     def prefix(self):
         return self.prefix_base + self.prefix_modifier
 
-    def create_input_files(self, template_prefix, base_filenames):
-        """
-        Create 'experiment input files' from the 'base input files'.
+    def remember_prefix(self):
+        self.prefixes_history += self.prefix() + "\n"
 
-        Duplicate input files appending prefix to name of new file,
-        and change contents of entities to use the generated prefix.
-        If they are in the /output subfolder, then do not modify.
+    def persist_prefix_history(self, filename="prefixes.txt"):
+        """ Save prefix history to a file """
 
-        Base input files are located in:  'experiment-folder/input'
-        Experiment input files are located in subfolder:   'experiment-folder/input/prefix'
+        print "\n....... Save prefix history to " + filename
+        with open(filename, "w") as prefix_file:
+            prefix_file.write(self.prefixes_history)
 
-        :param base_filenames: array of filenames (not full path) to be copied and prefix changed internally
-        :param template_prefix:
-        :return: array of modified filepaths (full path)
-        """
+    def info(self, sweep_param_vals):
 
-        filenames = []
-        for base_filename in base_filenames:
+        message = ""
+        message += "==============================================\n"
+        message += "Experiment Information\n"
+        message += "==============================================\n"
 
-            base_filepath = self.inputfile_base(base_filename)
+        message += "Datetime: " + datetime.datetime.now().strftime("%y %m %d - %H %M") + "\n"
+        message += "Folder: " + self.experiment_utils.experiment_folder() + "\n"
+        message += "Githash: " + self.experiment_utils.githash() + "\n"
+        message += "Variables file: " + self.experiment_utils.variables_filepath() + "\n"
+        message += "Prefix: " + self.prefix() + "\n"
+        message += "==============================================\n"
 
-            if not os.path.isfile(base_filepath):
-                print "ERROR: create_input_files(): The file does not exist" + base_filepath + \
-                      "\nCANNOT CONTINUE."
-                exit(1)
+        if sweep_param_vals:
+            message += "\nSweep Parameters:"
+            for param_def in sweep_param_vals:
+                message += "\n" + param_def
+            message += "\n"
 
-            # get the containing folder, and it's parent folder
-            full_dirname = os.path.dirname(os.path.normpath(base_filepath))  # full dirname
-            full_parentpath, dirname = os.path.split(full_dirname)  # take just the last part - next subfolder up
-            parent_dirname = os.path.basename(full_parentpath)  # take just the last part - subfolder
+        return message
 
-            if dirname != "output" and parent_dirname != "output":
-                filename = utils.append_before_ext(base_filename, "_" + self.prefix())
-                filepath = self.inputfile(filename)
-                utils.create_folder(filepath)  # create path if it doesn't exist
-                shutil.copyfile(base_filepath, filepath)  # create new input files with prefix in the name
-                utils.replace_in_file(template_prefix, self.prefix(),
-                                      filepath)  # search replace contents for PREFIX and replace with 'prefix'
-                filenames.append(filepath)
+    def log_results_config(self, compute_node):
+        config_exp = compute_node.get_entity_config(self.entity_with_prefix("experiment"))
+
+        reporting_name_key = "reportingEntityName"
+        reporting_path_key = "reportingEntityConfigPath"
+        if 'value' in config_exp and reporting_name_key in config_exp['value']:
+            # get the reporting entity's config
+            entity_name = config_exp['value'][reporting_name_key]
+            config = compute_node.get_entity_config(entity_name)
+
+            # get the relevant param, or if not there, show the whole config
+            report = None
+            param_path = None
+            try:
+                if reporting_path_key in config_exp['value']:
+                    param_path = config_exp['value'][reporting_path_key]
+                    report = dpath.util.get(config, 'value.' + param_path, '.')
+                else:
+                    print("WARNING: No reporting entity config path found in experiment config.")
+            except KeyError:
+                print("KeyError Exception")
+                print("WARNING: trying to access path '" + param_path + "' at config.value, but it DOES NOT exist!")
+            if report is None:
+                print("\n================================================")
+                print("Reporting Entity Config:")
+                print(json.dumps(config, indent=4))
+                print("================================================\n")
             else:
-                filenames.append(base_filepath)
+                print("\n================================================")
+                print("Reporting Entity Config Path (" + entity_name + "-Config.value." + param_path + "):")
+                print(report)
+                print("================================================\n")
+        else:
+            print("WARNING: No reportingEntityName has been specified in Experiment config.")
 
-        return filenames
+    def entity_with_prefix(self, entity_name):
+        if self.prefix() is None or self.prefix() == "":
+            return entity_name
+        else:
+            return self.prefix() + self.PREFIX_DELIMITER + entity_name
 
-    def variables_filepath(self):
-        """ return full filename with path, of the file being used for the variables file """
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        variables_file = os.getenv(self.variables_file, dir_path + '/../../variables.sh')
-        return variables_file
+    def run_parameterset(self, compute_node, cloud, args, entity_filepath, data_filepaths, compute_data_filepaths,
+                         sweep_param_vals=''):
+        """
+        Import input files
+        Run Experiment and Export experiment
+        The input files specified by params ('entity_file' and 'data_file')
+        have parameters modified, which are described in parameters 'param_description'
 
-    def output_names_from_input_names(self, entity_filepath, data_filepaths):
-        """ Create the filenames for export, from the input filenames """
+        :param compute_node:
+        :param cloud:
+        :param args:
+        :param entity_filepath:
+        :param data_filepaths:
+        :param compute_data_filepaths:      data files on the compute machine, relative to run folder
+        :param sweep_param_vals:
+        :return:
+        """
 
-        entity_filename = os.path.basename(entity_filepath)
-        data_filename = os.path.basename(data_filepaths[0])
+        print("........ Run parameter set.")
 
-        new_entity_file = "exported_" + entity_filename
-        new_data_file = "exported_" + data_filename
+        # print and save experiment info
+        info = self.info(sweep_param_vals)
+        print(info)
 
-        out_entity_file_path = self.outputfile(new_entity_file)
-        out_data_file_path = self.outputfile(new_data_file)
+        info_filepath = self.experiment_utils.outputfile(self.prefix(), "experiment-info.txt")
+        utils.create_folder(info_filepath)
+        with open(info_filepath, 'w') as data:
+            data.write(info)
 
-        return out_entity_file_path, out_data_file_path
+        failed = False
+        task_arn = None
+        try:
+            is_valid = utils.check_validity([entity_filepath]) and utils.check_validity(data_filepaths)
+
+            if not is_valid:
+                msg = "ERROR: One of the input files are not valid:\n"
+                msg += entity_filepath + "\n"
+                msg += json.dumps(data_filepaths)
+                raise Exception(msg)
+
+            if (self.launch_mode is LaunchMode.per_experiment) and args.launch_compute:
+                task_arn = self.launch_compute(compute_node, cloud, args)
+
+            compute_node.import_experiment(entity_filepath, data_filepaths)
+            compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
+
+            self.set_dataset(compute_node)
+
+            if not self.debug_no_run:
+                compute_node.run_experiment(self.entity_with_prefix("experiment"))
+
+            self.remember_prefix()
+
+            # log results expressed in the appropriate entity config
+            self.log_results_config(compute_node)
+
+            if args.export:
+                out_entity_file_path, out_data_file_path = self.experiment_utils.output_names_from_input_names(
+                    self.prefix(),
+                    entity_filepath,
+                    data_filepaths)
+                compute_node.export_subtree(self.entity_with_prefix("experiment"),
+                                            out_entity_file_path,
+                                            out_data_file_path)
+
+            if args.export_compute:
+                compute_node.export_subtree(self.entity_with_prefix("experiment"),
+                                            self.experiment_utils.outputfile_remote(self.prefix()),
+                                            self.experiment_utils.outputfile_remote(self.prefix()),
+                                            True)
+        except Exception as e:
+            failed = True
+            print("ERROR: Experiment failed for some reason, shut down Compute and continue.")
+            print(e)
+
+        if task_arn:
+            self.shutdown_compute(compute_node, cloud, args, task_arn)
+
+        if not failed and args.upload:
+            self.upload_results(cloud, compute_node, args.export_compute)
+
+    @staticmethod
+    def setup_parameter_sweepers(param_sweep):
+        """
+        For each 'param' in a set, get details and setup counter
+        The result is an array of counters
+        Each counter represents one parameter
+        """
+        val_sweepers = []
+        for param in param_sweep['parameter-set']:  # set of params for one 'sweep'
+            if 'val-series' in param:
+                value_series = ValueSeries(param['val-series'])
+            else:
+                value_series = ValueSeries.from_range(minv=param['val-begin'],
+                                                      maxv=param['val-end'],
+                                                      deltav=param['val-inc'])
+            val_sweepers.append({'value-series': value_series,
+                                 'entity-name': param['entity-name'],
+                                 'param-path': param['parameter-path']})
+        return val_sweepers
+
+    def inc_parameter_set(self, compute_node, args, entity_filepath, val_sweepers):
+        """
+        Iterate through counters, incrementing each parameter in the set
+        Set the new values in the input file, and then run the experiment
+        First counter to reset, return False
+
+        :param compute_node:
+        :param args:
+        :param entity_filepath:
+        :param val_sweepers:
+        :return: reset (True if any counter has reached above max), description of parameters (string)
+                                If reset is False, there MUST be a description of the parameters that have been set
+        """
+
+        if len(val_sweepers) == 0:
+            print("WARNING: in_parameter_set: there are no counters to use to increment the parameter set.")
+            print("         Returning without any action. This may have undesirable consequences.")
+            return True, ""
+
+        # inc all counters, and set parameter in entity file
+        sweep_param_vals = []
+        reset = False
+        for val_sweeper in val_sweepers:
+            val_series = val_sweeper['value-series']
+
+            # check if it overflowed last time it was incremented
+            overflowed = val_series.overflowed()
+
+            if overflowed:
+                if args.logging:
+                    print("LOG: Sweeping has concluded for this sweep-set, due to the parameter: " +
+                          val_sweeper['entity-name'] + '.' + val_sweeper['param-path'])
+                reset = True
+                break
+
+            set_param = compute_node.set_parameter_inputfile(entity_filepath,
+                                                             self.entity_with_prefix(val_sweeper['entity-name']),
+                                                             val_sweeper['param-path'],
+                                                             val_series.value())
+            sweep_param_vals.append(set_param)
+            val_series.next_val()
+
+        if len(sweep_param_vals) == 0:
+            print("WARNING: no parameters were changed.")
+
+        if args.logging:
+            if len(sweep_param_vals):
+                print("LOG: Parameter sweep: ", sweep_param_vals)
+
+        if reset is False and len(sweep_param_vals) == 0:
+            print("Error: inc_parameter_set() indeterminate state, reset is False, but parameter_description indicates "
+                  "no parameters have been modified. If there is no sweep to conduct, reset should be True.")
+            exit(1)
+
+        return reset, sweep_param_vals
+
+    def create_all_input_files(self, base_entity_filename, base_data_filenames):
+        self.reset_prefix()
+        return (self.experiment_utils.create_input_files(self.prefix(), self.TEMPLATE_PREFIX, [base_entity_filename])[0],
+                self.experiment_utils.create_input_files(self.prefix(), self.TEMPLATE_PREFIX, base_data_filenames))
+
+    def run_sweeps(self, compute_node, cloud, args):
+        """ Perform parameter sweep steps, and run experiment for each step. """
+
+        print("\n........ Run Sweeps")
+
+        exps_filename = self.experiment_utils.experiment_def_file()
+
+        if not os.path.exists(exps_filename):
+            msg = "ERROR: Experiment file does not exist at: " + exps_filename
+            raise Exception(msg)
+
+        with open(exps_filename) as exps_file:
+            filedata = json.load(exps_file)
+
+        for exp_i in filedata['experiments']:
+            import_files = exp_i['import-files']  # import files dictionary
+
+            if args.logging:
+                print("LOG: Import Files Dictionary = ")
+                print("LOG: ", json.dumps(import_files, indent=4))
+
+            base_entity_filename = import_files['file-entities']
+            base_data_filenames = import_files['file-data']
+
+            exp_ll_data_filepaths = []
+            if 'load-local-files' in exp_i:
+                load_local_files = exp_i['load-local-files']
+                if 'file-data' in load_local_files:
+                    exp_ll_data_filepaths = list(map(self.experiment_utils.runpath, load_local_files['file-data']))
+
+            run_parameterset_partial = functools.partial(self.run_parameterset,
+                                                         compute_node=compute_node,
+                                                         cloud=cloud,
+                                                         args=args,
+                                                         compute_data_filepaths=exp_ll_data_filepaths)
+            if 'parameter-sweeps' not in exp_i or len(exp_i['parameter-sweeps']) == 0:
+                print("No parameters to sweep, just run once.")
+                exp_entity_filepath, exp_data_filepaths = self.create_all_input_files(base_entity_filename,
+                                                                                      base_data_filenames)
+                run_parameterset_partial(entity_filepath=exp_entity_filepath, data_filepaths=exp_data_filepaths)
+            else:
+                for param_sweep in exp_i['parameter-sweeps']:  # array of sweep definitions
+                    counters = self.setup_parameter_sweepers(param_sweep)
+                    while True:
+                        exp_entity_filepath, exp_data_filepaths = self.create_all_input_files(base_entity_filename,
+                                                                                              base_data_filenames)
+                        reset, sweep_param_vals = self.inc_parameter_set(compute_node, args,
+                                                                         exp_entity_filepath, counters)
+                        if reset:
+                            break
+                        run_parameterset_partial(entity_filepath=exp_entity_filepath,
+                                                 data_filepaths=exp_data_filepaths,
+                                                 sweep_param_vals=sweep_param_vals)
+
+    def set_dataset(self, compute_node):
+        """
+        The dataset can be located in different locations on different machines. The location can be set in the
+        experiments definition file (experiments.json). This method parses that file, finds the parameters to set
+        relative to the AGI_DATA_HOME env variable, and sets the specified parameters.
+        """
+
+        print("\n....... Set Dataset")
+
+        with open(self.experiment_utils.experiment_def_file()) as data_exps_file:
+            data = json.load(data_exps_file)
+
+        for exp_i in data['experiments']:
+            for param in exp_i['dataset-parameters']:  # array of sweep definitions
+                entity_name = param['entity-name']
+                param_path = param['parameter-path']
+                data_filenames = param['value']
+
+                data_filenames_arr = data_filenames.split(',')
+
+                data_paths = ""
+                for data_filename in data_filenames_arr:
+                    if data_paths != "":
+                        # IMPORTANT: if space added here, additional characters ('+') get added, probably due to encoding
+                        # issues on the request
+                        data_paths += ","
+                    data_paths += self.experiment_utils.datapath(data_filename)
+
+                compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, data_paths)
+
+    @staticmethod
+    def launch_compute_aws_ecs(compute_node, cloud, task_name):
+        """
+        Launch Compute on AWS ECS (elastic container service).
+        Assumes that ECS is setup to have the necessary task, and container instances running.
+        Hang till Compute is up and running. Return task arn.
+        """
+
+        print("launching Compute on AWS-ECS")
+
+        if not task_name:
+            raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
+
+        task_arn = cloud.ecs_run_task(task_name)
+        compute_node.wait_up()
+        return task_arn
+
+    @staticmethod
+    def launch_compute_remote_docker(compute_node, cloud):
+        """
+        Launch Compute Node on AWS. Assumes there is a running ec2 instance running Docker
+        Hang till Compute is up and running.
+        """
+
+        print("launching Compute on AWS (on ec2 using run-in-docker.sh)")
+        cloud.remote_docker_launch_compute(compute_node.host_node)
+        compute_node.wait_up()
+
+    def launch_compute_local(self, compute_node, args, main_class="", no_docker=False):
+        """ Launch Compute locally. Hang till Compute is up and running.
+
+        If main_class is specified, then use run-demo.sh,
+        which builds entity graph and data from the relevant Demo project defined by the Main Class.
+        WARNING: In this case, the properties file used is hardcoded to node.properties
+        WARNING: and the prefix used is the global variable PREFIX
+        """
+
+        print("launching Compute locally")
+        print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
+
+        if no_docker:
+            cmd = self.experiment_utils.agi_binpath("/node_coordinator/run.sh")
+        else:
+            cmd = self.experiment_utils.agi_binpath("/node_coordinator/run-in-docker.sh -d")
+
+        if main_class is not "":
+            cmd = self.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh")
+            cmd = cmd + " node.properties " + main_class + " " + self.TEMPLATE_PREFIX
+
+        if args.logging:
+            print("Running: " + cmd)
+
+        cmd += " > run_stdout.log 2> run_stderr.log "
+
+        # we can't hold on to the stdout and stderr streams for logging, because it will hang on this line
+        # instead, logging to a file
+        subprocess.Popen(cmd,
+                         shell=True,
+                         executable="/bin/bash")
+
+        compute_node.wait_up()
+
+    def launch_compute(self, compute_node, cloud, args, use_ecs=False):
+        """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
+
+        print("\n....... Launch Compute")
+
+        task_arn = None
+
+        if compute_node.remote():
+            if use_ecs:
+                task_arn = self.launch_compute_aws_ecs(compute_node, cloud, args.task_name)
+            else:
+                self.launch_compute_remote_docker(compute_node, cloud)
+        else:
+            self.launch_compute_local(compute_node, args, no_docker=args.no_docker)
+
+        print("Running Compute version: " + compute_node.version())
+
+        return task_arn
+
+    @staticmethod
+    def shutdown_compute(compute_node, cloud, args, task_arn):
+        """ Close compute: terminate and then if running on AWS, stop the task. """
+
+        print("\n....... Shutdown System")
+
+        compute_node.terminate()
+
+        # note that task may be set up to terminate once compute has been terminated
+        if args.remote_type == "aws" and (task_arn is not None):
+            cloud.ecs_stop_task(task_arn)
+
+    def generate_input_files_locally(self, compute_node):
+        entity_filepath, data_filepaths = self.experiment_utils.inputfiles_for_generation()
+        # write to the first listed data path name
+        compute_node.export_subtree(root_entity=self.entity_with_prefix("experiment"),
+                                    entity_filepath=entity_filepath,
+                                    data_filepath=data_filepaths[0])
 
     def upload_results(self, cloud, compute_node, export_compute):
         """ Upload the results of the experiment to the cloud storage (s3)
@@ -295,18 +491,20 @@ class Experiment:
         :type compute_node: Compute
         """
 
+        print "\n...... Uploading results to S3"
+
         # upload /input folder (contains input files entity.json, data.json)
-        folder_path = self.inputfile("")
-        self.upload_experiment(cloud,
-                               self.prefix(),
-                               "input",
-                               folder_path)
+        folder_path = self.experiment_utils.inputfile(self.prefix(), "")
+        self.upload_experiment_file(cloud,
+                                    self.prefix(),
+                                    "input",
+                                    folder_path)
 
         # upload experiments definition file (if it exists)
-        self.upload_experiment(cloud,
-                               self.prefix(),
-                               self.experiments_def_filename,
-                               self.experiment_def_file())
+        self.upload_experiment_file(cloud,
+                                    self.prefix(),
+                                    self.experiment_utils.experiments_def_filename,
+                                    self.experiment_utils.experiment_def_file())
 
         # upload log4j configuration file that was used
         log_filename = "log4j2.log"
@@ -314,24 +512,24 @@ class Experiment:
         if compute_node.remote():
             cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), log_filename)
         else:
-            log_filepath = self.runpath(log_filename)
-            self.upload_experiment(cloud,
-                                   self.prefix(),
-                                   log_filename,
-                                   log_filepath)
+            log_filepath = self.experiment_utils.runpath(log_filename)
+            self.upload_experiment_file(cloud,
+                                        self.prefix(),
+                                        log_filename,
+                                        log_filepath)
 
         # upload /output files (entity.json, data.json and experiment-info.txt)
 
-        folder_path = self.outputfile("")
+        folder_path = self.experiment_utils.outputfile(self.prefix(), "")
 
         # if data was saved on compute, upload data from there
         if compute_node.remote() and export_compute:
-            print "--- Upload from exported file on remote machine."
+            print "\n --- Upload from exported file on remote machine."
             # remote upload of /output/[prefix] folder
             cloud.remote_upload_output_s3(compute_node.host_node, self.prefix())
         # otherwise, upload it from here
         else:
-            folder_path_big = self.filepath_from_exp_variable("output-big/", self.agi_run_home)
+            folder_path_big = self.experiment_utils.runpath("output-big/")
 
             # locate the output data file
             output_data_filepath = utils.match_file_by_name(folder_path, 'data')
@@ -347,12 +545,13 @@ class Experiment:
                 utils.move_file(output_data_filepath, folder_path_big)
 
         # for both, upload experiment-info.txt on this machine (where script is running)
-        self.upload_experiment(cloud,
-                               self.prefix(),
-                               "output",
-                               folder_path)
+        self.upload_experiment_file(cloud,
+                                    self.prefix(),
+                                    "output",
+                                    folder_path)
 
-    def upload_experiment(self, cloud, prefix, dest_name, source_path):
+    @staticmethod
+    def upload_experiment_file(cloud, prefix, dest_name, source_path):
         """
         Upload experiment to s3.
         :param prefix: experiment prefix (used in the full name of uploaded bucket)
@@ -362,7 +561,7 @@ class Experiment:
         :return:
         """
 
-        print "\n...... Uploading experiment to S3: prefix = " + prefix + ", destination file/folder = " + dest_name \
+        print "  --- uploading exp file to S3: prefix = " + prefix + ", destination file/folder = " + dest_name \
               + ", source file/folder = " + source_path
 
         bucket_name = "agief-project"
@@ -372,13 +571,3 @@ class Experiment:
             cloud.upload_file_s3(bucket_name, key, source_path)
         else:
             cloud.upload_folder_s3(bucket_name, key, source_path)
-
-    def remember_prefix(self):
-        self.prefixes_history += self.prefix() + "\n"
-
-    def persist_prefix_history(self, filename="prefixes.txt"):
-        """ Save prefix history to a file """
-
-        print "\n....... Save prefix history to " + filename
-        with open(filename, "w") as prefix_file:
-            prefix_file.write(self.prefixes_history)
