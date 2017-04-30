@@ -114,15 +114,16 @@ def check_validity(files):
     is_valid = True
     file_paths = []
 
-    for file in files:
-        if os.path.isfile(file) and os.path.exists(file):       # TODO for some reason exists() not working
-            file_paths.append(file)
+    for f in files:
+        if os.path.isfile(f) and os.path.exists(f):  # TODO for some reason exists() not working
+            file_paths.append(f)
         else:
             is_valid = False
-            print "ERROR: check_validity(), this file is not valid: " + file
+            print "ERROR: check_validity(), this file is not valid: " + f
             break
 
     return is_valid
+
 
 def compress_file(source_filepath):
     """
@@ -137,6 +138,7 @@ def compress_file(source_filepath):
         zipf.close()
     else:
         print "ERROR: compress_file(), this file is not valid: " + source_filepath
+
 
 def compress_folder_contents(source_path):
     """
@@ -200,6 +202,7 @@ def move_file(source_filepath, dest_path, create_dest=False):
     else:
         print "ERROR: move_file(), the source file path is not valid: " + source_filepath
 
+
 def get_entityfile_config(entity, log=False):
     """ 
         Get the config field straight out of an exported Entity, and turn it into valid JSON 
@@ -233,3 +236,9 @@ def set_entityfile_config(entity, config, log=False):
         print "LOG: Modified configStr   = " + config_str
 
     entity["config"] = config_str
+
+def format_timedelta(td):
+    hours = td.seconds // 3600
+    minutes = (td.seconds // 60) % 60
+
+    return td.days, hours, minutes, td.seconds, td.microseconds

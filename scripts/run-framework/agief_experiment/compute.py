@@ -1,12 +1,12 @@
 import os
 import subprocess
-
 import requests
 import time
 import json
 import dpath.util
 
 import utils
+import logging
 
 
 class Compute:
@@ -58,10 +58,10 @@ class Compute:
         print "... Waiting for param to achieve value (try every " + str(wait_period) + "s): " + entity_name + \
               "." + param_path + " = " + str(value)
 
-        def print_age(i, age_string):
+        def print_age(idx, age_str):
             # if not self.log:
             #     utils.restart_line()
-            print "Try = [%d]%s" % (i, age_string)  # add a comma at the end to remove newline
+            print "Try = [%d]%s" % (idx, age_str)  # add a comma at the end to remove newline
 
         while True:
             i += 1
@@ -114,7 +114,7 @@ class Compute:
         is_entity_file = entity_filepath is not None
         is_data_files = data_filepaths is not None or len(data_filepaths) != 0
 
-        print "\n....... Import Experiment"
+        print "\n....... Import experiment"
 
         if not is_entity_file and not is_data_files:
             print "        WARNING: no input files specified (that may be intentional)"
@@ -187,18 +187,18 @@ class Compute:
                 print "  LOG: response text = ", response.text
                 print "  LOG: url: ", response.url
 
-    def run_experiment(self, exp):
+    def run_experiment(self, experiment_entity):
 
-        print "\n....... Run Experiment"
+        print "\n....... Run experiment"
 
-        payload = {'entity': exp.entity_with_prefix('experiment'), 'event': 'update'}
+        payload = {'entity': experiment_entity, 'event': 'update'}
         response = requests.get(self.base_url() + '/update', params=payload)
         # TODO: check the response? what happens on failure?
         if self.log:
             print "LOG: Start experiment, response = ", response
 
         # wait for the task to finish (poll API for 'Terminated' config param)
-        self.wait_till_param(exp.entity_with_prefix('experiment'), 'terminated', True)
+        self.wait_till_param(experiment_entity, 'terminated', True)
 
     def export_root_entity(self, filepath, root_entity, export_type, is_compute_save=False):
         """
@@ -206,7 +206,7 @@ class Compute:
         or specify the Compute node to save it itself
         :param filepath: if specified, then receive a string
         :param root_entity:
-        :param export_type:
+        :param export_type: 'entity' for the entity tree or 'data' for the persisted data for that entity tree
         :param is_compute_save: boolean, if false (default) then returned as string and then we save the file
         if true then 'Compute' saves the file, using the path to a folder (for the compute machine) specified by filepath
         :return:
@@ -218,6 +218,10 @@ class Compute:
             payload = {'entity': root_entity, 'type': export_type, "export-location": filepath}
 
         response = requests.get(self.base_url() + '/export', params=payload)
+
+        if response.status_code == 400:
+            logging.error("Could not export type '%s' for the entity tree with root node '%s'", export_type, root_entity)
+            return
 
         if is_compute_save:
             print "Saved file response: ", response.text
