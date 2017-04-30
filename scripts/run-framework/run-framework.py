@@ -1,6 +1,10 @@
 from __future__ import print_function
 import os
 
+import dpath
+from enum import Enum
+from datetime import datetime
+
 
 from agief_experiment.host_node import HostNode
 from agief_experiment.compute import Compute
@@ -134,6 +138,9 @@ def main():
     print("----          run-framework           ----")
     print("------------------------------------------")
 
+    # Record experiment start time
+    exp_start_time = datetime.now()
+
     args = setup_arg_parsing()
     if args.logging:
         print("LOG: Arguments: ", args)
@@ -262,6 +269,13 @@ def main():
 
             if is_pg_ec2:
                 cloud.ec2_stop(args.pg_instance)
+
+    # Record experiment end time
+    exp_end_time = datetime.now()
+
+    # Print the experiment runtime in d:h:m:s:ms format
+    exp_runtime = utils.format_timedelta(exp_end_time - exp_start_time)
+    print("Experiment finished in %d days, %d hr, %d min, %d s, %d ms." % tuple(exp_runtime))
 
     if failed:
         exit(1)

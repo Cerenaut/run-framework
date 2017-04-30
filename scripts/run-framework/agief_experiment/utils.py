@@ -232,3 +232,9 @@ def set_entityfile_config(entity, config, log=False):
         print "LOG: Modified configStr   = " + config_str
 
     entity["config"] = config_str
+
+def format_timedelta(td):
+    hours = td.seconds // 3600
+    minutes = (td.seconds // 60) % 60
+
+    return td.days, hours, minutes, td.seconds, td.microseconds
