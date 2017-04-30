@@ -8,10 +8,6 @@ import sys
 import time
 
 
-TEMPLATE_PREFIX = "SPAGHETTI"
-PREFIX_DELIMITER = "--"
-
-
 def restart_line():
     sys.stdout.write('\r')
     sys.stdout.flush()
@@ -236,6 +232,7 @@ def set_entityfile_config(entity, config, log=False):
         print "LOG: Modified configStr   = " + config_str
 
     entity["config"] = config_str
+
 
 def format_timedelta(td):
     hours = td.seconds // 3600

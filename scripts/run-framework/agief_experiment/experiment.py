@@ -1,9 +1,10 @@
 import datetime
+import functools
 import json
 import os
-import shutil
-import subprocess
-import utils
+
+
+import dpath
 
 from agief_experiment.valueseries import ValueSeries
 from agief_experiment.experimentutils import ExperimentUtils
@@ -30,7 +31,7 @@ class Experiment:
 
         self.experiment_utils = ExperimentUtils(exps_file)
 
-        self.prefix_base = TEMPLATE_PREFIX
+        self.prefix_base = self.TEMPLATE_PREFIX
         self.prefixes_history = ""
         self.prefix_modifier = ""
 
@@ -175,7 +176,7 @@ class Experiment:
                 raise Exception(msg)
 
             if (self.launch_mode is LaunchMode.per_experiment) and args.launch_compute:
-                task_arn = self.launch_compute(compute_node, cloud, args)
+                task_arn = compute_node.launch(self, cloud=cloud, no_local_docker=args.no_docker)
 
             compute_node.import_experiment(entity_filepath, data_filepaths)
             compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
@@ -380,86 +381,86 @@ class Experiment:
 
                 compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, data_paths)
 
-    @staticmethod
-    def launch_compute_aws_ecs(compute_node, cloud, task_name):
-        """
-        Launch Compute on AWS ECS (elastic container service).
-        Assumes that ECS is setup to have the necessary task, and container instances running.
-        Hang till Compute is up and running. Return task arn.
-        """
+    # @staticmethod
+    # def launch_compute_aws_ecs(compute_node, cloud, task_name):
+    #     """
+    #     Launch Compute on AWS ECS (elastic container service).
+    #     Assumes that ECS is setup to have the necessary task, and container instances running.
+    #     Hang till Compute is up and running. Return task arn.
+    #     """
+    #
+    #     print("launching Compute on AWS-ECS")
+    #
+    #     if not task_name:
+    #         raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
+    #
+    #     task_arn = cloud.ecs_run_task(task_name)
+    #     compute_node.wait_up()
+    #     return task_arn
 
-        print("launching Compute on AWS-ECS")
-
-        if not task_name:
-            raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
-
-        task_arn = cloud.ecs_run_task(task_name)
-        compute_node.wait_up()
-        return task_arn
-
-    @staticmethod
-    def launch_compute_remote_docker(compute_node, cloud):
-        """
-        Launch Compute Node on AWS. Assumes there is a running ec2 instance running Docker
-        Hang till Compute is up and running.
-        """
-
-        print("launching Compute on AWS (on ec2 using run-in-docker.sh)")
-        cloud.remote_docker_launch_compute(compute_node.host_node)
-        compute_node.wait_up()
-
-    def launch_compute_local(self, compute_node, args, main_class="", no_docker=False):
-        """ Launch Compute locally. Hang till Compute is up and running.
-
-        If main_class is specified, then use run-demo.sh,
-        which builds entity graph and data from the relevant Demo project defined by the Main Class.
-        WARNING: In this case, the properties file used is hardcoded to node.properties
-        WARNING: and the prefix used is the global variable PREFIX
-        """
-
-        print("launching Compute locally")
-        print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
-
-        if no_docker:
-            cmd = self.experiment_utils.agi_binpath("/node_coordinator/run.sh")
-        else:
-            cmd = self.experiment_utils.agi_binpath("/node_coordinator/run-in-docker.sh -d")
-
-        if main_class is not "":
-            cmd = self.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh")
-            cmd = cmd + " node.properties " + main_class + " " + self.TEMPLATE_PREFIX
-
-        if args.logging:
-            print("Running: " + cmd)
-
-        cmd += " > run_stdout.log 2> run_stderr.log "
-
-        # we can't hold on to the stdout and stderr streams for logging, because it will hang on this line
-        # instead, logging to a file
-        subprocess.Popen(cmd,
-                         shell=True,
-                         executable="/bin/bash")
-
-        compute_node.wait_up()
-
-    def launch_compute(self, compute_node, cloud, args, use_ecs=False):
-        """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
-
-        print("\n....... Launch Compute")
-
-        task_arn = None
-
-        if compute_node.remote():
-            if use_ecs:
-                task_arn = self.launch_compute_aws_ecs(compute_node, cloud, args.task_name)
-            else:
-                self.launch_compute_remote_docker(compute_node, cloud)
-        else:
-            self.launch_compute_local(compute_node, args, no_docker=args.no_docker)
-
-        print("Running Compute version: " + compute_node.version())
-
-        return task_arn
+    # @staticmethod
+    # def launch_compute_remote_docker(compute_node, cloud):
+    #     """
+    #     Launch Compute Node on AWS. Assumes there is a running ec2 instance running Docker
+    #     Hang till Compute is up and running.
+    #     """
+    #
+    #     print("launching Compute on AWS (on ec2 using run-in-docker.sh)")
+    #     cloud.remote_docker_launch_compute(compute_node.host_node)
+    #     compute_node.wait_up()
+    #
+    # def launch_compute_local(self, compute_node, args, main_class="", no_docker=False):
+    #     """ Launch Compute locally. Hang till Compute is up and running.
+    #
+    #     If main_class is specified, then use run-demo.sh,
+    #     which builds entity graph and data from the relevant Demo project defined by the Main Class.
+    #     WARNING: In this case, the properties file used is hardcoded to node.properties
+    #     WARNING: and the prefix used is the global variable PREFIX
+    #     """
+    #
+    #     print("launching Compute locally")
+    #     print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
+    #
+    #     if no_docker:
+    #         cmd = self.experiment_utils.agi_binpath("/node_coordinator/run.sh")
+    #     else:
+    #         cmd = self.experiment_utils.agi_binpath("/node_coordinator/run-in-docker.sh -d")
+    #
+    #     if main_class is not "":
+    #         cmd = self.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh")
+    #         cmd = cmd + " node.properties " + main_class + " " + self.TEMPLATE_PREFIX
+    #
+    #     if args.logging:
+    #         print("Running: " + cmd)
+    #
+    #     cmd += " > run_stdout.log 2> run_stderr.log "
+    #
+    #     # we can't hold on to the stdout and stderr streams for logging, because it will hang on this line
+    #     # instead, logging to a file
+    #     subprocess.Popen(cmd,
+    #                      shell=True,
+    #                      executable="/bin/bash")
+    #
+    #     compute_node.wait_up()
+    #
+    # def launch_compute(self, compute_node, cloud, args, use_ecs=False):
+    #     """ Launch Compute locally or remotely. Return task arn if on AWS ECS. """
+    #
+    #     print("\n....... Launch Compute")
+    #
+    #     task_arn = None
+    #
+    #     if compute_node.remote():
+    #         if use_ecs:
+    #             task_arn = self.launch_compute_aws_ecs(compute_node, cloud, args.task_name)
+    #         else:
+    #             self.launch_compute_remote_docker(compute_node, cloud)
+    #     else:
+    #         self.launch_compute_local(compute_node, args, no_docker=args.no_docker)
+    #
+    #     print("Running Compute version: " + compute_node.version())
+    #
+    #     return task_arn
 
     @staticmethod
     def shutdown_compute(compute_node, cloud, args, task_arn):

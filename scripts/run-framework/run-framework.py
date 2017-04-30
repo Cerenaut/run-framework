@@ -1,10 +1,7 @@
 from __future__ import print_function
+
 import os
-
-import dpath
-from enum import Enum
 from datetime import datetime
-
 
 from agief_experiment.host_node import HostNode
 from agief_experiment.compute import Compute

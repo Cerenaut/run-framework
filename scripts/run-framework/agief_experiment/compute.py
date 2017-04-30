@@ -8,6 +8,8 @@ import dpath.util
 import utils
 import logging
 
+from agief_experiment.experiment import Experiment
+
 
 class Compute:
 
@@ -393,7 +395,7 @@ class Compute:
         :param main_class: if given and the run is local, use run-demo.sh, which builds entity graph and data from the
                            relevant demo project defined by the main class.
                            WARNING: In this case, the properties file used is hardcoded to node.properties and the
-                           prefix used is the global util.TEMPLATE_PREFIX.
+                           prefix used is Experiment.TEMPLATE_PREFIX.
         :param no_local_docker: if True, do not use Docker when running locally. 
         :return: task ARN if use_ecs is True, None otherwise.
         """
@@ -416,13 +418,13 @@ class Compute:
             print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
 
             if main_class:
-                cmd = "%s node.properties %s %s" % (experiment.agi_binpath("/node_coordinator/run-demo.sh"),
+                cmd = "%s node.properties %s %s" % (experiment.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh"),
                                                     main_class,
-                                                    utils.TEMPLATE_PREFIX)
+                                                    Experiment.TEMPLATE_PREFIX)
             elif no_local_docker:
-                cmd = experiment.agi_binpath("/node_coordinator/run.sh")
+                cmd = experiment.experiment_utils.agi_binpath("/node_coordinator/run.sh")
             else:
-                cmd = experiment.agi_binpath("/node_coordinator/run-in-docker.sh -d")
+                cmd = experiment.experiment_utils.agi_binpath("/node_coordinator/run-in-docker.sh -d")
 
             if self.log:
                 print("Running: " + cmd)
