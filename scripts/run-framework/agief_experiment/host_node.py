@@ -19,7 +19,4 @@ class HostNode:
 
     def remote(self):
         """ If remote, then no need for a keypath, so use this as a proxy to calculate whether remote or not. """
-        if self.keypath is None:
-            return False
-        else:
-            return True
+        return self.keypath is not None

@@ -1,11 +1,9 @@
-import subprocess
-import functools
+import datetime
 import json
 import os
-
-import datetime
-
-import dpath
+import shutil
+import subprocess
+import utils
 
 from agief_experiment.valueseries import ValueSeries
 from agief_experiment.experimentutils import ExperimentUtils
@@ -32,7 +30,7 @@ class Experiment:
 
         self.experiment_utils = ExperimentUtils(exps_file)
 
-        self.prefix_base = Experiment.TEMPLATE_PREFIX
+        self.prefix_base = TEMPLATE_PREFIX
         self.prefixes_history = ""
         self.prefix_modifier = ""
 

@@ -1,4 +1,5 @@
 import os
+import subprocess
 import requests
 import time
 import json
@@ -192,6 +193,7 @@ class Compute:
 
         payload = {'entity': experiment_entity, 'event': 'update'}
         response = requests.get(self.base_url() + '/update', params=payload)
+        # TODO: check the response? what happens on failure?
         if self.log:
             print "LOG: Start experiment, response = ", response
 
@@ -249,7 +251,7 @@ class Compute:
         self.export_root_entity(entity_filepath, root_entity, 'entity', is_export_compute)
         self.export_root_entity(data_filepath, root_entity, 'data', is_export_compute)
 
-    def wait_up(self):
+    def _wait_up(self):
         wait_period = 3
 
         print "\n....... Wait till framework has started (try every " + str(wait_period) + " seconds),   at = " \
@@ -377,3 +379,60 @@ class Compute:
                 print "Error connecting to agief to retrieve the version."
 
         return version
+
+    def launch(self, experiment, cloud=None, use_ecs=False, ecs_task_name=None, main_class=None, no_local_docker=False):
+        """
+        Launch Compute remotely if cloud is given and self.remote() is True, or locally otherwise.
+        Hang until Compute is up and running.
+        
+        :param experiment: an Experiment object.
+        :param cloud: a Cloud object (may be None for local runs).
+        :param use_ecs: if True, launch on AWS ECS (elastic container service). Assumes that ECS is set up to have the
+                        necessary task, and container instances are running. 
+        :param ecs_task_name: the ECS task name to use (ignored if use_ecs is False). 
+        :param main_class: if given and the run is local, use run-demo.sh, which builds entity graph and data from the
+                           relevant demo project defined by the main class.
+                           WARNING: In this case, the properties file used is hardcoded to node.properties and the
+                           prefix used is the global util.TEMPLATE_PREFIX.
+        :param no_local_docker: if True, do not use Docker when running locally. 
+        :return: task ARN if use_ecs is True, None otherwise.
+        """
+
+        print("\n....... Launch Compute")
+
+        task_arn = None
+        if cloud and self.remote():
+            if use_ecs:
+                print("launching Compute on AWS-ECS")
+                if not ecs_task_name:
+                    raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
+                task_arn = cloud.ecs_run_task(ecs_task_name)
+            else:
+                # Launch Compute Node on AWS. Assumes there is a running ec2 instance running Docker
+                print("launching Compute on AWS (on ec2 using run-in-docker.sh)")
+                cloud.remote_docker_launch_compute(self.host_node)
+        else:
+            print("launching Compute locally")
+            print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
+
+            if main_class:
+                cmd = "%s node.properties %s %s" % (experiment.agi_binpath("/node_coordinator/run-demo.sh"),
+                                                    main_class,
+                                                    utils.TEMPLATE_PREFIX)
+            elif no_local_docker:
+                cmd = experiment.agi_binpath("/node_coordinator/run.sh")
+            else:
+                cmd = experiment.agi_binpath("/node_coordinator/run-in-docker.sh -d")
+
+            if self.log:
+                print("Running: " + cmd)
+
+            # we can't hold on to the stdout and stderr streams for logging, because it will hang on this line
+            # instead, logging to a file
+            subprocess.Popen("%s > run_stdout.log 2> run_stderr.log" % cmd, shell=True, executable="/bin/bash")
+
+        # TODO: fail if there are hard errors?
+
+        self._wait_up()
+
+        return task_arn

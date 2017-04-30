@@ -152,10 +152,13 @@ def main():
     if args.main_class:
         compute_node = Compute(host_node=HostNode(), port=args.port, log=args.logging)
         compute_node.host = args.host
-        experiment.launch_compute_local(compute_node, args, main_class=args.main_class, no_docker=args.no_docker)
+
+#         experiment.launch_compute_local(compute_node, args, main_class=args.main_class, no_docker=args.no_docker)
+        compute_node.launch(experiment, main_class=args.main_class, no_local_docker=args.no_docker)
         experiment.generate_input_files_locally(compute_node)
+
         compute_node.terminate()
-        exit(1)
+        return
 
     # *) all other use cases (non Generate input files)
 
@@ -244,7 +247,8 @@ def main():
 
         # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
         if (LaunchMode.from_args(args) is LaunchMode.per_session) and args.launch_compute:
-            experiment.launch_compute(compute_node, cloud, args)
+            compute_node.launch(experiment, cloud=cloud, main_class=args.main_class, no_local_docker=args.no_docker)
+#             experiment.launch_compute(compute_node, cloud, args)
 
         # 5) Run experiments (includes per experiment 'export results' and 'upload results')
         if args.exps_file:
