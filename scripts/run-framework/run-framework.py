@@ -130,6 +130,30 @@ def setup_arg_parsing():
     return parser.parse_args()
 
 
+def check_args(args, compute_node):
+    if args.amiid and args.instanceid:
+        print("ERROR: Both the AMI ID and EC2 Instance ID have been specified. Use just one to specify how to get "
+              "a running ec2 instance")
+        exit(1)
+
+    if not args.remote_type == "aws" and (args.amiid or args.instanceid):
+        print("ERROR: amiid or instanceid was specified, but AWS has not been set, so they have no effect.")
+        exit(1)
+
+    if args.ssh_keypath and not compute_node.remote():
+        print("WARNING: a keypath has been set, but we're not running on a remote machine (arg: step_remote). "
+              "It will have no effect.")
+
+    if args.sync and not compute_node.remote():
+        print("ERROR: Syncing experiment is meaningless unless you're running on a "
+              "remote machine (use param --step_remote)")
+        exit(1)
+
+    if args.exps_file and not args.launch_compute:
+        print("WARNING: You have elected to run experiment without launching a Compute node. For success, you'll "
+              "have to have one running already, or use param --step_compute)")
+
+
 def main():
     print("------------------------------------------")
     print("----          run-framework           ----")
@@ -168,27 +192,7 @@ def main():
 
     compute_node = Compute(host_node, args.port, args.logging)
 
-    if args.amiid and args.instanceid:
-        print("ERROR: Both the AMI ID and EC2 Instance ID have been specified. Use just one to specify how to get "
-              "a running ec2 instance")
-        exit(1)
-
-    if not args.remote_type == "aws" and (args.amiid or args.instanceid):
-        print("ERROR: amiid or instanceid was specified, but AWS has not been set, so they have no effect.")
-        exit(1)
-
-    if args.ssh_keypath and not compute_node.remote():
-        print("WARNING: a keypath has been set, but we're not running on a remote machine (arg: step_remote). "
-              "It will have no effect.")
-
-    if args.sync and not compute_node.remote():
-        print("ERROR: Syncing experiment is meaningless unless you're running on a "
-              "remote machine (use param --step_remote)")
-        exit(1)
-
-    if args.exps_file and not args.launch_compute:
-        print("WARNING: You have elected to run experiment without launching a Compute node. For success, you'll "
-              "have to have one running already, or use param --step_compute)")
+    check_args(args, compute_node)
 
     # 2) Setup infrastructure (on AWS or nothing to do locally)
     ips = {'ip_public': args.host, 'ip_private': None}
