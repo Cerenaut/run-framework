@@ -210,7 +210,7 @@ class Experiment:
             print("ERROR: Experiment failed for some reason, shut down Compute and continue.")
             print(e)
 
-        if task_arn:
+        if (self.launch_mode is LaunchMode.per_experiment) and args.launch_compute:
             self.shutdown_compute(compute_node, cloud, args, task_arn)
 
         if not failed and args.upload:
