@@ -10,10 +10,11 @@ if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "" ]; then
   exit 0
 fi
 
-host=$1
-keyfile=${2:-$HOME/.ssh/ecs-key.pem}
-user=${3:-ec2-user}
-remote_variables_file=${4:-/home/ec2-user/agief-project/variables/variables-ec2.sh}
+prefix=$1
+host=$2
+keyfile=${3:-$HOME/.ssh/ecs-key.pem}
+user=${4:-ec2-user}
+remote_variables_file=${5:-/home/ec2-user/agief-project/variables/variables-ec2.sh}
 
 echo "Using host = " $host
 echo "Using keyfile = " $keyfile
