@@ -21,7 +21,7 @@ class Cloud:
     def __init__(self, log):
         self.log = log
 
-    def sync_experiment(self, remote):
+    def sync_experiment(self, prefix, remote):
         """
         Sync experiment from this machine to remote machine
         Assumes there exists a private key for the given ec2 instance, at keypath
@@ -29,7 +29,8 @@ class Cloud:
 
         print "\n....... Use remote-sync-experiment.sh to rsync relevant folders."
 
-        cmd = "../remote/remote-sync-experiment.sh " + remote.host_key_user_variables()
+        cmd = "../remote/remote-sync-experiment.sh " + " " + prefix \
+            + " " + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
 
     def remote_download_output(self, prefix, host_node):
