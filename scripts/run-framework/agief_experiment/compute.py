@@ -411,7 +411,7 @@ class Compute:
                 task_arn = cloud.ecs_run_task(ecs_task_name)
             else:
                 # Launch Compute Node on AWS. Assumes there is a running ec2 instance running Docker
-                print("launching Compute on AWS (on ec2 using run-in-docker.sh)")
+                print("launching Compute on remote machine")
                 cloud.remote_docker_launch_compute(self.host_node)
         else:
             print("launching Compute locally")
