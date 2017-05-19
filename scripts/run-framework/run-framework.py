@@ -81,6 +81,8 @@ def setup_arg_parsing():
                         help='Port where the Compute node will be running (default=%(default)s).')
     parser.add_argument('--user', dest='user', required=False,
                         help='If remote, the "user" on the remote Compute node (default=%(default)s).')
+    parser.add_argument('--ssh_port', dest='ssh_port', required=False,
+                        help='Which port to use for ssh when communicating with remote machine (default=%(default)s).')
     parser.add_argument('--remote_variables_file', dest='remote_variables_file', required=False,
                         help='If remote, the path to the remote VARIABLES_FILE to use on the remote Compute node '
                              '(default=%(default)s).')
@@ -119,6 +121,7 @@ def setup_arg_parsing():
     parser.set_defaults(remote_type="local")  # i.e. not remote
     parser.set_defaults(host="localhost")
     parser.set_defaults(port="8491")
+    parser.set_defaults(ssh_port="22")
     parser.set_defaults(user="ec2-user")
     parser.set_defaults(remote_variables_file="/home/ec2-user/agief-project/variables/variables-ec2.sh")
     parser.set_defaults(pg_instance="localhost")
@@ -186,7 +189,7 @@ def main():
               "important files (output entity.json and data.json) will be missing")
 
     if args.remote_type != "local":
-        host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file)
+        host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file, args.ssh_port)
     else:
         host_node = HostNode(args.host, args.user)
 

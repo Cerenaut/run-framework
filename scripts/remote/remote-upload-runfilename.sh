@@ -19,6 +19,7 @@ host=$3
 keyfile=${4:-$HOME/.ssh/ecs-key.pem}
 user=${5:-ec2-user}
 remote_variables_file=${6:-/home/ec2-user/agief-project/variables/variables-ec2.sh}
+port=${5:-22}
 
 echo "Using prefix = " $prefix
 echo "Using filename = " $filename
@@ -26,8 +27,9 @@ echo "Using host = " $host
 echo "Using keyfile = " $keyfile
 echo "Using user = " $user
 echo "Using remote_variables_file = " $remote_variables_file
+echo "Using port = " $port
 
-ssh -v -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix=$prefix filename=$filename VARIABLES_FILE=$remote_variables_file 'bash -s' <<'ENDSSH' 
+ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix=$prefix filename=$filename VARIABLES_FILE=$remote_variables_file 'bash -s' <<'ENDSSH' 
 	export VARIABLES_FILE=$VARIABLES_FILE
 	source $VARIABLES_FILE
 
