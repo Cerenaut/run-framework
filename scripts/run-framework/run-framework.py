@@ -235,10 +235,9 @@ def main():
 
         # 3) Sync code and run-home
         if args.sync:
-            cloud.sync_experiment(args.sync_s3_prefix, compute_node.host_node)
+            cloud.sync_experiment(compute_node.host_node)
 
-        # 3.5) Sync data from S3 (typically used to download output files from a previous experiment to be used as
-        #      input)
+        # 3.5) Sync data from S3 (typically used to download output files from a prev. experiment to be used as input)
         if args.sync_s3_prefix:
             cloud.remote_download_output(args.sync_s3_prefix, compute_node.host_node)
 
