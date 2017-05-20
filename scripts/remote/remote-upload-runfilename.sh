@@ -19,7 +19,7 @@ host=$3
 keyfile=${4:-$HOME/.ssh/ecs-key.pem}
 user=${5:-ec2-user}
 remote_variables_file=${6:-/home/ec2-user/agief-project/variables/variables-ec2.sh}
-port=${5:-22}
+port=${7:-22}
 
 echo "Using prefix = " $prefix
 echo "Using filename = " $filename
