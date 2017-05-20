@@ -14,18 +14,20 @@ host=$1
 keyfile=${2:-$HOME/.ssh/ecs-key.pem}
 user=${3:-ec2-user}
 remote_variables_file=${4:-/home/ec2-user/agief-project/variables/variables-ec2.sh}
+port=${5:-22}
 
 echo "Using host = " $host
 echo "Using keyfile = " $keyfile
 echo "Using user = " $user
 echo "Using remote_variables_file = " $remote_variables_file
+echo "Using port " = $port
 
 ########################################################
 # synch code and run folder with ecs instance
 ########################################################
 
 # code
-cmd="rsync -ave 'ssh -i $keyfile -o \"StrictHostKeyChecking no\"' $AGI_HOME/ ${user}@${host}:~/agief-project/agi --exclude={\"*.git/*\",*/src/*}"
+cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' $AGI_HOME/ ${user}@${host}:~/agief-project/agi --exclude={\"*.git/*\",*/src/*}"
 echo $cmd
 eval $cmd
 status=$?
@@ -39,7 +41,7 @@ then
 fi
 
 # the specific experiment folder
-cmd="rsync -ave 'ssh -i $keyfile -o \"StrictHostKeyChecking no\"'
+cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"'
 	-f \"- input/*\" -f \"- output/*\"
 	-f \"+ *\"
 	$AGI_EXP_HOME/ ${user}@${host}:~/agief-project/run --exclude={\"*.git/*\"}"
@@ -56,7 +58,7 @@ then
 fi
 
 # the variables folder (with variables.sh files)
-cmd="rsync -ave 'ssh -i $keyfile -o \"StrictHostKeyChecking no\"' $AGI_EXP_HOME/../variables/ ${user}@${host}:~/agief-project/variables --exclude={\"*.git/*\"}"
+cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' $AGI_EXP_HOME/../variables/ ${user}@${host}:~/agief-project/variables --exclude={\"*.git/*\"}"
 echo $cmd
 eval $cmd
 status=$?

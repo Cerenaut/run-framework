@@ -114,9 +114,14 @@ python run-framework.py --step_remote simple --exps_file experiments-phase1.json
 
 ### run experiment without upload on a remote (already running) machine (in this case, incbox)
 ```
+# incbox remote-network
 python run-framework.py --step_remote simple --exps_file experiments-phase1.json --step_sync --step_compute --step_export_compute --user incubator --host box.x.agi.io --port 8491 --ssh_keypath ~/.ssh/inc-box --remote_variables_file /home/incubator/agief-project/variables/variables-incbox.sh
 
+# incbox local-network
 python run-framework.py --step_remote simple --exps_file experiments-phase1.json --step_sync --step_compute --step_export_compute --user incubator --host 192.168.1.100 --port 8491 --ssh_keypath ~/.ssh/inc-box --remote_variables_file /home/incubator/agief-project/variables/variables-incbox.sh
+
+# minsky
+python run-framework.py --step_remote simple --exps_file experiments-phase1.json --step_sync --step_compute --step_export_compute --user incubator --host box.x.agi.io --ssh_port 9412 --port 8491 --ssh_keypath ~/.ssh/inc-box --remote_variables_file /home/incubator/agief-project/variables/variables-incbox.sh
 ```
 
 

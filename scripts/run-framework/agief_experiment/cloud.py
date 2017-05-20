@@ -47,7 +47,7 @@ class Cloud:
     def remote_docker_launch_compute(self, remote):
         """ Assumes there exists a private key for the given ec2 instance, at keypath """
 
-        print "\n....... Use remote-run.sh to launch compute node in a docker container on a remote host."
+        print ("\n....... Use remote-run.sh to launch compute node in a docker container on a remote host.")
 
         cmd = "../remote/remote-run.sh " + remote.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
@@ -55,7 +55,7 @@ class Cloud:
     def ecs_run_task(self, task_name):
         """ Run task 'task_name' and return the Task ARN """
 
-        print "\n....... Running task on ecs "
+        print ("\n....... Running task on ecs ")
         client = boto3.client('ecs')
         response = client.run_task(
             cluster=self.cluster,
@@ -65,7 +65,7 @@ class Cloud:
         )
 
         if self.log:
-            print "self.log: ", response
+            print "LOG: ", response
 
         length = len(response['failures'])
         if length > 0:
@@ -76,7 +76,7 @@ class Cloud:
             exit(1)
 
         if len(response['tasks']) <= 0:
-            print "ERROR: could not retrieve task arn when initiating task on AWS - something has gone wrong."
+            print ("ERROR: could not retrieve task arn when initiating task on AWS - something has gone wrong.")
             exit(1)
 
         task_arn = response['tasks'][0]['taskArn']
@@ -84,7 +84,7 @@ class Cloud:
 
     def ecs_stop_task(self, task_arn):
 
-        print "\n....... Stopping task on ecs "
+        print ("\n....... Stopping task on ecs ")
         client = boto3.client('ecs')
 
         response = client.stop_task(
@@ -94,7 +94,7 @@ class Cloud:
         )
 
         if self.log:
-            print "self.log: ", response
+            print "LOG: ", response
 
     def ec2_start_from_instanceid(self, instance_id):
         """
@@ -102,13 +102,13 @@ class Cloud:
         :return: the instance AWS public and private ip addresses
         """
         
-        print "\n....... Starting ec2 (instance id " + instance_id + ")"
+        print ("\n....... Starting ec2 (instance id " + instance_id + ")")
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
         response = instance.start()
 
         if self.log:
-            print "self.log: Start response: ", response
+            print "LOG: Start response: ", response
 
         instance_id = instance.instance_id
 
@@ -123,7 +123,7 @@ class Cloud:
         :return: ip addresses: public and private, and instance id
         """
 
-        print "\n....... Launching ec2 from AMI (AMI id " + ami_id + ", with minimum " + str(min_ram) + "GB RAM)"
+        print ("\n....... Launching ec2 from AMI (AMI id " + ami_id + ", with minimum " + str(min_ram) + "GB RAM)")
 
         instance_type = None      # minimum size, 15GB on machine, leaves 13GB for compute
         ram_allocated = 8
@@ -137,10 +137,10 @@ class Cloud:
             instance_type = 'r3.xlarge'     # 30.5
             ram_allocated = 30.5
         else:
-            print "ERROR: cannot create an ec2 instance with that much RAM"
+            print("ERROR: cannot create an ec2 instance with that much RAM")
             exit(1)
 
-        print "\n............. RAM to be allocated: " + str(ram_allocated) + " GB RAM"
+        print ("\n............. RAM to be allocated: " + str(ram_allocated) + " GB RAM")
 
         ec2 = boto3.resource('ec2')
         subnet = ec2.Subnet(self.subnet_id)
