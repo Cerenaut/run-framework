@@ -12,15 +12,12 @@ from agief_experiment.experiment import Experiment
 
 
 class Compute:
-
     def __init__(self,
                  host_node,
-                 port=8491,
-                 log=False):
+                 port=8491):
 
         """ If remote_node is unspecified, then assumes use of a local Compute node """
 
-        self.log = log
         self.port = port
         self.host_node = host_node
 
@@ -34,10 +31,9 @@ class Compute:
         param_dic = {'entity': entity_name}
         r = requests.get(self.base_url() + '/config', params=param_dic)
 
-        if self.log:
-            print "LOG: Get config: /config with params " + json.dumps(param_dic) + ", response = ", r
-            print "  LOG: response text = ", r.text
-            print "  LOG: url: ", r.url
+        logging.info("LOG: Get config: /config with params " + json.dumps(param_dic) + ", response = ", r)
+        logging.info("  LOG: response text = ", r.text)
+        logging.info("  LOG: url: ", r.url)
 
         config = r.json()
         return config
@@ -61,7 +57,6 @@ class Compute:
               "." + param_path + " = " + str(value)
 
         def print_age(idx, age_str):
-            # if not self.log:
             #     utils.restart_line()
             print "Try = [%d]%s" % (idx, age_str)  # add a comma at the end to remove newline
 
@@ -91,9 +86,8 @@ class Compute:
                     age = dpath.util.get(config, 'value.age', '.')
                     parameter = dpath.util.get(config, 'value.' + param_path, '.')
                     if parameter == value:
-                        if self.log:
-                            print "LOG: ... parameter: " + entity_name + "." + param_path + ", has achieved value: " + \
-                                  str(value) + "."
+
+                        logging.info("LOG: ... parameter: " + entity_name + "." + param_path + ", has achieved value: " + str(value) + ".")
                         break
             except KeyError:
                 print "KeyError Exception"
@@ -108,7 +102,7 @@ class Compute:
 
         # successfully reached value
         print_age(i, age_string)
-        print "   -> success, parameter reached value" + age_string
+        print("   -> success, parameter reached value" + age_string)
 
     def import_experiment(self, entity_filepath=None, data_filepaths=None):
         """setup the running instance of AGIEF with the input files"""
@@ -116,17 +110,17 @@ class Compute:
         is_entity_file = entity_filepath is not None
         is_data_files = data_filepaths is not None or len(data_filepaths) != 0
 
-        print "\n....... Import experiment"
+        print("\n....... Import experiment")
 
         if not is_entity_file and not is_data_files:
-            print "        WARNING: no input files specified (that may be intentional)"
+            print("        WARNING: no input files specified (that may be intentional)")
             return
 
-        print "     Input files: "
+        print("     Input files: ")
         if is_entity_file:
-            print "        Entities:" + entity_filepath
+            print("        Entities:" + entity_filepath)
         if is_data_files:
-            print "        Data: " + json.dumps(data_filepaths)
+            print("        Data: " + json.dumps(data_filepaths))
 
         if is_entity_file:
             if not os.path.isfile(entity_filepath):
@@ -135,11 +129,11 @@ class Compute:
             with open(entity_filepath, 'rb') as entity_data_file:
                 files = {'entity-file': entity_data_file}
                 response = requests.post(self.base_url() + '/import', files=files)
-                if self.log:
-                    print "LOG: Import entity file, response = ", response
-                    print "  LOG: response text = ", response.text
-                    print "  LOG: url: ", response.url
-                    print "  LOG: post body = ", files
+
+                logging.info("LOG: Import entity file, response = ", response)
+                logging.info("  LOG: response text = ", response.text)
+                logging.info("  LOG: url: ", response.url)
+                logging.info("  LOG: post body = ", files)
 
         if is_data_files:
             for data_filepath in data_filepaths:
@@ -149,11 +143,11 @@ class Compute:
                 with open(data_filepath, 'rb') as data_data_file:
                     files = {'data-file': data_data_file}
                     response = requests.post(self.base_url() + '/import', files=files)
-                    if self.log:
-                        print "LOG: Import data file, response = ", response
-                        print "  LOG: response text = ", response.text
-                        print "  LOG: url: ", response.url
-                        print "  LOG: post body = ", files
+
+                    logging.info("LOG: Import data file, response = ", response)
+                    logging.info("  LOG: response text = ", response.text)
+                    logging.info("  LOG: url: ", response.url)
+                    logging.info("  LOG: post body = ", files)
 
     def import_compute_experiment(self, filepaths, is_data):
         """
@@ -174,10 +168,10 @@ class Compute:
         is_data_files = filepaths is not None or len(filepaths) != 0
 
         if is_data_files:
-            print "     Input files: "
-            print "      Data: " + json.dumps(filepaths)
+            print("     Input files: ")
+            print("      Data: " + json.dumps(filepaths))
         else:
-            print "      No files to import"
+            print("      No files to import")
             return
 
         for filepath in filepaths:
@@ -185,23 +179,25 @@ class Compute:
             response = requests.get(self.base_url() + '/import-local', params=payload)
 
             if response.status_code == 400:
-                logging.error("Could not ")
-                # TODO: throw exception if it can be caught and handled
+                msg = "Compute error response from /import-local - import experiment from Data files on Compute"
+                raise Exception(msg)
 
-            if self.log:
-                print "LOG: Import data file, response = ", response
-                print "  LOG: response text = ", response.text
-                print "  LOG: url: ", response.url
+            logging.info("LOG: Import data file, response = ", response)
+            logging.info("  LOG: response text = ", response.text)
+            logging.info("  LOG: url: ", response.url)
 
     def run_experiment(self, experiment_entity):
 
-        print "\n....... Run experiment"
+        print("\n....... Run experiment")
 
         payload = {'entity': experiment_entity, 'event': 'update'}
         response = requests.get(self.base_url() + '/update', params=payload)
-        # TODO: check the response? what happens on failure?
-        if self.log:
-            print "LOG: Start experiment, response = ", response
+
+        if response.status_code == 400:
+            msg = "Compute error response from /update"
+            raise Exception(msg)
+
+        logging.info("Start experiment, response = ", response)
 
         # wait for the task to finish (poll API for 'Terminated' config param)
         self.wait_till_param(experiment_entity, 'terminated', True)
@@ -226,16 +222,16 @@ class Compute:
         response = requests.get(self.base_url() + '/export', params=payload)
 
         if response.status_code == 400:
-            logging.error("Could not export type '%s' for the entity tree with root node '%s'", export_type, root_entity)
+            logging.error("Could not export type '%s' for the entity tree with root node '%s'", export_type,
+                          root_entity)
             return
 
         if is_compute_save:
-            print "Saved file response: ", response.text
+            print("Saved file response: ", response.text)
 
-        if self.log:
-            # print "Exported entity file, response text = ", response.text
-            print "  LOG: response = ", response
-            print "  LOG: response url = ", response.url
+        # print "Exported entity file, response text = ", response.text
+        logging.info("  LOG: response = ", response)
+        logging.info("  LOG: response url = ", response.url)
 
         if not is_compute_save:
             # write back to file
@@ -250,9 +246,8 @@ class Compute:
         that consists of entity graph and the data
         """
 
-        print "\n....... Export Experiment"
-        if self.log:
-            print "Exporting data for root entity: " + root_entity
+        print("\n....... Export Experiment")
+        logging.info("Exporting data for root entity: %s" % root_entity)
 
         self.export_root_entity(entity_filepath, root_entity, 'entity', is_export_compute)
         self.export_root_entity(data_filepath, root_entity, 'data', is_export_compute)
@@ -278,14 +273,13 @@ class Compute:
             else:
                 break
 
-        print "\n  - framework is up, running version: " + version
+        print("\n  - framework is up, running version: " + version)
 
     def terminate(self):
-        print "\n...... Terminate framework"
+        print("\n...... Terminate framework")
         response = requests.get(self.base_url() + '/stop')
 
-        if self.log:
-            print "LOG: response text = ", response.text
+        logging.info("LOG: response text = ", response.text)
 
     def set_parameter_db(self, entity_name, param_path, value):
         """
@@ -295,10 +289,10 @@ class Compute:
 
         payload = {'entity': entity_name, 'path': param_path, 'value': value}
         response = requests.post(self.base_url() + '/config', params=payload)
-        if self.log:
-            print "LOG: set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path + ", value = "\
-                  + value
-            print "LOG: response = ", response
+
+        logging.info("LOG: set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path +
+                     ', value = ' + value)
+        logging.info("LOG: response = ", response)
 
     @staticmethod
     def set_parameter_inputfile(entity_filepath, entity_name, param_path, value):
@@ -371,8 +365,7 @@ class Compute:
         version = None
         try:
             response = requests.get(self.base_url() + '/version')
-            if self.log:
-                print "LOG: response = ", response
+            logging.info("response = ", response)
 
             response_json = response.json()
             if 'version' in response_json:
@@ -382,7 +375,7 @@ class Compute:
             version = None
 
             if not is_suppress_console_output:
-                print "Error connecting to agief to retrieve the version."
+                print("Error connecting to agief to retrieve the version.")
 
         return version
 
@@ -422,16 +415,16 @@ class Compute:
             print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
 
             if main_class:
-                cmd = "%s node.properties %s %s" % (experiment.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh"),
-                                                    main_class,
-                                                    Experiment.TEMPLATE_PREFIX)
+                cmd = "%s node.properties %s %s" % (
+                experiment.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh"),
+                main_class,
+                Experiment.TEMPLATE_PREFIX)
             elif no_local_docker:
                 cmd = experiment.experiment_utils.agi_binpath("/node_coordinator/run.sh")
             else:
                 cmd = experiment.experiment_utils.agi_binpath("/node_coordinator/run-in-docker.sh -d")
 
-            if self.log:
-                print("Running: " + cmd)
+            logging.info("Running: " + cmd)
 
             # we can't hold on to the stdout and stderr streams for logging, because it will hang on this line
             # instead, logging to a file

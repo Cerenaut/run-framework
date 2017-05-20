@@ -174,7 +174,7 @@ def main():
 
     # 1) Generate input files
     if args.main_class:
-        compute_node = Compute(host_node=HostNode(), port=args.port, log=args.logging)
+        compute_node = Compute(host_node=HostNode(), port=args.port)
         compute_node.launch(experiment, main_class=args.main_class, no_local_docker=args.no_docker)
         experiment.generate_input_files_locally(compute_node)
         compute_node.terminate()
@@ -193,7 +193,7 @@ def main():
     else:
         host_node = HostNode(args.host, args.user)
 
-    compute_node = Compute(host_node, args.port, args.logging)
+    compute_node = Compute(host_node, args.port)
 
     check_args(args, compute_node)
 
