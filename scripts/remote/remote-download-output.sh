@@ -32,6 +32,9 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 	download_folder=$AGI_RUN_HOME/output/$prefix
 	echo "Calculated download-folder = " $download_folder
 
+	# create folder if it doesn't exist
+	mkdir -p $download_folder
+
 	cmd="aws s3 cp s3://agief-project/experiment-output/$prefix/output $download_folder --recursive"
 
 	echo $cmd >> remote-download-cmd.log
