@@ -165,7 +165,7 @@ class Compute:
         :return:
         """
 
-        print "\n....... Import Data on Compute node into Experiment "
+        print("\n....... Import Data on Compute node into Experiment ")
 
         import_type = 'entity'
         if is_data:
@@ -183,6 +183,10 @@ class Compute:
         for filepath in filepaths:
             payload = {'type': import_type, 'file': filepath}
             response = requests.get(self.base_url() + '/import-local', params=payload)
+
+            if response.status_code == 400:
+                logging.error("Could not ")
+                # TODO: throw exception if it can be caught and handled
 
             if self.log:
                 print "LOG: Import data file, response = ", response
