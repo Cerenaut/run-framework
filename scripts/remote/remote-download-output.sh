@@ -33,8 +33,12 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 	echo "Calculated download-folder = " $download_folder
 
 	cmd="aws s3 cp s3://agief-project/experiment-output/$prefix/output $download_folder --recursive"
+
 	echo $cmd >> remote-download-cmd.log
 	eval $cmd >> remote-download-stdout.log 2>> remote-download-stderr.log
+
+	matching_files=( $(find . -maxdepth 1 -name '*.zip') )
+	unzip ${matching_files[0]} -d $download_folder
 ENDSSH
 
 status=$?
