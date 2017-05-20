@@ -40,7 +40,7 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 	# matching_files=( $(find . -maxdepth 1 -name '*.zip') )
 	# unzip ${matching_files[0]} -d $download_folder
 	
-	if [ `uname` == 'Darwin']; then
+	if [ `uname` == 'Darwin' ]; then
 		unzip data.zip -d $download_folder
 	else
 		unzip data -d $download_folder
