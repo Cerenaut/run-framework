@@ -53,12 +53,12 @@ class Compute:
         i = 0
         connection_error_count = 0
 
-        print "... Waiting for param to achieve value (try every " + str(wait_period) + "s): " + entity_name + \
-              "." + param_path + " = " + str(value)
+        print("... Waiting for param to achieve value (try every " + str(wait_period) + "s): " + entity_name +
+              "." + param_path + " = " + str(value))
 
         def print_age(idx, age_str):
             #     utils.restart_line()
-            print "Try = [%d]%s" % (idx, age_str)  # add a comma at the end to remove newline
+            print("Try = [%d]%s" % (idx, age_str))  # add a comma at the end to remove newline
 
         while True:
             i += 1
@@ -90,13 +90,13 @@ class Compute:
                         logging.info("LOG: ... parameter: " + entity_name + "." + param_path + ", has achieved value: " + str(value) + ".")
                         break
             except KeyError:
-                print "KeyError Exception"
-                print "WARNING: trying to access a keypath in config object, that DOES NOT exist!"
+                logging.error("KeyError Exception")
+                logging.error("WARNING: trying to access a keypath in config object, that DOES NOT exist!")
             except requests.exceptions.ConnectionError:
-                print "Oops, ConnectionError exception"
+                logging.error("Oops, ConnectionError exception")
                 connection_error_count += 1
             except requests.exceptions.RequestException:
-                print "Oops, request exception"
+                logging.error("Oops, request exception")
 
             time.sleep(wait_period)  # sleep for n seconds
 
@@ -229,9 +229,9 @@ class Compute:
         if is_compute_save:
             print("Saved file response: ", response.text)
 
-        # print "Exported entity file, response text = ", response.text
-        logging.info("  LOG: response = ", response)
-        logging.info("  LOG: response url = ", response.url)
+        logging.info("  Response = ", response)
+        logging.info("  Response text = ", response.text)
+        logging.info("  Response url = ", response.url)
 
         if not is_compute_save:
             # write back to file
@@ -255,8 +255,8 @@ class Compute:
     def _wait_up(self):
         wait_period = 3
 
-        print "\n....... Wait till framework has started (try every " + str(wait_period) + " seconds),   at = " \
-              + self.base_url()
+        print("\n....... Wait till framework has started (try every {} seconds),   at = {}".format(str(wait_period),
+                                                                                                   self.base_url()))
 
         i = 0
         while True:
@@ -268,7 +268,7 @@ class Compute:
 
             if version is None:
                 # utils.restart_line()
-                print "Try = [%d / 120]" % i  # add comma at the end to remove newline
+                print("Try = [%d / 120]" % i)  # add comma at the end to remove newline
                 time.sleep(wait_period)
             else:
                 break
@@ -306,12 +306,9 @@ class Compute:
         :return:
         """
 
-        log_debug = False
-
         set_param = entity_name + "." + param_path + " = " + str(value)
 
-        if log_debug:
-            print "LOG: in file: " + entity_filepath
+        logging.info("in file: " + entity_filepath)
 
         # open the entity input file
         with open(entity_filepath) as data_file:
@@ -332,10 +329,9 @@ class Compute:
             msg += "\tEntity name: " + entity_name
             raise Exception(msg)
 
-        config = utils.get_entityfile_config(entity, log_debug)
+        config = utils.get_entityfile_config(entity)
 
-        if log_debug:
-            print "LOG: config(t)   = " + json.dumps(config, indent=4)
+        logging.info("config(t)   = " + json.dumps(config, indent=4))
 
         changed = dpath.util.set(config, param_path, value, '.')
 
@@ -345,10 +341,9 @@ class Compute:
             msg += "\tParam_path = " + param_path
             raise Exception(msg)
 
-        if log_debug:
-            print "LOG: config(t+1) = " + json.dumps(config, indent=4)
+        logging.info("config(t+1) = " + json.dumps(config, indent=4))
 
-        utils.set_entityfile_config(entity, config, log_debug)
+        utils.set_entityfile_config(entity, config)
 
         # write back to file
         with open(entity_filepath, 'w') as data_file:

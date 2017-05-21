@@ -44,9 +44,9 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 	# unzip ${matching_files[0]} -d $download_folder
 	
 	if [ `uname` == 'Darwin' ]; then
-		unzip $download_folder/data.zip -o -d $download_folder
+		unzip -o $download_folder/data.zip -d $download_folder
 	else
-		unzip $download_folder/data -o -d $download_folder
+		unzip -o $download_folder/data -d $download_folder
 	fi
 ENDSSH
 
