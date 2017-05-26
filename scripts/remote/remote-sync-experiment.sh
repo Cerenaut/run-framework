@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# e.g.  ./remote-sync-experiment.sh 192.168.1.103 ~/.ssh/minsky incubator /home/incubator/agief-project/variables/variables-minsky.sh
+
+
 default="$(dirname $0)/../variables.sh"
 variables_file=${VARIABLES_FILE:-$default}
 echo "Using variables file = $variables_file" 

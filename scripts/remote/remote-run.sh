@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# e.g.  ./remote-run.sh 192.168.1.103 ~/.ssh/minsky incubator /Users/incubator/agief-project/variables/variables-minsky.sh
 
 default="$(dirname $0)/../variables.sh"
 variables_file=${VARIABLES_FILE:-$default}
