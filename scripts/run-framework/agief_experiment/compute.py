@@ -385,6 +385,21 @@ class Compute:
         except subprocess.CalledProcessError:
             pass
 
+    def docker_stop(self, container_id=None):
+        """
+        Stops the last run Docker containter or a specific container by
+
+        :param container_id: Docker container identifier
+        """
+        exit_status = 1
+        try:
+            if not container_id:
+                container_id = self.docker_id()
+            exit_status = subprocess.call(['docker', 'stop', container_id])
+        except subprocess.CalledProcessError:
+            pass
+        return exit_status
+
     def launch(self, experiment, cloud=None, use_ecs=False, ecs_task_name=None, main_class=None, no_local_docker=False):
         """
         Launch Compute remotely if cloud is given and self.remote() is True, or locally otherwise.
@@ -399,7 +414,7 @@ class Compute:
                            relevant demo project defined by the main class.
                            WARNING: In this case, the properties file used is hardcoded to node.properties and the
                            prefix used is Experiment.TEMPLATE_PREFIX.
-        :param no_local_docker: if True, do not use Docker when running locally. 
+        :param no_local_docker: if True, do not use Docker when running locally.
         :return: task ARN if use_ecs is True, None otherwise.
         """
 
