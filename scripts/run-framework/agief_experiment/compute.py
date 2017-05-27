@@ -374,11 +374,22 @@ class Compute:
 
         return version
 
+    @staticmethod
+    def docker_id():
+        """
+        Gets the ID of the last-run Docker container
+        """
+        try:
+            output = subprocess.check_output(['docker', 'ps', '-l', '-q'])
+            return output.rstrip()
+        except subprocess.CalledProcessError:
+            pass
+
     def launch(self, experiment, cloud=None, use_ecs=False, ecs_task_name=None, main_class=None, no_local_docker=False):
         """
         Launch Compute remotely if cloud is given and self.remote() is True, or locally otherwise.
         Hang until Compute is up and running.
-        
+
         :param experiment: an Experiment object.
         :param cloud: a Cloud object (may be None for local runs).
         :param use_ecs: if True, launch on AWS ECS (elastic container service). Assumes that ECS is set up to have the
