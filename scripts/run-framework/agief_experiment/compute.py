@@ -388,6 +388,7 @@ class Compute:
     def docker_stop(self, container_id=None):
         """
         Stops the last run Docker containter or a specific container by
+        providing the container identifier.
 
         :param container_id: Docker container identifier
         """
