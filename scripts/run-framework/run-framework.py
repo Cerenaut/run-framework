@@ -256,14 +256,17 @@ def main():
     except Exception as e:
         failed = True
 
-        # Stop local Docker container
-        if not host_node.remote():
-            utils.docker_stop()
-
         print("ERROR: Something failed running sweeps generally. "
               "If the error occurred in a specific parameter set it should have been caught there. "
               "Attempt to shut down infrastructure if running, and exit.")
         print(e)
+
+        # Shutdown the Docker container
+        print("Attempting to shutdown Docker container...")
+        if host_node.remote() and compute_node.docker_id:
+            utils.remote_run(host_node, 'docker stop ' + compute_node.docker_id, True)
+        elif not host_node.remote():
+            utils.docker_stop()
 
     # 6) Shutdown framework
     if args.shutdown:
