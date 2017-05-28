@@ -273,10 +273,6 @@ def remote_run(host_node, cmd, verbose=False):
     :param commands: The commands to be executed
     :param verbose: Set to True to display the stdout
     """
-
-    # The last command MUST be 'exit' in order to properly exit the shell
-    cmd += 'exit'
-
     if verbose:
         print "remote_run, running cmd = " + cmd
 
@@ -292,9 +288,16 @@ def remote_run(host_node, cmd, verbose=False):
     stdin = channel.makefile('wb')
     stdout = channel.makefile('rb')
 
+    # The last command MUST be 'exit' to avoiding hanging
+    cmd = '''
+        {0}
+        exit
+    '''.format(cmd)
+
     # Execute command and the capture output
     stdin.write(cmd)
     output = stdout.readlines()
+    print output
 
     if verbose:
         print "Stdout: " + ''.join(output)
