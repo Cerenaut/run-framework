@@ -297,7 +297,6 @@ def remote_run(host_node, cmd, verbose=False):
     # Execute command and the capture output
     stdin.write(cmd)
     output = stdout.readlines()
-    print output
 
     if verbose:
         print "Stdout: " + ''.join(output)
