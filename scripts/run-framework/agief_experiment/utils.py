@@ -1,4 +1,3 @@
-import re
 import json
 import subprocess
 import os
@@ -269,12 +268,15 @@ def docker_stop(container_id=None):
 def remote_run(host_node, cmd, verbose=False):
     """
     Runs a set of commands on a remote machine over SSH using paramiko.
-    Note: the last command MUST be 'exit' in order to properly exit the shell
 
     :param host_node: HostNode object
     :param commands: The commands to be executed
     :param verbose: Set to True to display the stdout
     """
+
+    # The last command MUST be 'exit' in order to properly exit the shell
+    cmd += 'exit'
+
     if verbose:
         print "remote_run, running cmd = " + cmd
 
@@ -302,11 +304,3 @@ def remote_run(host_node, cmd, verbose=False):
     ssh.close()
 
     return output
-
-def validate_uuid(value):
-    """
-    Return whether or not given value is a valid UUID.
-    :param value: UUID string to validate
-    """
-    pattern = re.compile(r'^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$')
-    return pattern.match(value)
