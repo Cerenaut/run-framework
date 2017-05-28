@@ -246,7 +246,7 @@ def main():
 
         # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
         if (LaunchMode.from_args(args) is LaunchMode.per_session) and args.launch_compute:
-        compute_node.launch(experiment, cloud=cloud, main_class=args.main_class, no_local_docker=args.no_docker)
+            compute_node.launch(experiment, cloud=cloud, main_class=args.main_class, no_local_docker=args.no_docker)
 
         # 5) Run experiments (includes per experiment 'export results' and 'upload results')
         if args.exps_file:
