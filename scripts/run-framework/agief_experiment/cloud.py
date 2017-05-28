@@ -54,7 +54,6 @@ class Cloud:
         source {0}
         cd $AGI_HOME/bin/node_coordinator
         ./run-in-docker.sh -d
-        exit
         '''.format(host_node.remote_variables_file)
 
         return utils.remote_run(host_node, commands, verbose=self.log)
