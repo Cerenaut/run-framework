@@ -265,7 +265,7 @@ def docker_stop(container_id=None):
         pass
     return exit_status
 
-def remote_run(host_node, commands, verbose=False):
+def remote_run(host_node, cmd, verbose=False):
     """
     Runs a set of commands on a remote machine over SSH using paramiko.
     Note: the last command MUST be 'exit' in order to properly exit the shell
@@ -274,24 +274,27 @@ def remote_run(host_node, commands, verbose=False):
     :param commands: The commands to be executed
     :param verbose: Set to True to display the stdout
     """
+    if verbose:
+        print "remote_run, running cmd = " + cmd
+
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     # Connect to remote machine using HostNode details
     ssh.connect(host_node.host, username=host_node.user,
-                key_filename=host_node.keypath, port=host_node.ssh_port)
+                key_filename=host_node.keypath, port=int(host_node.ssh_port))
 
     # Setup shell with input/output
     channel = ssh.invoke_shell()
     stdin = channel.makefile('wb')
     stdout = channel.makefile('rb')
 
-    # Execute commands and the capture output
-    stdin.write(commands)
+    # Execute command and the capture output
+    stdin.write(cmd)
     output = stdout.readlines()
 
     if verbose:
-        print "Stdout: " + output
+        print "Stdout: " + str(output)
 
     stdout.close()
     stdin.close()
