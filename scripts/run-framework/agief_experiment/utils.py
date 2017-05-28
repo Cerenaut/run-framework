@@ -1,3 +1,4 @@
+import re
 import json
 import subprocess
 import os
@@ -294,10 +295,18 @@ def remote_run(host_node, cmd, verbose=False):
     output = stdout.readlines()
 
     if verbose:
-        print "Stdout: " + str(output)
+        print "Stdout: " + ''.join(output)
 
     stdout.close()
     stdin.close()
     ssh.close()
 
     return output
+
+def validate_uuid(value):
+    """
+    Return whether or not given value is a valid UUID.
+    :param value: UUID string to validate
+    """
+    pattern = re.compile(r'^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$')
+    return pattern.match(value)
