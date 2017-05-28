@@ -408,8 +408,8 @@ class Compute:
                 print("launching Compute on remote machine")
                 output = cloud.remote_docker_launch_compute(self.host_node)
                 if output:
-                    docker_uuid = output[-3].rstrip()
-                    self.docker_id = docker_uuid if utils.validate_uuid(docker_uuid) else False
+                    self.docker_id = output[-4].rstrip()
+                    print("Docker Container ID: " + self.docker_id)
         else:
             print("launching Compute locally")
             print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
