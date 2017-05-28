@@ -374,11 +374,38 @@ class Compute:
 
         return version
 
+    @staticmethod
+    def docker_id():
+        """
+        Gets the ID of the last-run Docker container
+        """
+        try:
+            output = subprocess.check_output(['docker', 'ps', '-l', '-q'])
+            return output.rstrip()
+        except subprocess.CalledProcessError:
+            pass
+
+    def docker_stop(self, container_id=None):
+        """
+        Stops the last run Docker containter or a specific container by
+        providing the container identifier.
+
+        :param container_id: Docker container identifier
+        """
+        exit_status = 1
+        try:
+            if not container_id:
+                container_id = self.docker_id()
+            exit_status = subprocess.call(['docker', 'stop', container_id])
+        except subprocess.CalledProcessError:
+            pass
+        return exit_status
+
     def launch(self, experiment, cloud=None, use_ecs=False, ecs_task_name=None, main_class=None, no_local_docker=False):
         """
         Launch Compute remotely if cloud is given and self.remote() is True, or locally otherwise.
         Hang until Compute is up and running.
-        
+
         :param experiment: an Experiment object.
         :param cloud: a Cloud object (may be None for local runs).
         :param use_ecs: if True, launch on AWS ECS (elastic container service). Assumes that ECS is set up to have the
@@ -388,7 +415,7 @@ class Compute:
                            relevant demo project defined by the main class.
                            WARNING: In this case, the properties file used is hardcoded to node.properties and the
                            prefix used is Experiment.TEMPLATE_PREFIX.
-        :param no_local_docker: if True, do not use Docker when running locally. 
+        :param no_local_docker: if True, do not use Docker when running locally.
         :return: task ARN if use_ecs is True, None otherwise.
         """
 
