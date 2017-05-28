@@ -397,12 +397,13 @@ class Compute:
         task_arn = None
         if cloud and self.remote():
             if use_ecs:
+                # Using ECS - the elastic container service
                 print("launching Compute on AWS-ECS")
                 if not ecs_task_name:
                     raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
                 task_arn = cloud.ecs_run_task(ecs_task_name)
             else:
-                # Launch Compute Node on AWS. Assumes there is a running ec2 instance running Docker
+                # Launch Compute Node on remote running machine (whether that is ec2 or one of our machines)
                 print("launching Compute on remote machine")
                 cloud.remote_docker_launch_compute(self.host_node)
         else:
