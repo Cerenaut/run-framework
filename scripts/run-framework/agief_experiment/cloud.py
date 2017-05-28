@@ -50,14 +50,14 @@ class Cloud:
         print ("\n....... Launch compute node in a docker container on a remote host.")
 
         commands = '''
-            export VARIABLES_FILE={0}
-            source {0}
-            cd $AGI_HOME/bin/node_coordinator
-            ./run-in-docker.sh -d
-            exit
+        export VARIABLES_FILE={0}
+        source {0}
+        cd $AGI_HOME/bin/node_coordinator
+        ./run-in-docker.sh -d
+        exit
         '''.format(host_node.remote_variables_file)
 
-        utils.remote_run(host_node, commands, verbose=self.log)
+        return utils.remote_run(host_node, commands, verbose=self.log)
 
     def ecs_run_task(self, task_name):
         """ Run task 'task_name' and return the Task ARN """
