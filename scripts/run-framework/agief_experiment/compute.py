@@ -20,6 +20,7 @@ class Compute:
 
         self.port = port
         self.host_node = host_node
+        self.docker_id = ''
 
     def remote(self):
         return self.host_node.remote()
@@ -405,7 +406,10 @@ class Compute:
             else:
                 # Launch Compute Node on remote running machine (whether that is ec2 or one of our machines)
                 print("launching Compute on remote machine")
-                cloud.remote_docker_launch_compute(self.host_node)
+                output = cloud.remote_docker_launch_compute(self.host_node)
+                if output:
+                    docker_uuid = output[-3].rstrip()
+                    self.docker_id = docker_uuid if utils.validate_uuid(docker_uuid) else False
         else:
             print("launching Compute locally")
             print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
