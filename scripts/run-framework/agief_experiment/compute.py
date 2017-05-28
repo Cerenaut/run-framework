@@ -374,33 +374,6 @@ class Compute:
 
         return version
 
-    @staticmethod
-    def docker_id():
-        """
-        Gets the ID of the last-run Docker container
-        """
-        try:
-            output = subprocess.check_output(['docker', 'ps', '-l', '-q'])
-            return output.rstrip()
-        except subprocess.CalledProcessError:
-            pass
-
-    def docker_stop(self, container_id=None):
-        """
-        Stops the last run Docker containter or a specific container by
-        providing the container identifier.
-
-        :param container_id: Docker container identifier
-        """
-        exit_status = 1
-        try:
-            if not container_id:
-                container_id = self.docker_id()
-            exit_status = subprocess.call(['docker', 'stop', container_id])
-        except subprocess.CalledProcessError:
-            pass
-        return exit_status
-
     def launch(self, experiment, cloud=None, use_ecs=False, ecs_task_name=None, main_class=None, no_local_docker=False):
         """
         Launch Compute remotely if cloud is given and self.remote() is True, or locally otherwise.
