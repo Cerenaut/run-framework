@@ -263,8 +263,8 @@ def main():
 
         # Shutdown the Docker container
         print("Attempting to shutdown Docker container...")
-        if host_node.remote() and compute_node.docker_id:
-            utils.remote_run(host_node, 'docker stop ' + compute_node.docker_id, True)
+        if host_node.remote() and compute_node.container_id:
+            utils.remote_run(host_node, 'docker stop ' + compute_node.container_id, True)
         elif not host_node.remote():
             utils.docker_stop()
 

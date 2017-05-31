@@ -20,7 +20,7 @@ class Compute:
 
         self.port = port
         self.host_node = host_node
-        self.docker_id = ''
+        self.container_id = ''
 
     def remote(self):
         return self.host_node.remote()
@@ -408,8 +408,8 @@ class Compute:
                 print("launching Compute on remote machine")
                 output = cloud.remote_docker_launch_compute(self.host_node)
                 if output:
-                    self.docker_id = output[-4].rstrip()
-                    print("Docker Container ID: " + self.docker_id)
+                    self.container_id = output[-4].rstrip()
+                    print("Docker Container ID: " + self.container_id)
         else:
             print("launching Compute locally")
             print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
