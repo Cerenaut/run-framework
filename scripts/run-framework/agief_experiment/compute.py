@@ -87,8 +87,9 @@ class Compute:
                     age = dpath.util.get(config, 'value.age', '.')
                     parameter = dpath.util.get(config, 'value.' + param_path, '.')
                     if parameter == value:
-
-                        logging.info("LOG: ... parameter: " + entity_name + "." + param_path + ", has achieved value: " + str(value) + ".")
+                        logging.info(
+                            "LOG: ... parameter: " + entity_name + "." + param_path + ", has achieved value: " + str(
+                                value) + ".")
                         break
             except KeyError:
                 logging.error("KeyError Exception")
@@ -280,7 +281,7 @@ class Compute:
         print("\n...... Terminate framework")
         response = requests.get(self.base_url() + '/stop')
 
-        logging.info("LOG: response text = ", response.text)
+        logging.info("Response text = ", response.text)
 
     def set_parameter_db(self, entity_name, param_path, value):
         """
@@ -416,9 +417,9 @@ class Compute:
 
             if main_class:
                 cmd = "%s node.properties %s %s" % (
-                experiment.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh"),
-                main_class,
-                Experiment.TEMPLATE_PREFIX)
+                    experiment.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh"),
+                    main_class,
+                    Experiment.TEMPLATE_PREFIX)
             elif no_local_docker:
                 cmd = experiment.experiment_utils.agi_binpath("/node_coordinator/run.sh")
             else:

@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import logging
 from datetime import datetime
 
 from agief_experiment.host_node import HostNode
@@ -256,10 +257,13 @@ def main():
     except Exception as e:
         failed = True
 
-        print("ERROR: Something failed running sweeps generally. "
+        logging.error("Something failed running sweeps generally. "
               "If the error occurred in a specific parameter set it should have been caught there. "
               "Attempt to shut down infrastructure if running, and exit.")
-        print(e)
+        logging.error(e)
+
+        # TODO It may be running locally, and NOT in docker, so need to check for this scenario.
+        # TODO see the compute.launch() method for checking for this scenario
 
         # Shutdown the Docker container
         print("Attempting to shutdown Docker container...")

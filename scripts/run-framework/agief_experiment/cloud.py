@@ -71,18 +71,18 @@ class Cloud:
         )
 
         if self.log:
-            print "LOG: ", response
+            print("LOG: ", response)
 
         length = len(response['failures'])
         if length > 0:
-            print "ERROR: could not initiate task on AWS."
-            print "reason = " + response['failures'][0]['reason']
-            print "arn = " + response['failures'][0]['arn']
-            print " ----- exiting -------"
+            logging.error("Could not initiate task on AWS.")
+            logging.error("reason = " + response['failures'][0]['reason'])
+            logging.error("arn = " + response['failures'][0]['arn'])
+            logging.error(" ----- exiting -------")
             exit(1)
 
         if len(response['tasks']) <= 0:
-            print ("ERROR: could not retrieve task arn when initiating task on AWS - something has gone wrong.")
+            logging.error("could not retrieve task arn when initiating task on AWS - something has gone wrong.")
             exit(1)
 
         task_arn = response['tasks'][0]['taskArn']
@@ -100,7 +100,7 @@ class Cloud:
         )
 
         if self.log:
-            print "LOG: ", response
+            print("LOG: ", response)
 
     def ec2_start_from_instanceid(self, instance_id):
         """
@@ -114,7 +114,7 @@ class Cloud:
         response = instance.start()
 
         if self.log:
-            print "LOG: Start response: ", response
+            print("LOG: Start response: ", response)
 
         instance_id = instance.instance_id
 

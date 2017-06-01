@@ -2,6 +2,7 @@ import datetime
 import functools
 import json
 import os
+import logging
 
 
 import dpath
@@ -37,7 +38,7 @@ class Experiment:
 
     def reset_prefix(self):
 
-        print "-------------- RESET_PREFIX -------------"
+        print("-------------- RESET_PREFIX -------------")
 
         use_prefix_file = False
         if use_prefix_file:
@@ -45,8 +46,8 @@ class Experiment:
                                                                                ExperimentUtils.agi_exp_home)
 
             if not os.path.isfile(prefix_filepath) or not os.path.exists(prefix_filepath):
-                print """WARNING ****   no prefix.txt file could be found,
-                      using the default root entity name: 'experiment'"""
+                print("WARNING ****   no prefix.txt file could be found, using the default root entity name: "
+                      "'experiment'")
                 return None
 
             with open(prefix_filepath, 'r') as myfile:
@@ -68,7 +69,7 @@ class Experiment:
     def persist_prefix_history(self, filename="prefixes.txt"):
         """ Save prefix history to a file """
 
-        print "\n....... Save prefix history to " + filename
+        print("\n....... Save prefix history to " + filename)
         with open(filename, "w") as prefix_file:
             prefix_file.write(self.prefixes_history)
 
@@ -207,8 +208,8 @@ class Experiment:
                                             True)
         except Exception as e:
             failed = True
-            print("ERROR: Experiment failed for some reason, shut down Compute and continue.")
-            print(e)
+            logging.error("Experiment failed for some reason, shut down Compute and continue.")
+            logging.error(e)
 
         if (self.launch_mode is LaunchMode.per_experiment) and args.launch_compute:
             self.shutdown_compute(compute_node, cloud, args, task_arn)
@@ -314,9 +315,7 @@ class Experiment:
         for exp_i in filedata['experiments']:
             import_files = exp_i['import-files']  # import files dictionary
 
-            if args.logging:
-                print("LOG: Import Files Dictionary = ")
-                print("LOG: ", json.dumps(import_files, indent=4))
+            logging.info("Import Files Dictionary = \n", json.dumps(import_files, indent=4))
 
             base_entity_filename = import_files['file-entities']
             base_data_filenames = import_files['file-data']
@@ -384,15 +383,23 @@ class Experiment:
 
     @staticmethod
     def shutdown_compute(compute_node, cloud, args, task_arn):
-        """ Close compute: terminate and then if running on AWS, stop the task. """
+        """ Close compute: terminate and then if running on AWS ECS, stop the task. """
 
         print("\n....... Shutdown System")
 
         compute_node.terminate()
 
-        # note that task may be set up to terminate once compute has been terminated
+        # note that container should be set up to terminate once compute has been terminated
+        # however, it doesn't hurt to clean up by making sure that the container is killed
+
+        # if ecs, then stop the task
         if args.remote_type == "aws" and (task_arn is not None):
             cloud.ecs_stop_task(task_arn)
+
+        # if it's remote and docker, then kill container
+        # TODO move this method into Compute (like the launch method)
+        # TODO and kill container explicitly here with the same if for launching equivalent intended scenario
+        # TODO 'if cloud and self.remote():'
 
     def generate_input_files_locally(self, compute_node):
         entity_filepath, data_filepaths = self.experiment_utils.inputfiles_for_generation()
@@ -410,7 +417,7 @@ class Experiment:
         :type compute_node: Compute
         """
 
-        print "\n...... Uploading results to S3"
+        print("\n...... Uploading results to S3")
 
         # upload /input folder (contains input files entity.json, data.json)
         folder_path = self.experiment_utils.inputfile(self.prefix(), "")
