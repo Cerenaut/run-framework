@@ -7,6 +7,7 @@ import fileinput
 import sys
 import time
 import logging
+import paramiko
 
 def restart_line():
     sys.stdout.write('\r')
@@ -237,3 +238,71 @@ def format_timedelta(td):
     minutes = (td.seconds // 60) % 60
 
     return td.days, hours, minutes, td.seconds, td.microseconds
+
+def docker_id():
+    """
+    Gets the ID of the last-run Docker container
+    """
+    try:
+        output = subprocess.check_output(['docker', 'ps', '-l', '-q'])
+        return output.rstrip()
+    except subprocess.CalledProcessError:
+        pass
+
+def docker_stop(container_id=None):
+    """
+    Stops the last run Docker containter or a specific container by
+    providing the container identifier.
+
+    :param container_id: Docker container identifier
+    """
+    exit_status = 1
+    try:
+        if not container_id:
+            container_id = docker_id()
+        exit_status = subprocess.call(['docker', 'stop', container_id])
+    except subprocess.CalledProcessError:
+        pass
+    return exit_status
+
+def remote_run(host_node, cmd, verbose=False):
+    """
+    Runs a set of commands on a remote machine over SSH using paramiko.
+
+    :param host_node: HostNode object
+    :param commands: The commands to be executed
+    :param verbose: Set to True to display the stdout
+    """
+    if verbose:
+        print "remote_run, running cmd = " + cmd
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    # Connect to remote machine using HostNode details
+    ssh.connect(host_node.host, username=host_node.user,
+                key_filename=host_node.keypath, port=int(host_node.ssh_port))
+
+    # Setup shell with input/output
+    channel = ssh.invoke_shell()
+    stdin = channel.makefile('wb')
+    stdout = channel.makefile('rb')
+
+    # The last command MUST be 'exit' to avoiding hanging
+    cmd = '''
+        {0}
+        exit
+    '''.format(cmd)
+
+    # Execute command and the capture output
+    stdin.write(cmd)
+    output = stdout.readlines()
+
+    if verbose:
+        print "Stdout: " + ''.join(output)
+
+    stdout.close()
+    stdin.close()
+    ssh.close()
+
+    return output

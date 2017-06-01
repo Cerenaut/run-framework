@@ -44,13 +44,19 @@ class Cloud:
         cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + host_node.host_key_user_variables()
         utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
 
-    def remote_docker_launch_compute(self, remote):
+    def remote_docker_launch_compute(self, host_node):
         """ Assumes there exists a private key for the given ec2 instance, at keypath """
 
-        print ("\n....... Use remote-run.sh to launch compute node in a docker container on a remote host.")
+        print ("\n....... Launch compute node in a docker container on a remote host.")
 
-        cmd = "../remote/remote-run.sh " + remote.host_key_user_variables()
-        utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
+        commands = '''
+            export VARIABLES_FILE={0}
+            source {0}
+            cd $AGI_HOME/bin/node_coordinator
+            ./run-in-docker.sh -d
+        '''.format(host_node.remote_variables_file)
+
+        return utils.remote_run(host_node, commands, verbose=self.log)
 
     def ecs_run_task(self, task_name):
         """ Run task 'task_name' and return the Task ARN """
