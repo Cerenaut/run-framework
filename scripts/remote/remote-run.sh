@@ -24,7 +24,8 @@ echo "Using user = " $user
 echo "Using remote_variables_file = " $remote_variables_file
 echo "Using port = " $port
 
-ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' VARIABLES_FILE=$remote_variables_file 'bash -s' <<'ENDSSH' 
+ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' VARIABLES_FILE=$remote_variables_file 'bash --login
+ -s' <<'ENDSSH' 
 	export VARIABLES_FILE=$VARIABLES_FILE
 	source $VARIABLES_FILE
 	cd $AGI_HOME/bin/node_coordinator
@@ -44,3 +45,5 @@ fi
 
 exit
 ssh -i ~/.ssh/nextpair.pem ec2-user@52.63.242.158 "bash -c \"export VARIABLES_FILE=\"variables-ec2.sh\" && cd /home/ec2-user/agief-project/agi/bin/node_coordinator && ./run-in-docker.sh -d\""
+
+ssh -i ~/.ssh/inc-box incubator@192.168.1.100 "bash -c \"ls\""

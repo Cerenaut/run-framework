@@ -11,7 +11,6 @@ from agief_experiment.experiment import Experiment
 from agief_experiment.launchmode import LaunchMode
 from agief_experiment import utils
 
-
 help_generic = """
 run-framework.py allows you to run each step of the AGIEF (AGI Experimental Framework), locally and on AWS.
 Each step can be toggled with a parameter prefixed with 'step'. See parameter list for description of parameters.
@@ -258,8 +257,8 @@ def main():
         failed = True
 
         logging.error("Something failed running sweeps generally. "
-              "If the error occurred in a specific parameter set it should have been caught there. "
-              "Attempt to shut down infrastructure if running, and exit.")
+                      "If the error occurred in a specific parameter set it should have been caught there. "
+                      "Attempt to shut down infrastructure if running, and exit.")
         logging.error(e)
 
         # TODO It may be running locally, and NOT in docker, so need to check for this scenario.
@@ -293,6 +292,7 @@ def main():
 
     if failed:
         exit(1)
+
 
 if __name__ == '__main__':
     main()
