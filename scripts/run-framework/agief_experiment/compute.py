@@ -452,6 +452,12 @@ class Compute:
             cloud.ecs_stop_task(task_arn)
 
         # if it's remote and docker, then kill container
-        # TODO move this method into Compute (like the launch method)
-        # TODO and kill container explicitly here with the same if for launching equivalent intended scenario
-        # TODO 'if cloud and self.remote():'
+        if cloud and self.remote():
+            # ensure we have the container id
+            if self.container_id:
+                utils.remote_run(self.host_node, 'docker stop ' + self.container_id, True)
+            else:
+                print("WARNING: Docker did not shut down, could not locate container id")
+        else:
+            # stops local docker
+            utils.docker_stop()
