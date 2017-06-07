@@ -436,3 +436,22 @@ class Compute:
         self._wait_up()
 
         return task_arn
+
+    def shutdown_compute(self, cloud, args, task_arn):
+        """ Close compute: terminate and then if running on AWS ECS, stop the task. """
+
+        print("\n....... Shutdown System")
+
+        self.terminate()
+
+        # note that container should be set up to terminate once compute has been terminated
+        # however, it doesn't hurt to clean up by making sure that the container is killed
+
+        # if ecs, then stop the task
+        if args.remote_type == "aws" and (task_arn is not None):
+            cloud.ecs_stop_task(task_arn)
+
+        # if it's remote and docker, then kill container
+        # TODO move this method into Compute (like the launch method)
+        # TODO and kill container explicitly here with the same if for launching equivalent intended scenario
+        # TODO 'if cloud and self.remote():'
