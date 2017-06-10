@@ -9,6 +9,7 @@ import time
 import logging
 import paramiko
 
+
 def restart_line():
     sys.stdout.write('\r')
     sys.stdout.flush()
@@ -19,7 +20,7 @@ def replace_in_file(src_string, dest_string, file_path):
     f = fileinput.FileInput(file_path, inplace=True)
     for line in f:
         line = line.replace(src_string, dest_string).rstrip()
-        print line
+        print(line)
     f.close()
 
 
@@ -239,6 +240,7 @@ def format_timedelta(td):
 
     return td.days, hours, minutes, td.seconds, td.microseconds
 
+
 def docker_id():
     """
     Gets the ID of the last-run Docker container
@@ -248,6 +250,7 @@ def docker_id():
         return output.rstrip()
     except subprocess.CalledProcessError:
         pass
+
 
 def docker_stop(container_id=None):
     """
@@ -265,6 +268,7 @@ def docker_stop(container_id=None):
         pass
     return exit_status
 
+
 def remote_run(host_node, cmd, verbose=False):
     """
     Runs a set of commands on a remote machine over SSH using paramiko.
@@ -274,7 +278,7 @@ def remote_run(host_node, cmd, verbose=False):
     :param verbose: Set to True to display the stdout
     """
     if verbose:
-        print "remote_run, running cmd = " + cmd
+        print("remote_run, running cmd = " + cmd)
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -299,7 +303,7 @@ def remote_run(host_node, cmd, verbose=False):
     output = stdout.readlines()
 
     if verbose:
-        print "Stdout: " + ''.join(output)
+        print("Stdout: " + ''.join(output))
 
     stdout.close()
     stdin.close()

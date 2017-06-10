@@ -15,7 +15,8 @@ class Cloud:
     ec2_compute_securitygroup_id = 'sg-98d574fc'    # for compute hosts, which the security group to use
     availability_zone = 'ap-southeast-2a'           # az for all ec2 instances
     placement_group = 'MNIST-PGroup'                # placement group for ec2 instances
-    # client_token = 'this_is_the_client_token_la_la_34'  # Unique, case-sensitive identifier you provide to ensure the idempotency of the request.
+    # client_token = 'this_is_the_client_token_la_la_34'  # Unique, case-sensitive identifier you provide to ensure
+    # the idempotency of the request.
     network_interface_id = 'eni - b2acd4d4'
 
     def __init__(self, log):
@@ -184,7 +185,7 @@ class Cloud:
         instance_id = instance[0].instance_id
 
         if self.log:
-            print "Instance launched ", instance_id
+            print("Instance launched ", instance_id)
 
         # set name
         response = ec2.create_tags(
@@ -200,9 +201,8 @@ class Cloud:
             ]
         )
 
-        if self.log:
-            print "Set Name tag on instanceid: ", instance_id
-            print "Response is: ", response
+        logging.info("Set Name tag on instanceid: ", instance_id)
+        logging.info("Response is: ", response)
 
         ips = self.ec2_wait_till_running(instance_id)
         return ips, instance_id
@@ -215,21 +215,20 @@ class Cloud:
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
 
-        if self.log:
-            print "wait_till_running for instance: ", instance
+        print("wait_till_running for instance: ", instance)
 
         instance.wait_until_running()
 
         ip_public = instance.public_ip_address
         ip_private = instance.private_ip_address
 
-        print "Instance is up and running ..."
+        print("Instance is up and running ...")
         self.print_ec2_info(instance)
 
         return {'ip_public': ip_public, 'ip_private': ip_private}
 
     def ec2_stop(self, instance_id):
-        print "\n...... Closing ec2 instance (instance id " + str(instance_id) + ")"
+        print("\n...... Closing ec2 instance (instance id " + str(instance_id) + ")")
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
 
@@ -237,8 +236,7 @@ class Cloud:
 
         response = instance.stop()
 
-        if self.log:
-            print "self.log: stop ec2: ", response
+        print("stop ec2: ", response)
 
     def remote_upload_runfilename_s3(self, host_node, prefix, dest_name):
         cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name \
@@ -256,11 +254,11 @@ class Cloud:
     def upload_folder_s3(self, bucket_name, key, source_folderpath):
 
         if not os.path.exists(source_folderpath):
-            print "WARNING: folder does not exist, cannot upload: " + source_folderpath
+            print("WARNING: folder does not exist, cannot upload: " + source_folderpath)
             return
 
         if not os.path.isdir(source_folderpath):
-            print "WARNING: path is not a folder, cannot upload: " + source_folderpath
+            print("WARNING: path is not a folder, cannot upload: " + source_folderpath)
             return
 
         for root, dirs, files in os.walk(source_folderpath):
@@ -270,10 +268,11 @@ class Cloud:
 
                 self.upload_file_s3(bucket_name, filekey, filepath)
 
-    def upload_file_s3(self, bucket_name, key, source_filepath):
+    @staticmethod
+    def upload_file_s3(bucket_name, key, source_filepath):
 
         if not os.path.exists(source_filepath):
-            print "WARNING: file does not exist, cannot upload: " + source_filepath
+            print("WARNING: file does not exist, cannot upload: " + source_filepath)
             return
 
         s3 = boto3.resource('s3')
@@ -289,20 +288,17 @@ class Cloud:
                 exists = False
 
         if not exists:
-            print "WARNING: s3 bucket " + bucket_name + " does not exist, creating it now."
+            print("WARNING: s3 bucket " + bucket_name + " does not exist, creating it now.")
             s3.create_bucket(Bucket=bucket_name)
 
-        print " ... file = " + source_filepath + ", to bucket = " + bucket_name + ", key = " + key
+        print(" ... file = " + source_filepath + ", to bucket = " + bucket_name + ", key = " + key)
         response = s3.Object(bucket_name=bucket_name, key=key).put(Body=open(source_filepath, 'rb'))
 
-        if self.log:
-            print response
+        logging.info("Response = : ", response)
 
     @staticmethod
     def print_ec2_info(instance):
-
-        print "Instance details."
-        print " -- Public IP address is: ", instance.public_ip_address
-        print " -- Private IP address is: ", instance.private_ip_address
-        print " -- id is: ", str(instance.instance_id)
-
+        print("Instance details.")
+        print(" -- Public IP address is: ", instance.public_ip_address)
+        print(" -- Private IP address is: ", instance.private_ip_address)
+        print(" -- id is: ", str(instance.instance_id))
