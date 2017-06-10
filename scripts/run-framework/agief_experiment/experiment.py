@@ -212,7 +212,7 @@ class Experiment:
             logging.error(e)
 
         if (self.launch_mode is LaunchMode.per_experiment) and args.launch_compute:
-            self.shutdown_compute(compute_node, cloud, args, task_arn)
+            compute_node.shutdown_compute(cloud, args, task_arn)
 
         if not failed and args.upload:
             self.upload_results(cloud, compute_node, args.export_compute)
@@ -380,26 +380,6 @@ class Experiment:
                     data_paths += self.experiment_utils.datapath(data_filename)
 
                 compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, data_paths)
-
-    @staticmethod
-    def shutdown_compute(compute_node, cloud, args, task_arn):
-        """ Close compute: terminate and then if running on AWS ECS, stop the task. """
-
-        print("\n....... Shutdown System")
-
-        compute_node.terminate()
-
-        # note that container should be set up to terminate once compute has been terminated
-        # however, it doesn't hurt to clean up by making sure that the container is killed
-
-        # if ecs, then stop the task
-        if args.remote_type == "aws" and (task_arn is not None):
-            cloud.ecs_stop_task(task_arn)
-
-        # if it's remote and docker, then kill container
-        # TODO move this method into Compute (like the launch method)
-        # TODO and kill container explicitly here with the same if for launching equivalent intended scenario
-        # TODO 'if cloud and self.remote():'
 
     def generate_input_files_locally(self, compute_node):
         entity_filepath, data_filepaths = self.experiment_utils.inputfiles_for_generation()
