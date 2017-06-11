@@ -47,7 +47,7 @@ class Compute:
         If there are too many connection errors, exit the whole program.
         """
 
-        max_connection_error = 10
+        max_connection_error = 5
 
         wait_period = 10
         age = None
