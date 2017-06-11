@@ -166,7 +166,7 @@ def main():
     logger = logging.getLogger('root')
     log_format = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
     logging.basicConfig(format=log_format)
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.INFO)
 
     # Record experiment start time
     exp_start_time = datetime.now()
