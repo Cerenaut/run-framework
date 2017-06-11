@@ -302,7 +302,6 @@ class Experiment:
         """ Perform parameter sweep steps, and run experiment for each step. """
 
         print("\n........ Run Sweeps")
-        logging.info("\n........ Run Sweeps")
 
         exps_filename = self.experiment_utils.experiment_def_file()
 
