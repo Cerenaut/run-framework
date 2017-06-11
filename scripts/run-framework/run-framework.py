@@ -162,12 +162,18 @@ def main():
     print("----          run-framework           ----")
     print("------------------------------------------")
 
+    # setup logging
+    logger = logging.getLogger('root')
+    log_format = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+    logging.basicConfig(format=log_format)
+    logger.setLevel(logging.WARNING)
+
     # Record experiment start time
     exp_start_time = datetime.now()
 
     args = setup_arg_parsing()
     if args.logging:
-        print("LOG: Arguments: ", args)
+        logging.debug("Arguments: ", args)
 
     exps_file = args.exps_file if args.exps_file else ""
     experiment = Experiment(args.logging, args.debug_no_run, LaunchMode.from_args(args), exps_file)
@@ -185,8 +191,8 @@ def main():
     cloud = Cloud(args.logging)
 
     if args.upload and not (args.export or args.export_compute):
-        print("WARNING: Uploading experiment to S3 is enabled, but 'export experiment' is not, so the most "
-              "important files (output entity.json and data.json) will be missing")
+        logging.warning("Uploading experiment to S3 is enabled, but 'export experiment' is not, so the most "
+                        "important files (output entity.json and data.json) will be missing")
 
     if args.remote_type != "local":
         host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file, args.ssh_port)
@@ -219,7 +225,7 @@ def main():
 
     elif args.pg_instance:
         if is_pg_ec2:
-            print("ERROR: the pg instance is set to an ec2 instance id, but you are not running AWS.")
+            logging.error("The pg instance is set to an ec2 instance id, but you are not running AWS.")
             exit(1)
 
         ips_pg = {'ip_public': args.pg_instance, 'ip_private': args.pg_instance}

@@ -32,9 +32,9 @@ class Compute:
         param_dic = {'entity': entity_name}
         r = requests.get(self.base_url() + '/config', params=param_dic)
 
-        logging.info("LOG: Get config: /config with params " + json.dumps(param_dic) + ", response = ", r)
-        logging.info("  LOG: response text = ", r.text)
-        logging.info("  LOG: url: ", r.url)
+        logging.debug("Get config: /config with params " + json.dumps(param_dic) + ", response = ", r)
+        logging.debug("  response text = ", r.text)
+        logging.debug("  url: ", r.url)
 
         config = r.json()
         return config
@@ -47,7 +47,7 @@ class Compute:
         If there are too many connection errors, exit the whole program.
         """
 
-        max_connection_error = 20
+        max_connection_error = 10
 
         wait_period = 10
         age = None
@@ -87,8 +87,8 @@ class Compute:
                     age = dpath.util.get(config, 'value.age', '.')
                     parameter = dpath.util.get(config, 'value.' + param_path, '.')
                     if parameter == value:
-                        logging.info(
-                            "LOG: ... parameter: " + entity_name + "." + param_path + ", has achieved value: " + str(
+                        logging.debug(
+                            "... parameter: " + entity_name + "." + param_path + ", has achieved value: " + str(
                                 value) + ".")
                         break
             except KeyError:
@@ -132,10 +132,10 @@ class Compute:
                 files = {'entity-file': entity_data_file}
                 response = requests.post(self.base_url() + '/import', files=files)
 
-                logging.info("LOG: Import entity file, response = ", response)
-                logging.info("  LOG: response text = ", response.text)
-                logging.info("  LOG: url: ", response.url)
-                logging.info("  LOG: post body = ", files)
+                logging.debug("Import entity file, response = ", response)
+                logging.debug("  response text = ", response.text)
+                logging.debug("  url: ", response.url)
+                logging.debug("  post body = ", files)
 
         if is_data_files:
             for data_filepath in data_filepaths:
@@ -146,10 +146,10 @@ class Compute:
                     files = {'data-file': data_data_file}
                     response = requests.post(self.base_url() + '/import', files=files)
 
-                    logging.info("LOG: Import data file, response = ", response)
-                    logging.info("  LOG: response text = ", response.text)
-                    logging.info("  LOG: url: ", response.url)
-                    logging.info("  LOG: post body = ", files)
+                    logging.debug("Import data file, response = ", response)
+                    logging.debug("  response text = ", response.text)
+                    logging.debug("  url: ", response.url)
+                    logging.debug("  post body = ", files)
 
     def import_compute_experiment(self, filepaths, is_data):
         """
@@ -184,9 +184,9 @@ class Compute:
                 msg = "Compute error response from /import-local - import experiment from Data files on Compute"
                 raise Exception(msg)
 
-            logging.info("LOG: Import data file, response = ", response)
-            logging.info("  LOG: response text = ", response.text)
-            logging.info("  LOG: url: ", response.url)
+            logging.debug("Import data file, response = ", response)
+            logging.debug("  response text = ", response.text)
+            logging.debug("  url: ", response.url)
 
     def run_experiment(self, experiment_entity):
 
@@ -199,7 +199,7 @@ class Compute:
             msg = "Compute error response from /update"
             raise Exception(msg)
 
-        logging.info("Start experiment, response = ", response)
+        logging.debug("Start experiment, response = ", response)
 
         # wait for the task to finish (poll API for 'Terminated' config param)
         self.wait_till_param(experiment_entity, 'terminated', True)
@@ -231,9 +231,9 @@ class Compute:
         if is_compute_save:
             print("Saved file response: ", response.text)
 
-        logging.info("  Response = ", response)
-        logging.info("  Response text = ", response.text)
-        logging.info("  Response url = ", response.url)
+        logging.debug("  Response = ", response)
+        logging.debug("  Response text = ", response.text)
+        logging.debug("  Response url = ", response.url)
 
         if not is_compute_save:
             # write back to file
@@ -249,7 +249,7 @@ class Compute:
         """
 
         print("\n....... Export Experiment")
-        logging.info("Exporting data for root entity: %s" % root_entity)
+        logging.debug("Exporting data for root entity: %s" % root_entity)
 
         self.export_root_entity(entity_filepath, root_entity, 'entity', is_export_compute)
         self.export_root_entity(data_filepath, root_entity, 'data', is_export_compute)
@@ -281,7 +281,7 @@ class Compute:
         print("\n...... Terminate framework")
         response = requests.get(self.base_url() + '/stop')
 
-        logging.info("Response text = ", response.text)
+        logging.debug("Response text = ", response.text)
 
     def set_parameter_db(self, entity_name, param_path, value):
         """
@@ -292,9 +292,9 @@ class Compute:
         payload = {'entity': entity_name, 'path': param_path, 'value': value}
         response = requests.post(self.base_url() + '/config', params=payload)
 
-        logging.info("LOG: set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path +
+        logging.debug("LOG: set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path +
                      ', value = ' + value)
-        logging.info("LOG: response = ", response)
+        logging.debug("LOG: response = ", response)
 
     @staticmethod
     def set_parameter_inputfile(entity_filepath, entity_name, param_path, value):
@@ -310,7 +310,7 @@ class Compute:
 
         set_param = entity_name + "." + param_path + " = " + str(value)
 
-        logging.info("in file: " + entity_filepath)
+        logging.debug("in file: " + entity_filepath)
 
         # open the entity input file
         with open(entity_filepath) as data_file:
@@ -333,7 +333,7 @@ class Compute:
 
         config = utils.get_entityfile_config(entity)
 
-        logging.info("config(t)   = " + json.dumps(config, indent=4))
+        logging.debug("config(t)   = " + json.dumps(config, indent=4))
 
         changed = dpath.util.set(config, param_path, value, '.')
 
@@ -343,7 +343,7 @@ class Compute:
             msg += "\tParam_path = " + param_path
             raise Exception(msg)
 
-        logging.info("config(t+1) = " + json.dumps(config, indent=4))
+        logging.debug("config(t+1) = " + json.dumps(config, indent=4))
 
         utils.set_entityfile_config(entity, config)
 
@@ -362,7 +362,7 @@ class Compute:
         version = None
         try:
             response = requests.get(self.base_url() + '/version')
-            logging.info("response = ", response)
+            logging.debug("response = ", response)
 
             response_json = response.json()
             if 'version' in response_json:
@@ -425,7 +425,7 @@ class Compute:
             else:
                 cmd = experiment.experiment_utils.agi_binpath("/node_coordinator/run-in-docker.sh -d")
 
-            logging.info("Running: " + cmd)
+            logging.debug("Running: " + cmd)
 
             # we can't hold on to the stdout and stderr streams for logging, because it will hang on this line
             # instead, logging to a file

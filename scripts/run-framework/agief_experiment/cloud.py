@@ -201,8 +201,8 @@ class Cloud:
             ]
         )
 
-        logging.info("Set Name tag on instanceid: ", instance_id)
-        logging.info("Response is: ", response)
+        logging.debug("Set Name tag on instanceid: ", instance_id)
+        logging.debug("Response is: ", response)
 
         ips = self.ec2_wait_till_running(instance_id)
         return ips, instance_id
@@ -294,7 +294,7 @@ class Cloud:
         print(" ... file = " + source_filepath + ", to bucket = " + bucket_name + ", key = " + key)
         response = s3.Object(bucket_name=bucket_name, key=key).put(Body=open(source_filepath, 'rb'))
 
-        logging.info("Response = : ", response)
+        logging.debug("Response = : ", response)
 
     @staticmethod
     def print_ec2_info(instance):

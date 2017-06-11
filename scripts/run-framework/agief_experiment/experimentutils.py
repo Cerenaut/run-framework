@@ -94,7 +94,7 @@ class ExperimentUtils:
 
             input_files = exp_i[key]  # import files dictionary
 
-            logging.info("Input Files Dictionary = %s", json.dumps(input_files, indent=4))
+            logging.debug("Input Files Dictionary = %s", json.dumps(input_files, indent=4))
 
             # get experiment file-names, and expand to full path
             base_entity_filename = input_files['file-entities']

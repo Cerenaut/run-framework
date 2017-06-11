@@ -315,7 +315,7 @@ class Experiment:
         for exp_i in filedata['experiments']:
             import_files = exp_i['import-files']  # import files dictionary
 
-            logging.info("Import Files Dictionary = \n", json.dumps(import_files, indent=4))
+            logging.debug("Import Files Dictionary = \n", json.dumps(import_files, indent=4))
 
             base_entity_filename = import_files['file-entities']
             base_data_filenames = import_files['file-data']

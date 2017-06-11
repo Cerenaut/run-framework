@@ -209,7 +209,7 @@ def get_entityfile_config(entity):
 
     config_str = entity["config"]
 
-    logging.info("Raw configStr   = " + config_str)
+    logging.debug("Raw configStr   = " + config_str)
 
     # configStr = configStr.replace("\\\"", "\"")       --> don't need this anymore, depends on python behaviour
     config = json.loads(config_str)
@@ -229,7 +229,7 @@ def set_entityfile_config(entity, config):
     config_str = json.dumps(config)
     # configStr = configStr.replace("\"", "\\\"")       --> don't need this anymore, depends on python behaviour
 
-    logging.info("Modified configStr   = " + config_str)
+    logging.debug("Modified configStr   = " + config_str)
 
     entity["config"] = config_str
 
