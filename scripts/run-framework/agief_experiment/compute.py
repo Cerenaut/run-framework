@@ -193,7 +193,6 @@ class Compute:
         print("\n....... Run experiment")
 
         payload = {'entity': experiment_entity, 'event': 'update'}
-        time.sleep(30)
         response = requests.get(self.base_url() + '/update', params=payload)
 
         if response.status_code == 400:
