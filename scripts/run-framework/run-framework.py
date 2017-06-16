@@ -268,14 +268,11 @@ def main():
                       "Attempt to shut down infrastructure if running, and exit.")
         logging.error(e)
 
-        # TODO It may be running locally, and NOT in docker, so need to check for this scenario.
-        # TODO see the compute.launch() method for checking for this scenario
-
         # Shutdown the Docker container
         print("Attempting to shutdown Docker container...")
         if host_node.remote() and compute_node.container_id:
             utils.remote_run(host_node, 'docker stop ' + compute_node.container_id, True)
-        elif not host_node.remote():
+        elif not host_node.remote() and not args.no_docker:
             utils.docker_stop()
 
     # 6) Shutdown framework
