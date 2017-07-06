@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import sys
 import logging
 from datetime import datetime
 
@@ -170,6 +171,7 @@ def main():
     logging.info("------------------------------------------")
     logging.info("----          run-framework           ----")
     logging.info("------------------------------------------")
+    logging.info ("Python Version: " + sys.version)
 
     # Record experiment start time
     exp_start_time = datetime.now()
