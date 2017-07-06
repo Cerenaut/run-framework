@@ -163,8 +163,8 @@ def check_args(args, compute_node):
 def main():
 
     # setup logging
-    log_format = "[%(filename)s:%(lineno)s - %clas%(funcName)s() - %(levelname)s] %(message)s"
-    logging.basicConfig(format=log_format, level=logging.INFO)
+    log_format = "[%(filename)s:%(lineno)s - %(funcName)s() - %(levelname)s] %(message)s"
+    logging.basicConfig(format=log_format)
 
     print("------------------------------------------")
     print("----          run-framework           ----")
