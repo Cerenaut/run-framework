@@ -163,15 +163,13 @@ def check_args(args, compute_node):
 def main():
 
     # setup logging
-    # logger = logging.getLogger('root')
-    # log_format = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-    # logging.basicConfig(format=log_format)
-    # logger.setLevel(logging.INFO)
+    log_format = "[%(filename)s:%(lineno)s - %(funcName)20s() -  ] %(message)s"
+    logging.basicConfig(format=log_format, level=logging.INFO)
 
     logging.info("------------------------------------------")
     logging.info("----          run-framework           ----")
     logging.info("------------------------------------------")
-    logging.info ("Python Version: " + sys.version)
+    logging.debug ("Python Version: " + sys.version)
 
     # Record experiment start time
     exp_start_time = datetime.now()
