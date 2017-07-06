@@ -93,7 +93,7 @@ class Compute:
                         break
             except KeyError:
                 logging.error("KeyError Exception")
-                logging.error("WARNING: trying to access a keypath in config object, that DOES NOT exist!")
+                logging.error("Trying to access a keypath in config object, that DOES NOT exist!")
             except requests.exceptions.ConnectionError:
                 logging.error("Oops, ConnectionError exception")
                 connection_error_count += 1
@@ -115,7 +115,7 @@ class Compute:
         print("\n....... Import experiment")
 
         if not is_entity_file and not is_data_files:
-            print("        WARNING: no input files specified (that may be intentional)")
+            logging.warning("No input files specified (that may be intentional)")
             return
 
         print("     Input files: ")
@@ -372,7 +372,7 @@ class Compute:
             version = None
 
             if not is_suppress_console_output:
-                print("Error connecting to agief to retrieve the version.")
+                logging.error("Error connecting to agief to retrieve the version.")
 
         return version
 
@@ -400,7 +400,7 @@ class Compute:
         if cloud and self.remote():
             if use_ecs:
                 # Using ECS - the elastic container service
-                print("launching Compute on AWS-ECS")
+                print("Launching Compute on AWS-ECS")
                 if not ecs_task_name:
                     raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
                 task_arn = cloud.ecs_run_task(ecs_task_name)
@@ -412,8 +412,8 @@ class Compute:
                     self.container_id = output[-4].rstrip()
                     print("Docker Container ID: " + self.container_id)
         else:
-            print("launching Compute locally")
-            print("NOTE: generating run_stdout.log and run_stderr.log (in the current folder)")
+            print("Launching Compute locally")
+            print("NOTE: Generating run_stdout.log and run_stderr.log (in the current folder)")
 
             if main_class:
                 cmd = "%s node.properties %s %s" % (
@@ -457,7 +457,7 @@ class Compute:
             if self.container_id:
                 utils.remote_run(self.host_node, 'docker stop ' + self.container_id, True)
             else:
-                print("WARNING: Docker did not shut down, could not locate container id")
+                logging.warning("Docker did not shut down, could not locate container id")
         else:
             # stops local docker
             utils.docker_stop()
