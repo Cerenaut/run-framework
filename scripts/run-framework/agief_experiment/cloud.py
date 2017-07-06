@@ -101,7 +101,7 @@ class Cloud:
         )
 
         if self.log:
-            print("LOG: ", response)
+            logging.debug("LOG: ", response)
 
     def ec2_start_from_instanceid(self, instance_id):
         """
@@ -144,7 +144,7 @@ class Cloud:
             instance_type = 'r3.xlarge'     # 30.5
             ram_allocated = 30.5
         else:
-            print("ERROR: cannot create an ec2 instance with that much RAM")
+            logging.error("cannot create an ec2 instance with that much RAM")
             exit(1)
 
         print ("\n............. RAM to be allocated: " + str(ram_allocated) + " GB RAM")
@@ -185,7 +185,7 @@ class Cloud:
         instance_id = instance[0].instance_id
 
         if self.log:
-            print("Instance launched ", instance_id)
+            logging.debug("Instance launched ", instance_id)
 
         # set name
         response = ec2.create_tags(
@@ -272,7 +272,7 @@ class Cloud:
     def upload_file_s3(bucket_name, key, source_filepath):
 
         if not os.path.exists(source_filepath):
-            print("WARNING: file does not exist, cannot upload: " + source_filepath)
+            logging.warning("file does not exist, cannot upload: " + source_filepath)
             return
 
         s3 = boto3.resource('s3')
@@ -288,7 +288,7 @@ class Cloud:
                 exists = False
 
         if not exists:
-            print("WARNING: s3 bucket " + bucket_name + " does not exist, creating it now.")
+            logging.warning("s3 bucket " + bucket_name + " does not exist, creating it now.")
             s3.create_bucket(Bucket=bucket_name)
 
         print(" ... file = " + source_filepath + ", to bucket = " + bucket_name + ", key = " + key)
