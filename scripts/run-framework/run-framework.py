@@ -163,13 +163,12 @@ def check_args(args, compute_node):
 def main():
 
     # setup logging
-    log_format = "[%(filename)s:%(lineno)s - %(funcName)20s() -  ] %(message)s"
+    log_format = "[%(filename)s:%(lineno)s - %clas%(funcName)s() - %(levelname)s] %(message)s"
     logging.basicConfig(format=log_format, level=logging.INFO)
 
-    logging.info("------------------------------------------")
-    logging.info("----          run-framework           ----")
-    logging.info("------------------------------------------")
-    logging.debug ("Python Version: " + sys.version)
+    print("------------------------------------------")
+    print("----          run-framework           ----")
+    print("------------------------------------------")
 
     # Record experiment start time
     exp_start_time = datetime.now()
@@ -177,6 +176,7 @@ def main():
     args = setup_arg_parsing()
     if args.logging:
         logging.debug("Arguments: ", args)
+        logging.debug ("Python Version: " + sys.version)
 
     exps_file = args.exps_file if args.exps_file else ""
     experiment = Experiment(args.logging, args.debug_no_run, LaunchMode.from_args(args), exps_file)
@@ -271,7 +271,7 @@ def main():
         logging.error(e)
 
         # Shutdown the Docker container
-        logging.info("Attempting to shutdown Docker container...")
+        print("Attempting to shutdown Docker container...")
         if host_node.remote() and compute_node.container_id:
             utils.remote_run(host_node, 'docker stop ' + compute_node.container_id, True)
         elif not host_node.remote() and not args.no_docker:
@@ -294,7 +294,7 @@ def main():
 
     # Log the experiment runtime in d:h:m:s:ms format
     exp_runtime = utils.format_timedelta(exp_end_time - exp_start_time)
-    logging.info("Experiment finished in %d days, %d hr, %d min, %d s, %d ms." % tuple(exp_runtime))
+    print("Experiment finished in %d days, %d hr, %d min, %d s, %d ms." % tuple(exp_runtime))
 
     if failed:
         exit(1)
