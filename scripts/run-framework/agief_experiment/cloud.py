@@ -254,11 +254,11 @@ class Cloud:
     def upload_folder_s3(self, bucket_name, key, source_folderpath):
 
         if not os.path.exists(source_folderpath):
-            print("WARNING: folder does not exist, cannot upload: " + source_folderpath)
+            logging.warning("folder does not exist, cannot upload: " + source_folderpath)
             return
 
         if not os.path.isdir(source_folderpath):
-            print("WARNING: path is not a folder, cannot upload: " + source_folderpath)
+            logging.warning("path is not a folder, cannot upload: " + source_folderpath)
             return
 
         for root, dirs, files in os.walk(source_folderpath):
