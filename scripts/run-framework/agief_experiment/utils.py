@@ -117,7 +117,7 @@ def check_validity(files):
             file_paths.append(f)
         else:
             is_valid = False
-            print "ERROR: check_validity(), this file is not valid: " + f
+            logging.error("this file is not valid: " + f)
             break
 
     return is_valid
@@ -135,7 +135,7 @@ def compress_file(source_filepath):
         zipf.write(source_filepath)
         zipf.close()
     else:
-        print "ERROR: compress_file(), this file is not valid: " + source_filepath
+        logging.error("this file is not valid: " + source_filepath)
 
 
 def compress_folder_contents(source_path):
@@ -151,7 +151,7 @@ def compress_folder_contents(source_path):
                 filepath = os.path.join(root, filename)
                 compress_file(filepath)
     else:
-        print "ERROR: compress_file_in_folder(), this folder is not valid: " + source_path
+        logging.error("this folder is not valid: " + source_path)
 
 
 def match_file_by_name(source_path, name):
@@ -170,9 +170,9 @@ def match_file_by_name(source_path, name):
                 ret = os.path.abspath(root + "/" + matching_files[0])
                 return ret
             else:
-                print "WARNING: match_file_by_name(), no matching files found in: " + source_path
+                logging.warning("no matching files found in: " + source_path)
     else:
-        print "WARNING: match_file_by_name(), this folder is not valid: " + source_path
+        logging.warning("this folder is not valid: " + source_path)
 
     return None
 
@@ -196,9 +196,9 @@ def move_file(source_filepath, dest_path, create_dest=False):
             # Move file from source to destination
             os.rename(source_filepath, dest_path + "/" + parsed_filepath[1])
         else:
-            print "ERROR: move_file(), the destination folder is not valid: " + dest_path
+            logging.error("the destination folder is not valid: " + dest_path)
     else:
-        print "ERROR: move_file(), the source file path is not valid: " + source_filepath
+        logging.error("the source file path is not valid: " + source_filepath)
 
 
 def get_entityfile_config(entity):
