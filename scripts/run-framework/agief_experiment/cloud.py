@@ -244,7 +244,7 @@ class Cloud:
         try:
             utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
         except Exception as e:
-            logging.error("Remote Upload Failed   for this file")
+            logging.error("Remote Upload Failed for this file")
             logging.error("Exception: %s", e)
 
     def remote_upload_output_s3(self, host_node, prefix):

@@ -92,8 +92,7 @@ class Compute:
                                 value) + ".")
                         break
             except KeyError:
-                logging.error("KeyError Exception")
-                logging.error("Trying to access a keypath in config object, that DOES NOT exist!")
+                logging.warning("KeyError Exception: Trying to access a keypath in config object, that DOES NOT exist!")
             except requests.exceptions.ConnectionError:
                 logging.error("Oops, ConnectionError exception")
                 connection_error_count += 1

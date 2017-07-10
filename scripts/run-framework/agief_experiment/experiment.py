@@ -115,7 +115,7 @@ class Experiment:
                 else:
                     logging.warning("No reporting entity config path found in experiment config.")
             except KeyError:
-                logging.error("KeyError Exception: trying to access path '" + 
+                logging.warning("KeyError Exception: trying to access path '" +
                 param_path + "' at config.value, but it DOES NOT exist!")
             if report is None:
                 print("\n================================================")
