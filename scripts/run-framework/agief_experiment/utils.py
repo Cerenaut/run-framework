@@ -65,12 +65,11 @@ def cleanpath(path, filename):
     return file_path
 
 
-def run_bashscript_repeat(cmd, max_repeats, wait_period, verbose=False):
+def run_bashscript_repeat(cmd, max_repeats, wait_period):
     """ Run a shell command repeatedly until exit status shows success.
     Run command 'cmd' a maximum of 'max_repeats' times and wait 'wait_period' between attempts. """
 
-    if verbose:
-        print "run_bashscript_repeat, running cmd = " + cmd
+    logging.debug("running cmd = " + cmd)
 
     success = False
     exit_status = 0
@@ -82,21 +81,18 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period, verbose=False):
                                  executable="/bin/bash")
 
         output, error = child.communicate()  # get the outputs. NOTE: This will block until shell command returns.
-
         exit_status = child.returncode
 
-        if verbose:
-            print "Stdout: " + output
-            print "Exit status: " + str(exit_status)
-
-        print "utils.run_bashscript_repeat - stderr: " + error
+        logging.debug("Stdout: " + output)
+        logging.error("Stderr: " + error)
+        logging.debug("Exit status: " + str(exit_status))
 
         if exit_status == 0:
             success = True
             break
 
-        print "Run bash script was unsuccessful on attempt " + str(i)
-        print "Wait " + str(wait_period) + ", and try again."
+        logging.warning("Run bash script was unsuccessful on attempt " + str(i))
+        logging.debug("Wait " + str(wait_period) + ", and try again.")
 
         time.sleep(wait_period)
 
@@ -269,7 +265,7 @@ def docker_stop(container_id=None):
     return exit_status
 
 
-def remote_run(host_node, cmd, verbose=False):
+def remote_run(host_node, cmd):
     """
     Runs a set of commands on a remote machine over SSH using paramiko.
 
@@ -277,8 +273,7 @@ def remote_run(host_node, cmd, verbose=False):
     :param commands: The commands to be executed
     :param verbose: Set to True to display the stdout
     """
-    if verbose:
-        print("remote_run, running cmd = " + cmd)
+    logging.debug("running cmd = " + cmd)
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -302,8 +297,7 @@ def remote_run(host_node, cmd, verbose=False):
     stdin.write(cmd)
     output = stdout.readlines()
 
-    if verbose:
-        print("Stdout: " + ''.join(output))
+    logging.debug("Stdout: " + ''.join(output))
 
     stdout.close()
     stdin.close()
