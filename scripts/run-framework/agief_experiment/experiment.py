@@ -24,11 +24,10 @@ class Experiment:
     TEMPLATE_PREFIX = "SPAGHETTI"
     PREFIX_DELIMITER = "--"
 
-    def __init__(self, log, debug_no_run, launch_mode, exps_file):
+    def __init__(self, debug_no_run, launch_mode, exps_file):
         self.exps_file = exps_file
         self.debug_no_run = debug_no_run
         self.launch_mode = launch_mode
-        self.log = log
 
         self.experiment_utils = ExperimentUtils(exps_file)
 
