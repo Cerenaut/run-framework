@@ -304,3 +304,22 @@ def remote_run(host_node, cmd):
     ssh.close()
 
     return output
+
+def logger_level(level):
+    """
+    Map the specified level to the numerical value level for the logger
+
+    :param level: Logging level from command argument
+    """
+    try:
+        level = level.lower()
+    except AttributeError:
+        level = ""
+
+    return {
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'critical': logging.CRITICAL
+    }.get(level, logging.WARNING)
