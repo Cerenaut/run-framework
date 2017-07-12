@@ -65,12 +65,11 @@ def cleanpath(path, filename):
     return file_path
 
 
-def run_bashscript_repeat(cmd, max_repeats, wait_period, verbose=False):
+def run_bashscript_repeat(cmd, max_repeats, wait_period):
     """ Run a shell command repeatedly until exit status shows success.
     Run command 'cmd' a maximum of 'max_repeats' times and wait 'wait_period' between attempts. """
 
-    if verbose:
-        print "run_bashscript_repeat, running cmd = " + cmd
+    logging.debug("running cmd = " + cmd)
 
     success = False
     exit_status = 0
@@ -82,21 +81,18 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period, verbose=False):
                                  executable="/bin/bash")
 
         output, error = child.communicate()  # get the outputs. NOTE: This will block until shell command returns.
-
         exit_status = child.returncode
 
-        if verbose:
-            print "Stdout: " + output
-            print "Exit status: " + str(exit_status)
-
-        print "utils.run_bashscript_repeat - stderr: " + error
+        logging.debug("Stdout: " + output)
+        logging.error("Stderr: " + error)
+        logging.debug("Exit status: " + str(exit_status))
 
         if exit_status == 0:
             success = True
             break
 
-        print "Run bash script was unsuccessful on attempt " + str(i)
-        print "Wait " + str(wait_period) + ", and try again."
+        logging.warning("Run bash script was unsuccessful on attempt " + str(i))
+        logging.debug("Wait " + str(wait_period) + ", and try again.")
 
         time.sleep(wait_period)
 
@@ -117,7 +113,7 @@ def check_validity(files):
             file_paths.append(f)
         else:
             is_valid = False
-            print "ERROR: check_validity(), this file is not valid: " + f
+            logging.error("this file is not valid: " + f)
             break
 
     return is_valid
@@ -135,7 +131,7 @@ def compress_file(source_filepath):
         zipf.write(source_filepath)
         zipf.close()
     else:
-        print "ERROR: compress_file(), this file is not valid: " + source_filepath
+        logging.error("this file is not valid: " + source_filepath)
 
 
 def compress_folder_contents(source_path):
@@ -151,7 +147,7 @@ def compress_folder_contents(source_path):
                 filepath = os.path.join(root, filename)
                 compress_file(filepath)
     else:
-        print "ERROR: compress_file_in_folder(), this folder is not valid: " + source_path
+        logging.error("this folder is not valid: " + source_path)
 
 
 def match_file_by_name(source_path, name):
@@ -170,9 +166,9 @@ def match_file_by_name(source_path, name):
                 ret = os.path.abspath(root + "/" + matching_files[0])
                 return ret
             else:
-                print "WARNING: match_file_by_name(), no matching files found in: " + source_path
+                logging.warning("no matching files found in: " + source_path)
     else:
-        print "WARNING: match_file_by_name(), this folder is not valid: " + source_path
+        logging.warning("this folder is not valid: " + source_path)
 
     return None
 
@@ -196,9 +192,9 @@ def move_file(source_filepath, dest_path, create_dest=False):
             # Move file from source to destination
             os.rename(source_filepath, dest_path + "/" + parsed_filepath[1])
         else:
-            print "ERROR: move_file(), the destination folder is not valid: " + dest_path
+            logging.error("the destination folder is not valid: " + dest_path)
     else:
-        print "ERROR: move_file(), the source file path is not valid: " + source_filepath
+        logging.error("the source file path is not valid: " + source_filepath)
 
 
 def get_entityfile_config(entity):
@@ -269,7 +265,7 @@ def docker_stop(container_id=None):
     return exit_status
 
 
-def remote_run(host_node, cmd, verbose=False):
+def remote_run(host_node, cmd):
     """
     Runs a set of commands on a remote machine over SSH using paramiko.
 
@@ -277,8 +273,7 @@ def remote_run(host_node, cmd, verbose=False):
     :param commands: The commands to be executed
     :param verbose: Set to True to display the stdout
     """
-    if verbose:
-        print("remote_run, running cmd = " + cmd)
+    logging.debug("running cmd = " + cmd)
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -302,11 +297,29 @@ def remote_run(host_node, cmd, verbose=False):
     stdin.write(cmd)
     output = stdout.readlines()
 
-    if verbose:
-        print("Stdout: " + ''.join(output))
+    logging.debug("Stdout: " + ''.join(output))
 
     stdout.close()
     stdin.close()
     ssh.close()
 
     return output
+
+def logger_level(level):
+    """
+    Map the specified level to the numerical value level for the logger
+
+    :param level: Logging level from command argument
+    """
+    try:
+        level = level.lower()
+    except AttributeError:
+        level = ""
+
+    return {
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'critical': logging.CRITICAL
+    }.get(level, logging.WARNING)

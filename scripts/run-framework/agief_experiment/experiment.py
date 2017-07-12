@@ -24,11 +24,10 @@ class Experiment:
     TEMPLATE_PREFIX = "SPAGHETTI"
     PREFIX_DELIMITER = "--"
 
-    def __init__(self, log, debug_no_run, launch_mode, exps_file):
+    def __init__(self, debug_no_run, launch_mode, exps_file):
         self.exps_file = exps_file
         self.debug_no_run = debug_no_run
         self.launch_mode = launch_mode
-        self.log = log
 
         self.experiment_utils = ExperimentUtils(exps_file)
 
@@ -46,7 +45,7 @@ class Experiment:
                                                                                ExperimentUtils.agi_exp_home)
 
             if not os.path.isfile(prefix_filepath) or not os.path.exists(prefix_filepath):
-                print("WARNING ****   no prefix.txt file could be found, using the default root entity name: "
+                logging.warning("no prefix.txt file could be found, using the default root entity name: "
                       "'experiment'")
                 return None
 
@@ -113,10 +112,10 @@ class Experiment:
                     param_path = config_exp['value'][reporting_path_key]
                     report = dpath.util.get(config, 'value.' + param_path, '.')
                 else:
-                    print("WARNING: No reporting entity config path found in experiment config.")
+                    logging.warning("No reporting entity config path found in experiment config.")
             except KeyError:
-                print("KeyError Exception")
-                print("WARNING: trying to access path '" + param_path + "' at config.value, but it DOES NOT exist!")
+                logging.warning("KeyError Exception: trying to access path '" +
+                param_path + "' at config.value, but it DOES NOT exist!")
             if report is None:
                 print("\n================================================")
                 print("Reporting Entity Config:")
@@ -128,7 +127,7 @@ class Experiment:
                 print(report)
                 print("================================================\n")
         else:
-            print("WARNING: No reportingEntityName has been specified in Experiment config.")
+            logging.warning("No reportingEntityName has been specified in Experiment config.")
 
     def entity_with_prefix(self, entity_name):
         if self.prefix() is None or self.prefix() == "":
@@ -252,7 +251,7 @@ class Experiment:
         """
 
         if len(val_sweepers) == 0:
-            print("WARNING: in_parameter_set: there are no counters to use to increment the parameter set.")
+            logging.warning("there are no counters to use to increment the parameter set.")
             print("         Returning without any action. This may have undesirable consequences.")
             return True, ""
 
@@ -267,7 +266,7 @@ class Experiment:
 
             if overflowed:
                 if args.logging:
-                    print("LOG: Sweeping has concluded for this sweep-set, due to the parameter: " +
+                    logging.debug("LOG: Sweeping has concluded for this sweep-set, due to the parameter: " +
                           val_sweeper['entity-name'] + '.' + val_sweeper['param-path'])
                 reset = True
                 break
@@ -280,14 +279,14 @@ class Experiment:
             val_series.next_val()
 
         if len(sweep_param_vals) == 0:
-            print("WARNING: no parameters were changed.")
+            logging.warning("no parameters were changed.")
 
         if args.logging:
             if len(sweep_param_vals):
-                print("LOG: Parameter sweep: ", sweep_param_vals)
+                logging.debug("LOG: Parameter sweep: ", sweep_param_vals)
 
         if reset is False and len(sweep_param_vals) == 0:
-            print("Error: inc_parameter_set() indeterminate state, reset is False, but parameter_description indicates "
+            logging.error("indeterminate state, reset is False, but parameter_description indicates "
                   "no parameters have been modified. If there is no sweep to conduct, reset should be True.")
             exit(1)
 
@@ -441,8 +440,8 @@ class Experiment:
             output_data_filepath = utils.match_file_by_name(folder_path, 'data')
 
             if output_data_filepath is None:
-                print "WARNING: No data file found. This should only happen if you are running remote via ssh, " \
-                      "and exporting data by saving on compute."
+                logging.warning("No data file found. This should only happen if you are running remote via ssh, " \
+                      "and exporting data by saving on compute.")
             else:
                 # Compress data file
                 utils.compress_file(output_data_filepath)

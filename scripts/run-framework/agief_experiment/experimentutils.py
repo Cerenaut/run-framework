@@ -29,7 +29,7 @@ class ExperimentUtils:
         variables_file = self.variables_filepath()
 
         if variables_file == "" or variables_file is None:
-            print "WARNING: unable to locate variables file."
+            logging.warning("unable to locate variables file.")
 
         logging.debug("experiment:filepath_from_env_variable: variables file = %s", variables_file)
 
@@ -183,8 +183,8 @@ class ExperimentUtils:
             base_filepath = self.inputfile_base(base_filename)
 
             if not os.path.isfile(base_filepath):
-                print "ERROR: create_input_files(): The file does not exist" + base_filepath + \
-                      "\nCANNOT CONTINUE."
+                logging.error("The file does not exist" + base_filepath + \
+                      "\nCANNOT CONTINUE.")
                 exit(1)
 
             # get the containing folder, and it's parent folder

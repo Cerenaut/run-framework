@@ -7,8 +7,6 @@ import logging
 
 class Cloud:
 
-    log = False
-
     subnet_id = 'subnet-0b1a206e'   # ec2 instances will be launched into this subnet (in a vpc)
     cluster = 'default'             # for ecs, which cluster to use
     mainkeyname = 'nextpair'        # when creating ec2 instances, the root ssh key to use
@@ -19,8 +17,8 @@ class Cloud:
     # the idempotency of the request.
     network_interface_id = 'eni - b2acd4d4'
 
-    def __init__(self, log):
-        self.log = log
+    def __init__(self):
+        pass
 
     def sync_experiment(self, remote):
         """
@@ -30,7 +28,7 @@ class Cloud:
         print ("\n....... Use remote-sync-experiment.sh to rsync relevant folders.")
 
         cmd = "../remote/remote-sync-experiment.sh " + remote.host_key_user_variables()
-        utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
+        utils.run_bashscript_repeat(cmd, 15, 6)
 
     def remote_download_output(self, prefix, host_node):
         """ Download /output/prefix folder from remote storage (s3) to remote machine. 
@@ -43,7 +41,7 @@ class Cloud:
                "files) with prefix = " + prefix + ", to remote machine.")
 
         cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + host_node.host_key_user_variables()
-        utils.run_bashscript_repeat(cmd, 15, 6, verbose=self.log)
+        utils.run_bashscript_repeat(cmd, 15, 6)
 
     def remote_docker_launch_compute(self, host_node):
         """ Assumes there exists a private key for the given ec2 instance, at keypath """
@@ -57,7 +55,7 @@ class Cloud:
             ./run-in-docker.sh -d
         '''.format(host_node.remote_variables_file)
 
-        return utils.remote_run(host_node, commands, verbose=self.log)
+        return utils.remote_run(host_node, commands)
 
     def ecs_run_task(self, task_name):
         """ Run task 'task_name' and return the Task ARN """
@@ -71,8 +69,7 @@ class Cloud:
             startedBy='pyScript'
         )
 
-        if self.log:
-            print("LOG: ", response)
+        logging.debug("LOG: " + response)
 
         length = len(response['failures'])
         if length > 0:
@@ -100,8 +97,7 @@ class Cloud:
             reason='pyScript said so!'
         )
 
-        if self.log:
-            print("LOG: ", response)
+        logging.debug("LOG: " + response)
 
     def ec2_start_from_instanceid(self, instance_id):
         """
@@ -114,8 +110,7 @@ class Cloud:
         instance = ec2.Instance(instance_id)
         response = instance.start()
 
-        if self.log:
-            print("LOG: Start response: ", response)
+        print("LOG: Start response: " + response)
 
         instance_id = instance.instance_id
 
@@ -144,7 +139,7 @@ class Cloud:
             instance_type = 'r3.xlarge'     # 30.5
             ram_allocated = 30.5
         else:
-            print("ERROR: cannot create an ec2 instance with that much RAM")
+            logging.error("cannot create an ec2 instance with that much RAM")
             exit(1)
 
         print ("\n............. RAM to be allocated: " + str(ram_allocated) + " GB RAM")
@@ -184,8 +179,7 @@ class Cloud:
 
         instance_id = instance[0].instance_id
 
-        if self.log:
-            print("Instance launched ", instance_id)
+        logging.debug("Instance launched %s", instance_id)
 
         # set name
         response = ec2.create_tags(
@@ -201,8 +195,8 @@ class Cloud:
             ]
         )
 
-        logging.debug("Set Name tag on instanceid: ", instance_id)
-        logging.debug("Response is: ", response)
+        logging.debug("Set Name tag on instanceid: %s", instance_id)
+        logging.debug("Response is: %s", response)
 
         ips = self.ec2_wait_till_running(instance_id)
         return ips, instance_id
@@ -242,23 +236,23 @@ class Cloud:
         cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name \
               + host_node.host_key_user_variables()
         try:
-            utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
+            utils.run_bashscript_repeat(cmd, 3, 3)
         except Exception as e:
-            logging.error("Remote Upload Failed   for this file")
+            logging.error("Remote Upload Failed for this file")
             logging.error("Exception: %s", e)
 
     def remote_upload_output_s3(self, host_node, prefix):
         cmd = "../remote/remote-upload-output.sh " + prefix + " " + host_node.host_key_user_variables()
-        utils.run_bashscript_repeat(cmd, 3, 3, verbose=self.log)
+        utils.run_bashscript_repeat(cmd, 3, 3)
 
     def upload_folder_s3(self, bucket_name, key, source_folderpath):
 
         if not os.path.exists(source_folderpath):
-            print("WARNING: folder does not exist, cannot upload: " + source_folderpath)
+            logging.warning("folder does not exist, cannot upload: " + source_folderpath)
             return
 
         if not os.path.isdir(source_folderpath):
-            print("WARNING: path is not a folder, cannot upload: " + source_folderpath)
+            logging.warning("path is not a folder, cannot upload: " + source_folderpath)
             return
 
         for root, dirs, files in os.walk(source_folderpath):
@@ -272,7 +266,7 @@ class Cloud:
     def upload_file_s3(bucket_name, key, source_filepath):
 
         if not os.path.exists(source_filepath):
-            print("WARNING: file does not exist, cannot upload: " + source_filepath)
+            logging.warning("file does not exist, cannot upload: " + source_filepath)
             return
 
         s3 = boto3.resource('s3')
@@ -288,7 +282,7 @@ class Cloud:
                 exists = False
 
         if not exists:
-            print("WARNING: s3 bucket " + bucket_name + " does not exist, creating it now.")
+            logging.warning("s3 bucket " + bucket_name + " does not exist, creating it now.")
             s3.create_bucket(Bucket=bucket_name)
 
         print(" ... file = " + source_filepath + ", to bucket = " + bucket_name + ", key = " + key)
