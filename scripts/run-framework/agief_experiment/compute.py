@@ -454,7 +454,7 @@ class Compute:
         if cloud and self.remote():
             # ensure we have the container id
             if self.container_id:
-                utils.remote_run(self.host_node, 'docker stop ' + self.container_id, True)
+                utils.remote_run(self.host_node, 'docker stop ' + self.container_id)
             else:
                 logging.warning("Docker did not shut down, could not locate container id")
         else:
