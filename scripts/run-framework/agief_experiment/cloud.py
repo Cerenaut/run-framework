@@ -241,8 +241,8 @@ class Cloud:
             logging.error("Remote Upload Failed for this file")
             logging.error("Exception: %s", e)
 
-    def remote_upload_output_s3(self, host_node, prefix):
-        cmd = "../remote/remote-upload-output.sh " + prefix + " " + host_node.host_key_user_variables()
+    def remote_upload_output_s3(self, host_node, prefix, no_compress):
+        cmd = "../remote/remote-upload-output.sh " + prefix + " " + host_node.host_key_user_variables() + " " + str(no_compress)
         utils.run_bashscript_repeat(cmd, 3, 3)
 
     def upload_folder_s3(self, bucket_name, key, source_folderpath):
