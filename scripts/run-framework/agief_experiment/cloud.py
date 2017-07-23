@@ -265,7 +265,11 @@ class Cloud:
     @staticmethod
     def upload_file_s3(bucket_name, key, source_filepath):
 
-        if not os.path.exists(source_filepath):
+        try:
+            if os.stat(source_filepath).st_size == 0:
+                logging.warning("file is empty, cannot upload: " + source_filepath)
+                return
+        except OSError:
             logging.warning("file does not exist, cannot upload: " + source_filepath)
             return
 
