@@ -24,10 +24,11 @@ class Experiment:
     TEMPLATE_PREFIX = "SPAGHETTI"
     PREFIX_DELIMITER = "--"
 
-    def __init__(self, debug_no_run, launch_mode, exps_file):
+    def __init__(self, debug_no_run, launch_mode, exps_file, no_compress):
         self.exps_file = exps_file
         self.debug_no_run = debug_no_run
         self.launch_mode = launch_mode
+        self.no_compress = no_compress
 
         self.experiment_utils = ExperimentUtils(exps_file)
 
@@ -431,9 +432,9 @@ class Experiment:
         if compute_node.remote() and export_compute:
             print "\n --- Upload from exported file on remote machine."
             # remote upload of /output/[prefix] folder
-            cloud.remote_upload_output_s3(compute_node.host_node, self.prefix())
+            cloud.remote_upload_output_s3(compute_node.host_node, self.prefix(), self.no_compress)
         # otherwise, upload it from here
-        else:
+        elif self.no_compress is False:
             folder_path_big = self.experiment_utils.runpath("output-big/")
 
             # locate the output data file
