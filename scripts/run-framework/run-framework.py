@@ -129,7 +129,9 @@ def setup_arg_parsing():
                              'assumes that if the string starts with "i-", '
                              'then it is an Instance ID')
 
-    parser.add_argument('--logging', dest='logging', action='store_true', help='Turn logging on.')
+    parser.add_argument('--logging', dest='logging', required=False,
+                        help='Logging level (default=%(default)s). '
+                             'Options: debug, info, warning, error, critical')
 
     parser.set_defaults(remote_type="local")  # i.e. not remote
     parser.set_defaults(host="localhost")
@@ -143,6 +145,7 @@ def setup_arg_parsing():
     parser.set_defaults(ssh_keypath=utils.filepath_from_env_variable(".ssh/ecs-key.pem", "HOME"))
     parser.set_defaults(ami_ram='6')
     parser.set_defaults(no_docker=False)
+    parser.set_defaults(logging="warning")
 
     return parser.parse_args()
 
