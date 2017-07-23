@@ -40,13 +40,18 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 	echo $cmd >> remote-download-cmd.log
 	eval $cmd >> remote-download-stdout.log 2>> remote-download-stderr.log
 
-	# matching_files=( $(find . -maxdepth 1 -name '*.zip') )
-	# unzip ${matching_files[0]} -d $download_folder
-	
-	if [ `uname` == 'Darwin' ]; then
-		unzip -o $download_folder/data.zip -d $download_folder
-	else
-		unzip -o $download_folder/data -d $download_folder
+	# find zip file in download folder
+	matching_files=( $(find $download_folder -maxdepth 1 -name '*.zip') )
+
+	# ensure file exists before unzipping
+	if [ ${matching_files[0]} ] && [ -f ${matching_files[0]} ]; then
+		if [ `uname` == 'Darwin' ]; then
+			unzip -o ${matching_files[0]} -d $download_folder
+		else
+			# unzip without .zip extension
+			# ref: https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
+			unzip -o ${matching_files[0]%.*} -d $download_folder
+		fi
 	fi
 ENDSSH
 
