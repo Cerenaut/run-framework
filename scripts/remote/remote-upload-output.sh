@@ -33,7 +33,7 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 	upload_folder=$AGI_RUN_HOME/output/$prefix
 	echo "Calculated upload-folder = " $upload_folder
 
-	if [ ${no_compress} = False ]; then
+	if [ "$no_compress" == "False" ]; then
 		output_big_folder=$AGI_RUN_HOME/output-big/
 		mkdir -p $output_big_folder
 
