@@ -433,7 +433,7 @@ class Experiment:
             print "\n --- Upload from exported file on remote machine."
             # remote upload of /output/[prefix] folder
             cloud.remote_upload_output_s3(compute_node.host_node, self.prefix(), self.no_compress)
-        # otherwise, upload it from here
+        # otherwise, compress it here before upload if applicable
         elif self.no_compress is False:
             folder_path_big = self.experiment_utils.runpath("output-big/")
 
@@ -450,7 +450,7 @@ class Experiment:
                 # Move uncompressed data file to /output-big folder
                 utils.move_file(output_data_filepath, folder_path_big)
 
-        # for both, upload experiment-info.txt on this machine (where script is running)
+        # for both, upload the output folder on this machine (where script is running)
         self.upload_experiment_file(cloud,
                                     self.prefix(),
                                     "output",
