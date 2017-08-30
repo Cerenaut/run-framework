@@ -27,7 +27,7 @@ def replace_in_file(src_string, dest_string, file_path):
 def create_folder(filepath):
     if not os.path.exists(os.path.dirname(filepath)):
         try:
-            os.makedirs(os.path.dirname(filepath))
+            os.makedirs(os.path.dirname(filepath), 0777)
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
