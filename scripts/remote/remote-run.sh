@@ -24,8 +24,7 @@ echo "Using user = " $user
 echo "Using remote_variables_file = " $remote_variables_file
 echo "Using port = " $port
 
-ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' VARIABLES_FILE=$remote_variables_file 'bash --login
- -s' <<'ENDSSH' 
+ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' VARIABLES_FILE=$remote_variables_file 'bash --login -s' <<'ENDSSH' 
 	export VARIABLES_FILE=$VARIABLES_FILE
 	source $VARIABLES_FILE
 	cd $AGI_HOME/bin/node_coordinator

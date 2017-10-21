@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import sys
 import logging
+import traceback
 from datetime import datetime
 
 from agief_experiment.host_node import HostNode
@@ -307,6 +308,10 @@ def main():
                       "occurred in a specific parameter set it should have been caught there. "
                       "Attempt to shut down infrastructure if running, and exit.")
         logging.error(err)
+
+        print('-'*60)
+        traceback.print_exc(file=sys.stdout)
+        print('-'*60)
 
         # Shutdown the Docker container
         print("Attempting to shutdown Docker container...")

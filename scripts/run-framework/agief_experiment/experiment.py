@@ -267,7 +267,7 @@ class Experiment:
 
             if overflowed:
                 if args.logging:
-                    logging.debug("LOG: Sweeping has concluded for this sweep-set, due to the parameter: " +
+                    logging.debug("Sweeping has concluded for this sweep-set, due to the parameter: " +
                           val_sweeper['entity-name'] + '.' + val_sweeper['param-path'])
                 reset = True
                 break
@@ -284,7 +284,7 @@ class Experiment:
 
         if args.logging:
             if len(sweep_param_vals):
-                logging.debug("LOG: Parameter sweep: ", sweep_param_vals)
+                logging.debug("Parameter sweep: " + str(sweep_param_vals))
 
         if reset is False and len(sweep_param_vals) == 0:
             logging.error("indeterminate state, reset is False, but parameter_description indicates "
@@ -306,7 +306,7 @@ class Experiment:
         exps_filename = self.experiment_utils.experiment_def_file()
 
         if not os.path.exists(exps_filename):
-            msg = "ERROR: Experiment file does not exist at: " + exps_filename
+            msg = "Experiment file does not exist at: " + exps_filename
             raise Exception(msg)
 
         with open(exps_filename) as exps_file:
@@ -315,7 +315,7 @@ class Experiment:
         for exp_i in filedata['experiments']:
             import_files = exp_i['import-files']  # import files dictionary
 
-            logging.debug("Import Files Dictionary = \n", json.dumps(import_files, indent=4))
+            logging.debug("Import Files Dictionary = \n" + json.dumps(import_files, indent=4))
 
             base_entity_filename = import_files['file-entities']
             base_data_filenames = import_files['file-data']

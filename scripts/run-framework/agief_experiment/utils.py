@@ -83,9 +83,10 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period):
         output, error = child.communicate()  # get the outputs. NOTE: This will block until shell command returns.
         exit_status = child.returncode
 
-        logging.debug("Stdout: " + output)
-        logging.error("Stderr: " + error)
         logging.debug("Exit status: " + str(exit_status))
+        logging.debug("Stdout: " + output)
+
+        if len(error): logging.error("Stderr: " + error)
 
         if exit_status == 0:
             success = True

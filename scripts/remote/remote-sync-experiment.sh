@@ -25,9 +25,9 @@ echo "Using user = " $user
 echo "Using remote_variables_file = " $remote_variables_file
 echo "Using port " = $port
 
-########################################################
-# synch code and run folder with ecs instance
-########################################################
+################################################################################
+# synch code, experiment and 'variables folder' with remote machine
+################################################################################
 
 # code
 cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' $AGI_HOME/ ${user}@${host}:~/agief-project/agi --exclude={\"*.git/*\",*/src/*}"
