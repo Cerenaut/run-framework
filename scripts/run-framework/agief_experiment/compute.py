@@ -32,9 +32,9 @@ class Compute:
         param_dic = {'entity': entity_name}
         r = requests.get(self.base_url() + '/config', params=param_dic)
 
-        logging.debug("Get config: /config with params " + json.dumps(param_dic) + ", response = ", r)
-        logging.debug("  response text = ", r.text)
-        logging.debug("  url: ", r.url)
+        logging.debug("Get config: /config with params " + json.dumps(param_dic))
+        logging.debug("  response text = " + r.text)
+        logging.debug("  url: " + r.url)
 
         config = r.json()
         return config
@@ -131,10 +131,10 @@ class Compute:
                 files = {'entity-file': entity_data_file}
                 response = requests.post(self.base_url() + '/import', files=files)
 
-                logging.debug("Import entity file, response = ", response)
-                logging.debug("  response text = ", response.text)
-                logging.debug("  url: ", response.url)
-                logging.debug("  post body = ", files)
+                logging.debug("Import entity file")
+                logging.debug("  response text = " + response.text)
+                logging.debug("  url: " + response.url)
+                logging.debug("  post body = " + json.dumps(files))
 
         if is_data_files:
             for data_filepath in data_filepaths:
@@ -145,10 +145,10 @@ class Compute:
                     files = {'data-file': data_data_file}
                     response = requests.post(self.base_url() + '/import', files=files)
 
-                    logging.debug("Import data file, response = ", response)
-                    logging.debug("  response text = ", response.text)
-                    logging.debug("  url: ", response.url)
-                    logging.debug("  post body = ", files)
+                    logging.debug("Import data file")
+                    logging.debug("  response text = " + response.text)
+                    logging.debug("  url: " + response.url)
+                    logging.debug("  post body = " + json.dumps(files))
 
     def import_compute_experiment(self, filepaths, is_data):
         """
@@ -183,9 +183,9 @@ class Compute:
                 msg = "Compute error response from /import-local - import experiment from Data files on Compute"
                 raise Exception(msg)
 
-            logging.debug("Import data file, response = ", response)
-            logging.debug("  response text = ", response.text)
-            logging.debug("  url: ", response.url)
+            logging.debug("Import data file")
+            logging.debug("  response text = " + response.text)
+            logging.debug("  url: " + response.url)
 
     def run_experiment(self, experiment_entity):
 
@@ -198,7 +198,7 @@ class Compute:
             msg = "Compute error response from /update"
             raise Exception(msg)
 
-        logging.debug("Start experiment, response = ", response)
+        logging.debug("Start experiment, response text = " + response.text)
 
         # wait for the task to finish (poll API for 'Terminated' config param)
         self.wait_till_param(experiment_entity, 'terminated', True)
@@ -230,9 +230,8 @@ class Compute:
         if is_compute_save:
             print("Saved file response: ", response.text)
 
-        logging.debug("  Response = ", response)
-        logging.debug("  Response text = ", response.text)
-        logging.debug("  Response url = ", response.url)
+        logging.debug("  Response text = " + response.text)
+        logging.debug("  Response url = " + response.url)
 
         if not is_compute_save:
             # write back to file
@@ -248,7 +247,7 @@ class Compute:
         """
 
         print("\n....... Export Experiment")
-        logging.debug("Exporting data for root entity: %s" % root_entity)
+        logging.debug("Exporting data for root entity: %s", root_entity)
 
         self.export_root_entity(entity_filepath, root_entity, 'entity', is_export_compute)
         self.export_root_entity(data_filepath, root_entity, 'data', is_export_compute)
@@ -360,7 +359,7 @@ class Compute:
         version = None
         try:
             response = requests.get(self.base_url() + '/version')
-            logging.debug("response = ", response)
+            logging.debug("response = " + response)
 
             response_json = response.json()
             if 'version' in response_json:
