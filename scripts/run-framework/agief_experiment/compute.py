@@ -280,7 +280,7 @@ class Compute:
         print("\n...... Terminate framework")
         response = requests.get(self.base_url() + '/stop')
 
-        logging.debug("Response text = ", response.text)
+        logging.debug("Response text = " + response.text)
 
     def set_parameter_db(self, entity_name, param_path, value):
         """
@@ -291,9 +291,8 @@ class Compute:
         payload = {'entity': entity_name, 'path': param_path, 'value': value}
         response = requests.post(self.base_url() + '/config', params=payload)
 
-        logging.debug("LOG: set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path +
-                     ', value = ' + value)
-        logging.debug("LOG: response = ", response)
+        logging.debug("set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path + ', value = ' + value)
+        logging.debug("response = " + response.text)
 
     @staticmethod
     def set_parameter_inputfile(entity_filepath, entity_name, param_path, value):
