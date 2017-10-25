@@ -148,7 +148,7 @@ class Compute:
                     logging.debug("Import data file")
                     logging.debug("  response text = " + response.text)
                     logging.debug("  url: " + response.url)
-                    logging.debug("  post body = " + files)
+                    logging.debug("  post body = " + str(files))
 
     def import_compute_experiment(self, filepaths, is_data):
         """
