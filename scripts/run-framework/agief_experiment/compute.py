@@ -359,7 +359,7 @@ class Compute:
         version = None
         try:
             response = requests.get(self.base_url() + '/version')
-            logging.debug("response = " + response)
+            logging.debug("response = " + response.text)
 
             response_json = response.json()
             if 'version' in response_json:
