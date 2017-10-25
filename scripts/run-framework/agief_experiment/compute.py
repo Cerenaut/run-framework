@@ -134,7 +134,7 @@ class Compute:
                 logging.debug("Import entity file")
                 logging.debug("  response text = " + response.text)
                 logging.debug("  url: " + response.url)
-                logging.debug("  post body = " + json.dumps(files))
+                logging.debug("  post body = " + str(files))
 
         if is_data_files:
             for data_filepath in data_filepaths:
@@ -148,7 +148,7 @@ class Compute:
                     logging.debug("Import data file")
                     logging.debug("  response text = " + response.text)
                     logging.debug("  url: " + response.url)
-                    logging.debug("  post body = " + json.dumps(files))
+                    logging.debug("  post body = " + files)
 
     def import_compute_experiment(self, filepaths, is_data):
         """
