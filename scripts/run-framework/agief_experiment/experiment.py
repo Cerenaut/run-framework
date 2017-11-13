@@ -192,16 +192,33 @@ class Experiment:
             # log results expressed in the appropriate entity config
             self.log_results_config(compute_node)
 
+            # Get the path to labels and features CSV files
+            out_labels_file_path = self.experiment_utils.datapath('labels.csv')
+            out_features_file_path = self.experiment_utils.datapath('features.csv')
+
             if args.export:
                 out_entity_file_path, out_data_file_path = self.experiment_utils.output_names_from_input_names(
                     self.prefix(),
                     entity_filepath,
                     data_filepaths)
+
+                # Move labels/features files to the experiment output folder
+                utils.move_file(out_features_file_path,
+                                self.experiment_utils.outputfile(self.prefix()))
+                utils.move_file(out_labels_file_path,
+                                self.experiment_utils.outputfile(self.prefix()))
+
                 compute_node.export_subtree(self.entity_with_prefix("experiment"),
                                             out_entity_file_path,
                                             out_data_file_path)
 
             if args.export_compute:
+                # Move labels/features files to the experiment output folder
+                utils.move_file(out_features_file_path,
+                                self.experiment_utils.outputfile_remote(self.prefix()))
+                utils.move_file(out_labels_file_path,
+                                self.experiment_utils.outputfile_remote(self.prefix()))
+
                 compute_node.export_subtree(self.entity_with_prefix("experiment"),
                                             self.experiment_utils.outputfile_remote(self.prefix()),
                                             self.experiment_utils.outputfile_remote(self.prefix()),
