@@ -202,7 +202,7 @@ class Experiment:
                     entity_filepath,
                     data_filepaths)
 
-                # Move labels/features files to the experiment output folder
+                # TODO: Remove this once the absolute path issue is resolved
                 utils.move_file(out_features_file_path,
                                 self.experiment_utils.outputfile(self.prefix()))
                 utils.move_file(out_labels_file_path,
@@ -213,7 +213,7 @@ class Experiment:
                                             out_data_file_path)
 
             if args.export_compute:
-                # Move labels/features files to the experiment output folder
+                # TODO: Remove this once the absolute path issue is resolved
                 utils.move_file(out_features_file_path,
                                 self.experiment_utils.outputfile_remote(self.prefix()))
                 utils.move_file(out_labels_file_path,
@@ -380,6 +380,24 @@ class Experiment:
         with open(self.experiment_utils.experiment_def_file()) as data_exps_file:
             data = json.load(data_exps_file)
 
+        out_features_filepath = 'features.csv' # self.experiment_utils.outputfile(self.prefix(), 'features.csv')
+        out_labels_filepath = 'labels.csv' # self.experiment_utils.outputfile(self.prefix(), 'labels.csv')
+
+        features = {
+            'entity-name': 'feature-series',
+            'parameter-path': 'fileNameWrite',
+            'value': out_features_filepath
+        }
+
+        labels = {
+            'entity-name': 'label-series',
+            'parameter-path': 'fileNameWrite',
+            'value': out_labels_filepath
+        }
+
+        data['experiments'][0]['dataset-parameters'].append(features)
+        data['experiments'][0]['dataset-parameters'].append(labels)
+
         for exp_i in data['experiments']:
             for param in exp_i['dataset-parameters']:  # array of sweep definitions
                 entity_name = param['entity-name']
@@ -461,11 +479,26 @@ class Experiment:
                 logging.warning("No data file found. This should only happen if you are running remote via ssh, " \
                       "and exporting data by saving on compute.")
             else:
-                # Compress data file
-                utils.compress_file(output_data_filepath)
+                # Get features and labels CSV files
+                output_labels_filepath = self.experiment_utils.outputfile(self.prefix(), "labels.csv")
+                output_features_filepath = self.experiment_utils.outputfile(self.prefix(), "features.csv")
+
+                files_to_compress = [
+                    output_data_filepath,
+                    output_labels_filepath,
+                    output_features_filepath
+                ]
+
+                archive_filename = self.experiment_utils.outputfile(self.prefix(), "data.zip")
+
+                 # Compress data, features and labels
+                utils.compress_files(archive_filename, files_to_compress)
 
                 # Move uncompressed data file to /output-big folder
-                utils.move_file(output_data_filepath, folder_path_big)
+                utils.move_file(output_data_filepath, folder_path_big, True)
+                utils.move_file(output_labels_filepath, folder_path_big, True)
+                utils.move_file(output_features_filepath, folder_path_big, True)
+
 
         # for both, upload the output folder on this machine (where script is running)
         self.upload_experiment_file(cloud,
