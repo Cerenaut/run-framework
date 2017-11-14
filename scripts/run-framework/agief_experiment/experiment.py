@@ -182,6 +182,9 @@ class Experiment:
             compute_node.import_experiment(entity_filepath, data_filepaths)
             compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
 
+            self.set_labels(compute_node)
+            self.set_features(compute_node)
+
             self.set_dataset(compute_node)
 
             if not self.debug_no_run:
@@ -192,33 +195,16 @@ class Experiment:
             # log results expressed in the appropriate entity config
             self.log_results_config(compute_node)
 
-            # Get the path to labels and features CSV files
-            out_labels_file_path = self.experiment_utils.datapath('labels.csv')
-            out_features_file_path = self.experiment_utils.datapath('features.csv')
-
             if args.export:
                 out_entity_file_path, out_data_file_path = self.experiment_utils.output_names_from_input_names(
                     self.prefix(),
                     entity_filepath,
                     data_filepaths)
-
-                # TODO: Remove this once the absolute path issue is resolved
-                utils.move_file(out_features_file_path,
-                                self.experiment_utils.outputfile(self.prefix()))
-                utils.move_file(out_labels_file_path,
-                                self.experiment_utils.outputfile(self.prefix()))
-
                 compute_node.export_subtree(self.entity_with_prefix("experiment"),
                                             out_entity_file_path,
                                             out_data_file_path)
 
             if args.export_compute:
-                # TODO: Remove this once the absolute path issue is resolved
-                utils.move_file(out_features_file_path,
-                                self.experiment_utils.outputfile_remote(self.prefix()))
-                utils.move_file(out_labels_file_path,
-                                self.experiment_utils.outputfile_remote(self.prefix()))
-
                 compute_node.export_subtree(self.entity_with_prefix("experiment"),
                                             self.experiment_utils.outputfile_remote(self.prefix()),
                                             self.experiment_utils.outputfile_remote(self.prefix()),
@@ -368,6 +354,16 @@ class Experiment:
                                                  data_filepaths=exp_data_filepaths,
                                                  sweep_param_vals=sweep_param_vals)
 
+    def set_labels(self, compute_node):
+        filename = utils.append_before_ext('labels.csv', '_' + self.prefix())
+        out_labels_filepath = self.experiment_utils.outputfile(self.prefix(), filename)
+        compute_node.set_parameter_db(self.entity_with_prefix('label-series'), 'fileNameWrite', out_labels_filepath)
+
+    def set_features(self, compute_node):
+        filename = utils.append_before_ext('features.csv', '_' + self.prefix())
+        out_features_filepath = self.experiment_utils.outputfile(self.prefix(), filename)
+        compute_node.set_parameter_db(self.entity_with_prefix('feature-series'), 'fileNameWrite', out_features_filepath)
+
     def set_dataset(self, compute_node):
         """
         The dataset can be located in different locations on different machines. The location can be set in the
@@ -379,24 +375,6 @@ class Experiment:
 
         with open(self.experiment_utils.experiment_def_file()) as data_exps_file:
             data = json.load(data_exps_file)
-
-        out_features_filepath = 'features.csv' # self.experiment_utils.outputfile(self.prefix(), 'features.csv')
-        out_labels_filepath = 'labels.csv' # self.experiment_utils.outputfile(self.prefix(), 'labels.csv')
-
-        features = {
-            'entity-name': 'feature-series',
-            'parameter-path': 'fileNameWrite',
-            'value': out_features_filepath
-        }
-
-        labels = {
-            'entity-name': 'label-series',
-            'parameter-path': 'fileNameWrite',
-            'value': out_labels_filepath
-        }
-
-        data['experiments'][0]['dataset-parameters'].append(features)
-        data['experiments'][0]['dataset-parameters'].append(labels)
 
         for exp_i in data['experiments']:
             for param in exp_i['dataset-parameters']:  # array of sweep definitions
@@ -491,10 +469,10 @@ class Experiment:
 
                 archive_filename = self.experiment_utils.outputfile(self.prefix(), "data.zip")
 
-                 # Compress data, features and labels
+                # Compress data, features and labels
                 utils.compress_files(archive_filename, files_to_compress)
 
-                # Move uncompressed data file to /output-big folder
+                # Move uncompressed files to /output-big directory
                 utils.move_file(output_data_filepath, folder_path_big, True)
                 utils.move_file(output_labels_filepath, folder_path_big, True)
                 utils.move_file(output_features_filepath, folder_path_big, True)
