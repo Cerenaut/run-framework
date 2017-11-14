@@ -38,8 +38,8 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 		mkdir -p $output_big_folder
 
 		matching_files=( $(find $upload_folder -name '*data*') )
-		zip -j $upload_folder/data.zip ${matching_files[0]}
-		mv ${matching_files[0]} $output_big_folder
+		zip -j $upload_folder/data.zip ${matching_files[0]} *.csv
+		mv -t $output_big_folder ${matching_files[0]} *.csv
 	fi
 
 	cmd="aws s3 cp $upload_folder s3://agief-project/experiment-output/$prefix/output --recursive"
