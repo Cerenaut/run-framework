@@ -137,7 +137,8 @@ def compress_file(source_filepath):
 def compress_files(zipfilepath, source_filepaths):
     with zipfile.ZipFile(zipfilepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for filepath in source_filepaths:
-            zipf.write(filepath, os.path.basename(filepath))
+            if os.path.isfile(filepath) and os.path.exists(filepath):
+                zipf.write(filepath, os.path.basename(filepath))
 
 def compress_folder_contents(source_path):
     """
