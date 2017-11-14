@@ -458,8 +458,8 @@ class Experiment:
                       "and exporting data by saving on compute.")
             else:
                 # Get features and labels CSV files
-                output_labels_filepath = self.experiment_utils.outputfile(self.prefix(), "labels.csv")
-                output_features_filepath = self.experiment_utils.outputfile(self.prefix(), "features.csv")
+                output_labels_filepath = utils.match_file_by_name(folder_path, 'labels')
+                output_features_filepath = utils.match_file_by_name(folder_path, 'features')
 
                 files_to_compress = [
                     output_data_filepath,
