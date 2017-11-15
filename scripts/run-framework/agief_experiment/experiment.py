@@ -185,6 +185,7 @@ class Experiment:
             self.set_labels(compute_node)
             self.set_features(compute_node)
 
+            self.set_config(compute_node)
             self.set_dataset(compute_node)
 
             if not self.debug_no_run:
@@ -363,6 +364,20 @@ class Experiment:
         filename = utils.append_before_ext('features.csv', '_' + self.prefix())
         out_features_filepath = self.experiment_utils.outputfile(self.prefix(), filename)
         compute_node.set_parameter_db(self.entity_with_prefix('feature-series'), 'fileNameWrite', out_features_filepath)
+
+    def set_config(self, compute_node):
+        print("\n....... Set Entity Config")
+
+        with open(self.experiment_utils.experiment_def_file()) as data_exps_file:
+            data = json.load(data_exps_file)
+
+        for exp_i in data['experiments']:
+            for param in exp_i['config-parameters']:
+                entity_name = param['entity-name']
+                param_path = param['parameter-path']
+                config_value = param['value']
+
+                compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, config_value)
 
     def set_dataset(self, compute_node):
         """
