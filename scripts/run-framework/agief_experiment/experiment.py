@@ -24,6 +24,9 @@ class Experiment:
     TEMPLATE_PREFIX = "SPAGHETTI"
     PREFIX_DELIMITER = "--"
 
+    LABELS_FILENAME = 'labels'
+    FEATURES_FILENAME = 'features'
+
     def __init__(self, debug_no_run, launch_mode, exps_file, no_compress):
         self.exps_file = exps_file
         self.debug_no_run = debug_no_run
@@ -356,12 +359,12 @@ class Experiment:
                                                  sweep_param_vals=sweep_param_vals)
 
     def set_labels(self, compute_node):
-        filename = utils.append_before_ext('labels.csv', '_' + self.prefix())
+        filename = utils.append_before_ext(LABELS_FILENAME + '.csv', '_' + self.prefix())
         out_labels_filepath = self.experiment_utils.outputfile(self.prefix(), filename)
         compute_node.set_parameter_db(self.entity_with_prefix('label-series'), 'fileNameWrite', out_labels_filepath)
 
     def set_features(self, compute_node):
-        filename = utils.append_before_ext('features.csv', '_' + self.prefix())
+        filename = utils.append_before_ext(FEATURES_FILENAME + '.csv', '_' + self.prefix())
         out_features_filepath = self.experiment_utils.outputfile(self.prefix(), filename)
         compute_node.set_parameter_db(self.entity_with_prefix('feature-series'), 'fileNameWrite', out_features_filepath)
 
@@ -473,8 +476,8 @@ class Experiment:
                       "and exporting data by saving on compute.")
             else:
                 # Get features and labels CSV files
-                output_labels_filepath = utils.match_file_by_name(folder_path, 'labels')
-                output_features_filepath = utils.match_file_by_name(folder_path, 'features')
+                output_labels_filepath = utils.match_file_by_name(folder_path, LABELS_FILENAME)
+                output_features_filepath = utils.match_file_by_name(folder_path, FEATURES_FILENAME)
 
                 files_to_compress = [
                     output_data_filepath,
