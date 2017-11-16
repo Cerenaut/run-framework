@@ -185,11 +185,7 @@ class Experiment:
             compute_node.import_experiment(entity_filepath, data_filepaths)
             compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
 
-            self.set_labels(compute_node)
-            self.set_features(compute_node)
-
-            self.set_config(compute_node)
-            self.set_analytics(compute_node)
+            self.set_entity_params(compute_node)
             self.set_dataset(compute_node)
 
             if not self.debug_no_run:
@@ -369,37 +365,23 @@ class Experiment:
         out_features_filepath = self.experiment_utils.outputfile(self.prefix(), filename)
         compute_node.set_parameter_db(self.entity_with_prefix('feature-series'), 'fileNameWrite', out_features_filepath)
 
-    def set_analytics(self, compute_node):
-        print("\n....... Set Analytics")
+    def set_entity_params(self, compute_node):
+        print("\n....... Set Entity Parameters")
 
         with open(self.experiment_utils.experiment_def_file()) as data_exps_file:
             data = json.load(data_exps_file)
 
         for exp_i in data['experiments']:
-            for param in exp_i['analytics-parameters']:
+            for param in exp_i['entity-parameters']:
                 entity_name = param['entity-name']
                 param_path = param['parameter-path']
                 value = param['value']
 
-                if param_path == 'fileNameFeatures' or param_path == 'fileNameLabels':
+                if utils.is_valid_filename(value):
+                    value = value.replace(self.TEMPLATE_PREFIX, self.prefix())
                     value = self.experiment_utils.runpath(value)
 
-                print(param_path + ":" + value)
                 compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, value)
-
-    def set_config(self, compute_node):
-        print("\n....... Set Entity Config")
-
-        with open(self.experiment_utils.experiment_def_file()) as data_exps_file:
-            data = json.load(data_exps_file)
-
-        for exp_i in data['experiments']:
-            for param in exp_i['config-parameters']:
-                entity_name = param['entity-name']
-                param_path = param['parameter-path']
-                config_value = param['value']
-
-                compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, config_value)
 
     def set_dataset(self, compute_node):
         """

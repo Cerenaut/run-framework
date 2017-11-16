@@ -23,7 +23,6 @@ def replace_in_file(src_string, dest_string, file_path):
         print(line)
     f.close()
 
-
 def create_folder(filepath):
     if not os.path.exists(os.path.dirname(filepath)):
         try:
@@ -118,6 +117,12 @@ def check_validity(files):
             break
 
     return is_valid
+
+
+def is_valid_filename(filepath):
+    fileName, fileExtension = os.path.splitext(filepath)
+    if fileExtension: return True
+    return False
 
 
 def compress_file(source_filepath):
