@@ -21,8 +21,9 @@ class Experiment:
         It does _not_ relate to setting up the infrastructure.
     """
 
-    TEMPLATE_PREFIX = "SPAGHETTI"
     PREFIX_DELIMITER = "--"
+    TEMPLATE_PREFIX = "SPAGHETTI"
+    TEMPLATE_OUTPUT_PREFIX = "PASTASAUCE"
 
     LABELS_FILENAME = "labels"
     FEATURES_FILENAME = "features"
@@ -378,7 +379,7 @@ class Experiment:
                 value = param['value']
 
                 if utils.is_valid_filename(value):
-                    value = value.replace(self.TEMPLATE_PREFIX, self.prefix())
+                    value = value.replace(self.TEMPLATE_OUTPUT_PREFIX, self.prefix())
                     value = self.experiment_utils.runpath(value)
 
                 compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, value)
