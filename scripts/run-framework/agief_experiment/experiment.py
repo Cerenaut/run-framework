@@ -356,16 +356,6 @@ class Experiment:
                                                  data_filepaths=exp_data_filepaths,
                                                  sweep_param_vals=sweep_param_vals)
 
-    def set_labels(self, compute_node):
-        filename = utils.append_before_ext(self.LABELS_FILENAME + '.csv', '_' + self.prefix())
-        out_labels_filepath = self.experiment_utils.outputfile(self.prefix(), filename)
-        compute_node.set_parameter_db(self.entity_with_prefix('label-series'), 'fileNameWrite', out_labels_filepath)
-
-    def set_features(self, compute_node):
-        filename = utils.append_before_ext(self.FEATURES_FILENAME + '.csv', '_' + self.prefix())
-        out_features_filepath = self.experiment_utils.outputfile(self.prefix(), filename)
-        compute_node.set_parameter_db(self.entity_with_prefix('feature-series'), 'fileNameWrite', out_features_filepath)
-
     def set_entity_params(self, compute_node):
         print("\n....... Set Entity Parameters")
 
