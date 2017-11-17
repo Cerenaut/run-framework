@@ -290,6 +290,9 @@ class Compute:
         payload = {'entity': entity_name, 'path': param_path, 'value': value}
         response = requests.post(self.base_url() + '/config', params=payload)
 
+        if response.status_code == 400:
+            raise Exception(response.text)
+
         logging.debug("set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path + ', value = ' + value)
         logging.debug("response = " + response.text)
 
