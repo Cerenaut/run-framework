@@ -18,6 +18,7 @@ user=${4:-ec2-user}
 remote_variables_file=${5:-/home/ec2-user/agief-project/variables/variables-ec2.sh}
 port=${6:-22}
 no_compress=${7:-False}
+csv_output=${8:-False}
 
 echo "Using prefix = " $prefix
 echo "Using host = " $host
@@ -26,20 +27,25 @@ echo "Using user = " $user
 echo "Using remote_variables_file = " $remote_variables_file
 echo "Using port =  " $port
 
-ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix=$prefix VARIABLES_FILE=$remote_variables_file no_compress=$no_compress 'bash --login -s' <<'ENDSSH'
+ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix=$prefix VARIABLES_FILE=$remote_variables_file no_compress=$no_compress csv_output=$csv_output 'bash --login -s' <<'ENDSSH'
 	export VARIABLES_FILE=$VARIABLES_FILE
 	source $VARIABLES_FILE
 
 	upload_folder=$AGI_RUN_HOME/output/$prefix
 	echo "Calculated upload-folder = " $upload_folder
 
+	csv_files=""
+	if [ "$csv_output" = "True" ]; then
+		csv_files="*.csv"
+	fi
+
 	if [ "$no_compress" = "False" ]; then
 		output_big_folder=$AGI_RUN_HOME/output-big/
 		mkdir -p $output_big_folder
 
 		matching_files=( $(find $upload_folder -name '*data*') )
-		zip -j $upload_folder/data.zip ${matching_files[0]} *.csv
-		mv -t $output_big_folder ${matching_files[0]} *.csv
+		zip -j $upload_folder/data.zip ${matching_files[0]} {$csv_files}
+		mv -t $output_big_folder ${matching_files[0]} {$csv_files}
 	fi
 
 	cmd="aws s3 cp $upload_folder s3://agief-project/experiment-output/$prefix/output --recursive"

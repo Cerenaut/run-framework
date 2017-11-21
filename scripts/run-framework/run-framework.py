@@ -137,6 +137,9 @@ def setup_arg_parsing():
     parser.add_argument('--no_compress', dest='no_compress', action='store_true',
                         help='If set, then DO NOT compress the experiment output data (default=%(default)s).')
 
+    parser.add_argument('--csv_output', dest='csv_output', action='store_true',
+                        help='If set, then output CSV files for features/labels (default=%(default)s).')
+
     parser.set_defaults(remote_type="local")  # i.e. not remote
     parser.set_defaults(host="localhost")
     parser.set_defaults(port="8491")
@@ -151,6 +154,7 @@ def setup_arg_parsing():
     parser.set_defaults(no_docker=False)
     parser.set_defaults(logging="warning")
     parser.set_defaults(no_compress=False)
+    parser.set_defaults(csv_output=False)
 
     return parser.parse_args()
 
@@ -210,7 +214,7 @@ def main():
     logging.debug("Arguments: %s", args)
 
     exps_file = args.exps_file if args.exps_file else ""
-    experiment = Experiment(args.debug_no_run, LaunchMode.from_args(args), exps_file, args.no_compress)
+    experiment = Experiment(args.debug_no_run, LaunchMode.from_args(args), exps_file, args.no_compress, args.csv_output)
 
     # 1) Generate input files
     if args.main_class:

@@ -28,11 +28,12 @@ class Experiment:
     LABELS_FILENAME = "labels"
     FEATURES_FILENAME = "features"
 
-    def __init__(self, debug_no_run, launch_mode, exps_file, no_compress):
+    def __init__(self, debug_no_run, launch_mode, exps_file, no_compress, csv_output):
         self.exps_file = exps_file
         self.debug_no_run = debug_no_run
         self.launch_mode = launch_mode
         self.no_compress = no_compress
+        self.csv_output = csv_output
 
         self.experiment_utils = ExperimentUtils(exps_file)
 
@@ -455,7 +456,7 @@ class Experiment:
         if compute_node.remote() and export_compute:
             print "\n --- Upload from exported file on remote machine."
             # remote upload of /output/[prefix] folder
-            cloud.remote_upload_output_s3(compute_node.host_node, self.prefix(), self.no_compress)
+            cloud.remote_upload_output_s3(compute_node.host_node, self.prefix(), self.no_compress, self.csv_output)
         # otherwise, compress it here before upload if applicable
         elif self.no_compress is False:
             folder_path_big = self.experiment_utils.runpath("output-big/")
@@ -467,25 +468,25 @@ class Experiment:
                 logging.warning("No data file found. This should only happen if you are running remote via ssh, " \
                       "and exporting data by saving on compute.")
             else:
-                # Get features and labels CSV files
-                output_labels_filepath = utils.match_file_by_name(folder_path, self.LABELS_FILENAME)
-                output_features_filepath = utils.match_file_by_name(folder_path, self.FEATURES_FILENAME)
-
-                files_to_compress = [
-                    output_data_filepath,
-                    output_labels_filepath,
-                    output_features_filepath
-                ]
-
+                files_to_compress = [output_data_filepath]
                 archive_filename = self.experiment_utils.outputfile(self.prefix(), "data.zip")
 
-                # Compress data, features and labels
+                if self.csv_output:
+                    # Get features and labels CSV files
+                    output_labels_filepath = utils.match_file_by_name(folder_path, self.LABELS_FILENAME)
+                    output_features_filepath = utils.match_file_by_name(folder_path, self.FEATURES_FILENAME)
+
+                    files_to_compress.append(output_labels_filepath)
+                    files_to_compress.append(output_features_filepath)
+
+                # Compress the output files
                 utils.compress_files(archive_filename, files_to_compress)
 
                 # Move uncompressed files to /output-big directory
                 utils.move_file(output_data_filepath, folder_path_big, True)
-                utils.move_file(output_labels_filepath, folder_path_big, True)
-                utils.move_file(output_features_filepath, folder_path_big, True)
+                if self.csv_output:
+                    utils.move_file(output_labels_filepath, folder_path_big, True)
+                    utils.move_file(output_features_filepath, folder_path_big, True)
 
 
         # for both, upload the output folder on this machine (where script is running)
