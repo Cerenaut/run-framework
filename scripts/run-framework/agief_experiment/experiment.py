@@ -41,8 +41,6 @@ class Experiment:
         self.prefixes_history = ""
         self.prefix_modifier = ""
 
-        self.run_time = 0
-
     def reset_prefix(self):
 
         print("-------------- RESET_PREFIX -------------")
@@ -194,6 +192,9 @@ class Experiment:
 
             if not self.debug_no_run:
                 compute_node.run_experiment(self.entity_with_prefix("experiment"))
+                self.append_runtime(compute_node.runtime)
+                print("Parameter Sweeps finished in %d days, %d hr, %d min, " \
+                    "%d s." % tuple(compute_node.runtime))
 
             self.remember_prefix()
 
@@ -519,10 +520,8 @@ class Experiment:
         else:
             cloud.upload_folder_s3(bucket_name, key, source_path)
 
-    @staticmethod
-    def append_runtime(runtime):
-        formatted_runtime = utils.format_timedelta(runtime)
+    def append_runtime(self, runtime):
         info_filepath = self.experiment_utils.outputfile(self.prefix(), "experiment-info.txt")
 
         with open(info_filepath, 'a') as data:
-            data.write("\n\nExperiment Runtime: %d days, %d hr, %d min, %d s, %d ms." % tuple(exp_runtime))
+            data.write("\n\nExperiment Runtime: %d days, %d hr, %d min, %d s." % tuple(runtime))

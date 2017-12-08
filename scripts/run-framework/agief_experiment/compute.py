@@ -21,6 +21,7 @@ class Compute:
         self.port = port
         self.host_node = host_node
         self.container_id = ''
+        self.runtime = 0
 
     def remote(self):
         return self.host_node.remote()
@@ -107,10 +108,9 @@ class Compute:
         print_age(i, age_string)
         print("   -> success, parameter reached value" + age_string)
 
-        # append & print param sweeps runtime
-        Experiment.append_runtime(runtime)
-        print("Parameter Sweeps finished in %d days, %d hr, %d min, " \
-              "%d s, %d ms." % tuple(run_time))
+        # set param sweeps runtime
+        if param_runtime > 0:
+            self.runtime = utils.format_runtime(param_runtime)
 
     def import_experiment(self, entity_filepath=None, data_filepaths=None):
         """setup the running instance of AGIEF with the input files"""
