@@ -194,7 +194,7 @@ class Experiment:
                 compute_node.run_experiment(self.entity_with_prefix("experiment"))
                 self.append_runtime(compute_node.runtime)
                 print("Parameter Sweeps finished in %d days, %d hr, %d min, " \
-                    "%d s." % tuple(compute_node.runtime))
+                    "%d s" % tuple(compute_node.runtime))
 
             self.remember_prefix()
 
@@ -524,4 +524,4 @@ class Experiment:
         info_filepath = self.experiment_utils.outputfile(self.prefix(), "experiment-info.txt")
 
         with open(info_filepath, 'a') as data:
-            data.write("\n\nExperiment Runtime: %d days, %d hr, %d min, %d s." % tuple(runtime))
+            data.write("\nExperiment Runtime: %d days, %d hr, %d min, %d s" % tuple(runtime))

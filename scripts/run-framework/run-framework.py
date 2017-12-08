@@ -341,7 +341,7 @@ def main():
 
     # Log the experiment runtime in d:h:m:s:ms format
     exp_runtime = utils.format_timedelta(exp_end_time - exp_start_time)
-    print("Experiment finished in %d days, %d hr, %d min, %d s." % tuple(exp_runtime))
+    print("Experiment finished in %d days, %d hr, %d min, %d s" % tuple(exp_runtime))
 
     if failed:
         exit(1)
