@@ -52,6 +52,7 @@ class Compute:
         wait_period = 10
         age = None
         i = 0
+        param_runtime = 0
         connection_error_count = 0
 
         print("... Waiting for param to achieve value (try every " + str(wait_period) + "s): " + entity_name +
@@ -85,6 +86,7 @@ class Compute:
 
                 if 'value' in config:
                     age = dpath.util.get(config, 'value.age', '.')
+                    param_runtime = dpath.util.get(config, 'value.runTime', '.')
                     parameter = dpath.util.get(config, 'value.' + param_path, '.')
                     if parameter == value:
                         logging.debug(
@@ -104,6 +106,11 @@ class Compute:
         # successfully reached value
         print_age(i, age_string)
         print("   -> success, parameter reached value" + age_string)
+
+        # append & print param sweeps runtime
+        Experiment.append_runtime(runtime)
+        print("Parameter Sweeps finished in %d days, %d hr, %d min, " \
+              "%d s, %d ms." % tuple(run_time))
 
     def import_experiment(self, entity_filepath=None, data_filepaths=None):
         """setup the running instance of AGIEF with the input files"""
