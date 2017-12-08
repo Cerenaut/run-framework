@@ -458,6 +458,6 @@ class Compute:
                 utils.remote_run(self.host_node, 'docker stop ' + self.container_id)
             else:
                 logging.warning("Docker did not shut down, could not locate container id")
-        else:
+        elif not args.no_docker:
             # stops local docker
-            utils.docker_stop()
+                utils.docker_stop()
