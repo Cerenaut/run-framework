@@ -21,6 +21,7 @@ class Compute:
         self.port = port
         self.host_node = host_node
         self.container_id = ''
+        self.runtime = 0
 
     def remote(self):
         return self.host_node.remote()
@@ -52,6 +53,7 @@ class Compute:
         wait_period = 10
         age = None
         i = 0
+        param_runtime = 0
         connection_error_count = 0
 
         print("... Waiting for param to achieve value (try every " + str(wait_period) + "s): " + entity_name +
@@ -85,6 +87,7 @@ class Compute:
 
                 if 'value' in config:
                     age = dpath.util.get(config, 'value.age', '.')
+                    param_runtime = dpath.util.get(config, 'value.runTime', '.')
                     parameter = dpath.util.get(config, 'value.' + param_path, '.')
                     if parameter == value:
                         logging.debug(
@@ -104,6 +107,10 @@ class Compute:
         # successfully reached value
         print_age(i, age_string)
         print("   -> success, parameter reached value" + age_string)
+
+        # set param sweeps runtime
+        if param_runtime > 0:
+            self.runtime = utils.format_runtime(param_runtime)
 
     def import_experiment(self, entity_filepath=None, data_filepaths=None):
         """setup the running instance of AGIEF with the input files"""

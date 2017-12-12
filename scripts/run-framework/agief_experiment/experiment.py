@@ -192,6 +192,9 @@ class Experiment:
 
             if not self.debug_no_run:
                 compute_node.run_experiment(self.entity_with_prefix("experiment"))
+                self.append_runtime(compute_node.runtime)
+                print("Parameter Sweeps finished in %d days, %d hr, %d min, " \
+                    "%d s" % tuple(compute_node.runtime))
 
             self.remember_prefix()
 
@@ -516,3 +519,9 @@ class Experiment:
             cloud.upload_file_s3(bucket_name, key, source_path)
         else:
             cloud.upload_folder_s3(bucket_name, key, source_path)
+
+    def append_runtime(self, runtime):
+        info_filepath = self.experiment_utils.outputfile(self.prefix(), "experiment-info.txt")
+
+        with open(info_filepath, 'a') as data:
+            data.write("\nExperiment Runtime: %d days, %d hr, %d min, %d s" % tuple(runtime))

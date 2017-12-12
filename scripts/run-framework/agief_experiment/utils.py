@@ -8,6 +8,7 @@ import sys
 import time
 import logging
 import paramiko
+import datetime
 
 
 def restart_line():
@@ -229,7 +230,7 @@ def set_entityfile_config(entity, config):
         Get a valid json config string, and put it back in the exported entity in a way that can be Imported 
         i.e. with escape characters so that it is a dumb string
         
-        NOTE: Works with Import/Export API, which does not treat config string as a valid json string 
+        NOTE: Works with Import/Export API, which does not treat config string as a valid json string
     """
 
     # put the escape characters back in the config str and write back to file
@@ -242,10 +243,25 @@ def set_entityfile_config(entity, config):
 
 
 def format_timedelta(td):
-    hours = td.seconds // 3600
-    minutes = (td.seconds // 60) % 60
+    # Split td.seconds into minutes and seconds
+    m       = td.seconds / 60;
+    seconds = td.seconds % 60;
 
-    return td.days, hours, minutes, td.seconds, td.microseconds
+    # Split m into hours and minutes.
+    h       = m / 60;
+    minutes = m % 60;
+
+    # Split h into days and hours
+    days    = h / 24;
+    hours   = h % 24;
+
+    return days, hours, minutes, seconds
+
+
+def format_runtime(runtime):
+    td_runtime = datetime.timedelta(milliseconds=int(runtime))
+    formatted_runtime = format_timedelta(td_runtime)
+    return formatted_runtime
 
 
 def docker_id():
