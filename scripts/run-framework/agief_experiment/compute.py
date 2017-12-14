@@ -87,7 +87,7 @@ class Compute:
 
                 if 'value' in config:
                     age = dpath.util.get(config, 'value.age', '.')
-                    # param_runtime = dpath.util.get(config, 'value.runTime', '.')
+                    param_runtime = dpath.util.get(config, 'value.runTime', '.')
                     parameter = dpath.util.get(config, 'value.' + param_path, '.')
                     if parameter == value:
                         logging.debug(
