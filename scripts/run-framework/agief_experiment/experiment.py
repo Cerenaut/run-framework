@@ -192,9 +192,9 @@ class Experiment:
 
             if not self.debug_no_run:
                 compute_node.run_experiment(self.entity_with_prefix("experiment"))
-                self.append_runtime(compute_node.runtime)
-                print("Parameter Sweeps finished in %d days, %d hr, %d min, " \
-                    "%d s" % tuple(compute_node.runtime))
+                # self.append_runtime(compute_node.runtime)
+                # print("Parameter Sweeps finished in %d days, %d hr, %d min, " \
+                #     "%d s" % tuple(compute_node.runtime))
 
             self.remember_prefix()
 
