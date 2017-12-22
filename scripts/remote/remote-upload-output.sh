@@ -43,9 +43,9 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 		output_big_folder=$AGI_RUN_HOME/output-big/
 		mkdir -p $output_big_folder
 
-		matching_files=( $(find $upload_folder -name '*data*') )
-		zip -j $upload_folder/data.zip ${matching_files[0]} $csv_files
-		mv -t $output_big_folder ${matching_files[0]} $csv_files
+		matching_files=( $(find $upload_folder -name '*data*.json') )
+		zip -j $upload_folder/data.zip ${matching_files[0]} $upload_folder/$csv_files
+		mv -t $output_big_folder ${matching_files[0]} $upload_folder/$csv_files
 	fi
 
 	cmd="aws s3 cp $upload_folder s3://agief-project/experiment-output/$prefix/output --recursive"
