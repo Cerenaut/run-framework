@@ -178,7 +178,7 @@ def match_file_by_name(source_path, name):
                 ret = os.path.abspath(root + "/" + matching_files[0])
                 return ret
             else:
-                logging.warning("no matching files found in: " + source_path)
+                logging.warning("no files matching '" + name + "' found in: " + source_path)
     else:
         logging.warning("this folder is not valid: " + source_path)
 
