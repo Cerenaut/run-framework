@@ -156,14 +156,22 @@ def export_results(results, build_no, target_path):
         # Header/Columns
         csv_writer.writerow(CSV_HEADER)
 
-        for ph1_i in results:
+        # Sort Phase 1 Prefixes
+        ph1_prefixes = results.keys()
+        ph1_prefixes.sort()
+
+        for ph1_i in ph1_prefixes:
             # Phase 1
             build = 'Build #{0}'.format(build_no)
             ph1_info = "".join(results[ph1_i]['ph1_info']).rstrip()
             csv_writer.writerow([ph1_i, build, 'Phase 1', 'N/A', 'N/A', ph1_info])
 
+            # Sort Phase 2 Prefixes
+            ph2_prefixes = results[ph1_i]['ph2_info'].keys()
+            ph2_prefixes.sort()
+
             # Phase 2
-            for ph2_i in results[ph1_i]['ph2_info']:
+            for ph2_i in ph2_prefixes:
                 exp_info = "".join(results[ph1_i]['ph2_info'][ph2_i]).rstrip()
                 cm_train = "".join(results[ph1_i]['cm'][ph2_i][0]).rstrip()
                 cm_test  = "".join(results[ph1_i]['cm'][ph2_i][1]).rstrip()
