@@ -172,6 +172,9 @@ class Experiment:
         with open(info_filepath, 'w') as data:
             data.write(info)
 
+        # Silently remove older log file if exists
+        utils.remove_file(LOG_FILENAME, True)
+
         failed = False
         task_arn = None
         try:
