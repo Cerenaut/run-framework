@@ -30,6 +30,7 @@ class Experiment:
     FEATURES_FILENAME = "features"
 
     LOG_FILENAME = "log4j2.log"
+    PREFIXES_FILENAME = "prefixes.txt"
 
     def __init__(self, debug_no_run, launch_mode, exps_file, no_compress, csv_output):
         self.exps_file = exps_file
@@ -74,7 +75,7 @@ class Experiment:
     def remember_prefix(self):
         self.prefixes_history += self.prefix() + "\n"
 
-    def persist_prefix_history(self, filename="prefixes.txt"):
+    def persist_prefix_history(self, filename=PREFIXES_FILENAME):
         """ Save prefix history to a file """
 
         print("\n....... Save prefix history to " + filename)
