@@ -450,6 +450,12 @@ class Experiment:
                                     self.experiment_utils.experiments_def_filename,
                                     self.experiment_utils.experiment_def_file())
 
+        # upload prefixes file
+        prefixes_filepath = self.experiment_utils.runpath(self.PREFIXES_FILENAME)
+        self.upload_experiment_file(cloud, self.prefix(),
+                                           self.PREFIXES_FILENAME,
+                                           prefixes_filepath)
+
         # upload log4j configuration file that was used
         if compute_node.remote():
             cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), self.LOG_FILENAME)
