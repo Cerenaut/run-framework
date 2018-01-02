@@ -173,13 +173,6 @@ class Experiment:
         with open(info_filepath, 'w') as data:
             data.write(info)
 
-        # Silently remove older log file if exists
-        log_filepath = self.experiment_utils.runpath(self.LOG_FILENAME)
-        if compute_node.remote():
-             utils.remote_run(compute_node.host_node, 'rm ' + log_filepath)
-        else:
-            utils.remove_file(log_filepath, True)
-
         failed = False
         task_arn = None
         try:
@@ -327,6 +320,13 @@ class Experiment:
         if not os.path.exists(exps_filename):
             msg = "Experiment file does not exist at: " + exps_filename
             raise Exception(msg)
+
+        # Silently remove older log file if exists
+        log_filepath = self.experiment_utils.runpath(self.LOG_FILENAME)
+        if compute_node.remote():
+             utils.remote_run(compute_node.host_node, 'rm ' + log_filepath)
+        else:
+            utils.remove_file(log_filepath, True)
 
         with open(exps_filename) as exps_file:
             filedata = json.load(exps_file)
