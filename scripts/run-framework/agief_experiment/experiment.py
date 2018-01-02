@@ -28,6 +28,8 @@ class Experiment:
     LABELS_FILENAME = "labels"
     FEATURES_FILENAME = "features"
 
+    LOG_FILENAME = "log4j2.log"
+
     def __init__(self, debug_no_run, launch_mode, exps_file, no_compress, csv_output):
         self.exps_file = exps_file
         self.debug_no_run = debug_no_run
@@ -440,15 +442,13 @@ class Experiment:
                                     self.experiment_utils.experiment_def_file())
 
         # upload log4j configuration file that was used
-        log_filename = "log4j2.log"
-
         if compute_node.remote():
-            cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), log_filename)
+            cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), LOG_FILENAME)
         else:
-            log_filepath = self.experiment_utils.runpath(log_filename)
+            log_filepath = self.experiment_utils.runpath(LOG_FILENAME)
             self.upload_experiment_file(cloud,
                                         self.prefix(),
-                                        log_filename,
+                                        LOG_FILENAME,
                                         log_filepath)
 
         # upload /output files (entity.json, data.json and experiment-info.txt)
