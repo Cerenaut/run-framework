@@ -3,6 +3,7 @@ import functools
 import json
 import os
 import logging
+import time
 
 
 import dpath
@@ -173,7 +174,11 @@ class Experiment:
             data.write(info)
 
         # Silently remove older log file if exists
-        utils.remove_file(LOG_FILENAME, True)
+        log_filepath = self.experiment_utils.runpath(self.LOG_FILENAME)
+        if compute_node.remote():
+             utils.remote_run(compute_node.host_node, 'rm ' + log_filepath)
+        else:
+            utils.remove_file(log_filepath, True)
 
         failed = False
         task_arn = None
@@ -446,12 +451,12 @@ class Experiment:
 
         # upload log4j configuration file that was used
         if compute_node.remote():
-            cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), LOG_FILENAME)
+            cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), self.LOG_FILENAME)
         else:
-            log_filepath = self.experiment_utils.runpath(LOG_FILENAME)
+            log_filepath = self.experiment_utils.runpath(self.LOG_FILENAME)
             self.upload_experiment_file(cloud,
                                         self.prefix(),
-                                        LOG_FILENAME,
+                                        self.LOG_FILENAME,
                                         log_filepath)
 
         # upload /output files (entity.json, data.json and experiment-info.txt)
