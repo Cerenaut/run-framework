@@ -82,6 +82,12 @@ class Experiment:
         with open(filename, "w") as prefix_file:
             prefix_file.write(self.prefixes_history)
 
+        # Upload prefix history to S3
+        prefixes_filepath = self.experiment_utils.runpath(self.PREFIXES_FILENAME)
+        self.upload_experiment_file(cloud, self.prefix(),
+                                           self.PREFIXES_FILENAME,
+                                           prefixes_filepath)
+
     def info(self, sweep_param_vals):
 
         message = ""
@@ -449,12 +455,6 @@ class Experiment:
                                     self.prefix(),
                                     self.experiment_utils.experiments_def_filename,
                                     self.experiment_utils.experiment_def_file())
-
-        # upload prefixes file
-        prefixes_filepath = self.experiment_utils.runpath(self.PREFIXES_FILENAME)
-        self.upload_experiment_file(cloud, self.prefix(),
-                                           self.PREFIXES_FILENAME,
-                                           prefixes_filepath)
 
         # upload log4j configuration file that was used
         if compute_node.remote():
