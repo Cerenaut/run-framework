@@ -209,8 +209,24 @@ def move_file(source_filepath, dest_path, create_dest=False):
         logging.error("the source file path is not valid: " + source_filepath)
 
 
+def remove_file(source_filepath, silent=False):
+    """
+    Removes a file using the default os.remove method with the option for
+    silent removal to avoid raising errors when the file is not found.
+    :param source_filepath: the path to the file that needs to be removed
+    :param silent: (optional) if True, no error will be raised if file not found
+    :return:
+    """
+    try:
+        os.remove(source_filepath)
+    except OSError as e:
+        # Raise error if not silent, or if error not file not found
+        if not silent or e.errno != errno.ENOENT:
+            raise
+
+
 def get_entityfile_config(entity):
-    """ 
+    """
         Get the config field straight out of an exported Entity, and turn it into valid JSON 
         NOTE: Works with Import/Export API, which does not treat config string as a valid json string
     """
