@@ -75,7 +75,7 @@ class Experiment:
     def remember_prefix(self):
         self.prefixes_history += self.prefix() + "\n"
 
-    def persist_prefix_history(self, filename=PREFIXES_FILENAME):
+    def persist_prefix_history(self, cloud, filename=PREFIXES_FILENAME):
         """ Save prefix history to a file """
 
         print("\n....... Save prefix history to " + filename)
@@ -83,10 +83,9 @@ class Experiment:
             prefix_file.write(self.prefixes_history)
 
         # Upload prefix history to S3
-        prefixes_filepath = self.experiment_utils.runpath(self.PREFIXES_FILENAME)
         self.upload_experiment_file(cloud, self.prefix(),
                                            self.PREFIXES_FILENAME,
-                                           prefixes_filepath)
+                                           filename)
 
     def info(self, sweep_param_vals):
 

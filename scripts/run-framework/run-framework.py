@@ -303,7 +303,7 @@ def main():
         # 5) Run experiments (includes per experiment 'export results' and 'upload results')
         if args.exps_file:
             experiment.run_sweeps(compute_node, cloud, args)
-            experiment.persist_prefix_history()
+            experiment.persist_prefix_history(cloud)
 
     except Exception as err: # pylint: disable=W0703
         failed = True
