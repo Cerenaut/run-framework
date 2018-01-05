@@ -32,13 +32,17 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 	download_folder=$AGI_RUN_HOME/output/$prefix
 	echo "Calculated download-folder = " $download_folder
 
-	# create folder if it doesn't exist
-	mkdir -p $download_folder
+	# Sync with S3 only if the directory is empty or non-existent
+	# ref: https://stackoverflow.com/q/20456666/
+	if ! find "$download_folder" -mindepth 1 -print -quit | grep -q .; then
+		# create folder if it doesn't exist
+		mkdir -p $download_folder
 
-	cmd="aws s3 cp s3://agief-project/experiment-output/$prefix/output $download_folder --recursive"
+		cmd="aws s3 cp s3://agief-project/experiment-output/$prefix/output $download_folder --recursive"
 
-	echo $cmd >> remote-download-cmd.log
-	eval $cmd >> remote-download-stdout.log 2>> remote-download-stderr.log
+		echo $cmd >> remote-download-cmd.log
+		eval $cmd >> remote-download-stdout.log 2>> remote-download-stderr.log
+	fi
 
 	# find zip file in download folder
 	matching_files=( $(find $download_folder -maxdepth 1 -name '*.zip') )
