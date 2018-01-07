@@ -62,8 +62,8 @@ def setup_arg_parsing():
     parser.add_argument('--step_sync', dest='sync', action='store_true',
                         help='Sync the code and run folder. Copy from local machine to remote. '
                              'Requires setting --step_remote and key path with --ssh_keypath')
-    parser.add_argument('--step_sync_s3_prefix', dest='sync_s3_prefix', required=False,
-                        help='Sync output files. Download relevant output files '
+    parser.add_argument('--step_prepare_data_from_prefix', dest='prepare_data_from_prefix', required=False,
+                        help='Prepare output files. Download relevant output files if necessary '
                              'from a previous phase determined by prefix, to the remote machine.'
                              'Requires setting --step_remote and key path with --ssh_keypath')
     parser.add_argument('--step_compute', dest='launch_compute', action='store_true',
@@ -289,10 +289,10 @@ def main():
         if args.sync:
             cloud.sync_experiment(compute_node.host_node)
 
-        # 3.5) Sync data from S3 (typically used to download output files
-        # from a prev. experiment to be used as input)
-        if args.sync_s3_prefix:
-            cloud.remote_download_output(args.sync_s3_prefix, compute_node.host_node)
+        # 3.5) Prepare data and sync from S3 if necessary
+        # (typically used to download output files from a prev. experiment to be used as input)
+        if args.prepare_data_from_prefix:
+            cloud.remote_download_output(args.prepare_data_from_prefix, compute_node.host_node)
 
         # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
         if (LaunchMode.from_args(args) is LaunchMode.per_session) and args.launch_compute:
