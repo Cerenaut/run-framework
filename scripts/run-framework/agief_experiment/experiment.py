@@ -83,7 +83,8 @@ class Experiment:
             prefix_file.write(self.prefixes_history)
 
         # Upload prefix history to S3
-        self.upload_experiment_file(cloud, self.prefix(),
+        prefixes_list = self.prefixes_history.splitlines()
+        self.upload_experiment_file(cloud, prefixes_list[0],
                                            self.PREFIXES_FILENAME,
                                            filename)
 
