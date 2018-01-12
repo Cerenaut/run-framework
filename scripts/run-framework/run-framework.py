@@ -14,15 +14,19 @@ from agief_experiment.launchmode import LaunchMode
 from agief_experiment import utils
 
 HELP_GENERIC = """
-run-framework.py allows you to run each step of the AGIEF (AGI Experimental Framework), locally and on AWS.
-Each step can be toggled with a parameter prefixed with 'step'. See parameter list for description of parameters.
-As with all scripts that are part of AGIEF, the environment variables in VARIABLES_FILES are used.
-The main ones being $AGI_HOME (code) and $AGI_RUN_HOME (experiment definitions).
+run-framework.py allows you to run each step of the AGIEF (AGI Experimental
+Framework), locally and on AWS. Each step can be toggled with a parameter
+prefixed with 'step'. See parameter list for description of parameters.
+As with all scripts that are part of AGIEF, the environment variables in
+VARIABLES_FILES are used. The main ones being $AGI_HOME (code) and
+$AGI_RUN_HOME (experiment definitions).
 
-Note that script runs the experiment by updating the experiment Entity until termination.
-The script imports input files to set up the experiment, and exports experimental results for archive.
+Note that script runs the experiment by updating the experiment Entity
+until termination. The script imports input files to set up the experiment,
+and exports experimental results for archive.
 
-See README.md for installation instructions and longer explanation of the end-to-end AGIEF system.
+See README.md for installation instructions and longer explanation
+of the end-to-end AGIEF system.
 
 Assumptions:
 - experiment entity exists, with 'terminated' field
@@ -37,108 +41,136 @@ def setup_arg_parsing():
     import argparse
     from argparse import RawTextHelpFormatter
 
-    parser = argparse.ArgumentParser(description=HELP_GENERIC, formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description=HELP_GENERIC,
+                                     formatter_class=RawTextHelpFormatter)
 
     # generate input files from the java experiment description
     parser.add_argument('--step_gen_input', dest='main_class', required=False,
-                        help='Generate input files for experiments, then exit. '
-                             'The value is the Main class to run, that defines '
-                             'the experiment, before exporting the experimental '
-                             'input files entities.json and data.json. ')
+                        help='Generate input files for experiments, then '
+                             'exit. The value is the Main class to run, that '
+                             'defines the experiment, before exporting the '
+                             'experimental input files entities.json '
+                             'and data.json.')
 
     # main program flow
     parser.add_argument('--step_remote', dest='remote_type',
-                        help='Run Compute on remote machine. This parameter can '
-                             'specify "simple" or "aws". '
+                        help='Run Compute on remote machine. This parameter '
+                             'can specify "simple" or "aws". '
                              'If "AWS", then launch remote machine on AWS '
-                             '(then --instanceid or --amiid needs to be specified).'
-                             'Requires setting key path with --ssh_keypath'
-                             '(default= % (default)s)')
+                             '(then --instanceid or --amiid needs to '
+                             'be specified). Requires setting key path '
+                             'with --ssh_keypath (default=%(default)s)')
     parser.add_argument('--exps_file', dest='exps_file', required=False,
-                        help='Run experiments, defined in the file that is set '
-                             'with this parameter. Filename is within '
-                             'AGI_RUN_HOME that defines the experiments to run '
-                             '(with parameter sweeps) in json format (default=%(default)s).')
+                        help='Run experiments, defined in the file that is '
+                             'set with this parameter. Filename is within '
+                             'AGI_RUN_HOME that defines the experiments to '
+                             'run (with parameter sweeps) in json format '
+                             '(default=%(default)s).')
     parser.add_argument('--step_sync', dest='sync', action='store_true',
-                        help='Sync the code and run folder. Copy from local machine to remote. '
-                             'Requires setting --step_remote and key path with --ssh_keypath')
-    parser.add_argument('--step_prepare_data_from_prefix', dest='prepare_data_from_prefix', required=False,
-                        help='Prepare output files. Download relevant output files if necessary '
-                             'from a previous phase determined by prefix, to the remote machine.'
-                             'Requires setting --step_remote and key path with --ssh_keypath')
-    parser.add_argument('--step_compute', dest='launch_compute', action='store_true',
+                        help='Sync the code and run folder. Copy from local '
+                             'machine to remote. Requires setting '
+                             '--step_remote and key path with --ssh_keypath')
+    parser.add_argument('--step_prepare_data_from_prefix',
+                        dest='prepare_data_from_prefix', required=False,
+                        help='Prepare output files. Download relevant output '
+                             'files if necessary from a previous phase '
+                             'determined by prefix, to the remote machine. '
+                             'Requires setting --step_remote and key path '
+                             'with --ssh_keypath')
+    parser.add_argument('--step_compute', dest='launch_compute',
+                        action='store_true',
                         help='Launch the Compute node.')
-    parser.add_argument('--step_shutdown', dest='shutdown', action='store_true',
+    parser.add_argument('--step_shutdown', dest='shutdown',
+                        action='store_true',
                         help='Shutdown instances and Compute '
                              '(if --launch_per_session) after other stages.')
     parser.add_argument('--step_export', dest='export', action='store_true',
-                        help='Export entity tree and data at the end of each experiment.')
-    parser.add_argument('--step_export_compute', dest='export_compute', action='store_true',
+                        help='Export entity tree and data at the end of '
+                             'each experiment.')
+    parser.add_argument('--step_export_compute', dest='export_compute',
+                        action='store_true',
                         help='Compute should export entity tree and data at '
-                             'the end of each experiment - i.e. saved on the Compute node.')
+                             'the end of each experiment - i.e. saved on '
+                             'the Compute node.')
     parser.add_argument('--step_upload', dest='upload', action='store_true',
-                        help='Upload exported entity tree and data at the end of each experiment.')
-    parser.add_argument('--DEBUG-NO-RUN', dest='debug_no_run', action='store_true',
-                        help='Do everything except actually run experiment - used for debugging.')
+                        help='Upload exported entity tree and data at the end '
+                             'of each experiment.')
+    parser.add_argument('--DEBUG-NO-RUN', dest='debug_no_run',
+                        action='store_true',
+                        help='Do everything except actually run experiment '
+                             '- used for debugging.')
 
     # how to reach the Compute node
     parser.add_argument('--host', dest='host', required=False,
-                        help='Host where the Compute node will be running (default=%(default)s). '
-                             'THIS IS IGNORED IF RUNNING ON AWS (in which case '
-                             'the IP of the instance specified by the Instance ID is used)')
+                        help='Host where the Compute node will be running '
+                             '(default=%(default)s). THIS IS IGNORED IF '
+                             'RUNNING ON AWS (in which case the IP of the '
+                             'instance specified by the Instance ID is used)')
     parser.add_argument('--port', dest='port', required=False,
-                        help='Port where the Compute node will be running (default=%(default)s).')
+                        help='Port where the Compute node will be running '
+                             '(default=%(default)s).')
     parser.add_argument('--user', dest='user', required=False,
                         help='If remote, the "user" on the remote '
                              'Compute node (default=%(default)s).')
     parser.add_argument('--ssh_port', dest='ssh_port', required=False,
                         help='Which port to use for ssh when communicating '
                              'with remote machine (default=%(default)s).')
-    parser.add_argument('--remote_variables_file', dest='remote_variables_file', required=False,
-                        help='If remote, the path to the remote VARIABLES_FILE '
-                             'to use on the remote Compute node (default=%(default)s).')
+    parser.add_argument('--remote_variables_file',
+                        dest='remote_variables_file', required=False,
+                        help='If remote, the path to the remote '
+                             'VARIABLES_FILE to use on the remote '
+                             'Compute node (default=%(default)s).')
 
     # launch mode
-    parser.add_argument('--launch_per_session', dest='launch_per_session', action='store_true',
+    parser.add_argument('--launch_per_session', dest='launch_per_session',
+                        action='store_true',
                         help='Compute node is launched once at the start '
                              '(and shutdown at the end if you use '
-                             '--step_shutdown. Otherwise, it is launched and shut per experiment.')
+                             '--step_shutdown. Otherwise, it is launched '
+                             'and shut per experiment.')
 
     parser.add_argument('--no_docker', dest='no_docker', action='store_true',
-                        help='If set, then DO NOT launch in a docker container. '
-                             'Applies to LOCAL usage only. (default=%(default)s). ')
+                        help='If set, then DO NOT launch in a docker '
+                             'container. Applies to LOCAL usage only. '
+                             '(default=%(default)s). ')
 
     # aws/remote details
     parser.add_argument('--instanceid', dest='instanceid', required=False,
                         help='Instance ID of the ec2 container instance - to '
-                             'start an ec2 instance, use this OR ami id, not both.')
+                             'start an ec2 instance, use this OR ami id, '
+                             'not both.')
     parser.add_argument('--amiid', dest='amiid', required=False,
                         help='AMI ID for new ec2 instances - to start an ec2 '
                              'instance, use this OR instance id, not both.')
     parser.add_argument('--ami_ram', dest='ami_ram', required=False,
                         help='If launching ec2 via AMI, use this to specify '
-                             'how much minimum RAM you want (default=%(default)s).')
+                             'how much minimum RAM you want '
+                             '(default=%(default)s).')
     parser.add_argument('--task_name', dest='task_name', required=False,
                         help='The name of the ecs task (default=%(default)s).')
     parser.add_argument('--ssh_keypath', dest='ssh_keypath', required=False,
                         help='Path to the private key for the remote machine, '
                              'used for comms over ssh (default=%(default)s).')
     parser.add_argument('--pg_instance', dest='pg_instance', required=False,
-                        help='Instance ID of the Postgres ec2 instance (default=%(default)s). '
-                             'If you want to use a running postgres instance, '
-                             'just specify the host (e.g. localhost). WARNING: '
-                             'assumes that if the string starts with "i-", '
-                             'then it is an Instance ID')
+                        help='Instance ID of the Postgres ec2 instance '
+                             '(default=%(default)s). If you want to use a '
+                             'running postgres instance, just specify the '
+                             'host (e.g. localhost). WARNING: assumes that '
+                             'if the string starts with "i-", then it '
+                             'is an Instance ID')
 
     parser.add_argument('--logging', dest='logging', required=False,
                         help='Logging level (default=%(default)s). '
                              'Options: debug, info, warning, error, critical')
 
-    parser.add_argument('--no_compress', dest='no_compress', action='store_true',
-                        help='If set, then DO NOT compress the experiment output data (default=%(default)s).')
+    parser.add_argument('--no_compress', dest='no_compress',
+                        action='store_true',
+                        help='If set, then DO NOT compress the experiment '
+                             'output data (default=%(default)s).')
 
     parser.add_argument('--csv_output', dest='csv_output', action='store_true',
-                        help='If set, then output CSV files for features/labels (default=%(default)s).')
+                        help='If set, then output CSV files for '
+                             'features/labels (default=%(default)s).')
 
     parser.set_defaults(remote_type="local")  # i.e. not remote
     parser.set_defaults(host="localhost")
@@ -149,7 +181,12 @@ def setup_arg_parsing():
                                               "variables/variables-ec2.sh")
     parser.set_defaults(pg_instance="localhost")
     parser.set_defaults(task_name="mnist-spatial-task:10")
-    parser.set_defaults(ssh_keypath=utils.filepath_from_env_variable(".ssh/ecs-key.pem", "HOME"))
+    parser.set_defaults(
+        ssh_keypath=utils.filepath_from_env_variable(
+                        ".ssh/ecs-key.pem",
+                        "HOME"
+                    )
+    )
     parser.set_defaults(ami_ram='6')
     parser.set_defaults(no_docker=False)
     parser.set_defaults(logging="warning")
@@ -167,31 +204,32 @@ def check_args(args, compute_node):
     :param compute_node: The instance of the Compute class
     """
     if args.amiid and args.instanceid:
-        logging.error("Both the AMI ID and EC2 Instance ID have been specified."
-                      " Use just one to specify how to get a running ec2 instance")
+        logging.error("Both the AMI ID and EC2 Instance ID have been "
+                      "specified. Use just one to specify how to get "
+                      "a running ec2 instance")
         exit(1)
 
     if not args.remote_type == "aws" and (args.amiid or args.instanceid):
-        logging.error("amiid or instanceid was specified, but AWS has not been "
-                      "set, so they have no effect.")
+        logging.error("amiid or instanceid was specified, but AWS has not "
+                      "been set, so they have no effect.")
         exit(1)
 
     if args.ssh_keypath and not compute_node.remote():
         logging.warning("A keypath has been set, but we're not running on a "
-                        "remote machine (arg: step_remote). It will have no effect.")
+                        "remote machine (arg: step_remote). "
+                        "It will have no effect.")
 
     if args.sync and not compute_node.remote():
-        logging.error("Syncing experiment is meaningless unless you're running "
-                      "on a remote machine (use param --step_remote)")
+        logging.error("Syncing experiment is meaningless unless you're "
+                      "running on a remote machine (use param --step_remote)")
         exit(1)
 
     if args.exps_file and not args.launch_compute:
-        logging.warning("You have elected to run experiment without launching a "
-                        "Compute node. For success, you'll have to have one "
+        logging.warning("You have elected to run experiment without launching "
+                        "a Compute node. For success, you'll have to have one "
                         "running already, or use param --step_compute)")
 
 
-# pylint: disable=R0915, R0912, R0914
 def main():
     """
     The main scope of the run-framework containing the high level code
@@ -207,19 +245,23 @@ def main():
     args = setup_arg_parsing()
 
     # setup logging
-    log_format = "[%(filename)s:%(lineno)s - %(funcName)s() - %(levelname)s] %(message)s"
-    logging.basicConfig(format=log_format, level=utils.logger_level(args.logging))
+    log_format = ("[%(filename)s:%(lineno)s - %(funcName)s() ",
+                  "- %(levelname)s] %(message)s")
+    logging.basicConfig(format=log_format,
+                        level=utils.logger_level(args.logging))
 
     logging.debug("Python Version: " + sys.version)
     logging.debug("Arguments: %s", args)
 
     exps_file = args.exps_file if args.exps_file else ""
-    experiment = Experiment(args.debug_no_run, LaunchMode.from_args(args), exps_file, args.no_compress, args.csv_output)
+    experiment = Experiment(args.debug_no_run, LaunchMode.from_args(args),
+                            exps_file, args.no_compress, args.csv_output)
 
     # 1) Generate input files
     if args.main_class:
         compute_node = Compute(host_node=HostNode(), port=args.port)
-        compute_node.launch(experiment, main_class=args.main_class, no_local_docker=args.no_docker)
+        compute_node.launch(experiment, main_class=args.main_class,
+                            no_local_docker=args.no_docker)
         experiment.generate_input_files_locally(compute_node)
         compute_node.terminate()
         return
@@ -231,7 +273,8 @@ def main():
     if args.upload and not (args.export or args.export_compute):
         logging.warning("Uploading experiment to S3 is enabled, but "
                         "'export experiment' is not, so the most important "
-                        "files (output entity.json and data.json) will be missing")
+                        "files (output entity.json and data.json) "
+                        "will be missing")
 
     if args.remote_type != "local":
         host_node = HostNode(args.host, args.user, args.ssh_keypath,
@@ -271,10 +314,14 @@ def main():
                           " but you are not running AWS.")
             exit(1)
 
-        ips_pg = {'ip_public': args.pg_instance, 'ip_private': args.pg_instance}
+        ips_pg = {
+            'ip_public': args.pg_instance,
+            'ip_private': args.pg_instance
+        }
 
-    # infrastructure has been started
-    # try to run experiment, and if fails with exception, still shut down infrastructure
+    # Infrastructure has been started
+    # Try to run experiment, and if fails with exception,
+    # still shut down infrastructure
     failed = False
     try:
         compute_node.host_node.host = ips['ip_public']
@@ -290,27 +337,33 @@ def main():
             cloud.sync_experiment(compute_node.host_node)
 
         # 3.5) Prepare data and sync from S3 if necessary
-        # (typically used to download output files from a prev. experiment to be used as input)
+        # This is typically used to download output files from
+        # a previous experiment to be used as input
         if args.prepare_data_from_prefix:
-            cloud.remote_download_output(args.prepare_data_from_prefix, compute_node.host_node)
+            cloud.remote_download_output(args.prepare_data_from_prefix,
+                                         compute_node.host_node)
 
-        # 4) Launch Compute (remote or local) - *** IF Mode == 'Per Session' ***
-        if (LaunchMode.from_args(args) is LaunchMode.per_session) and args.launch_compute:
+        # 4) Launch Compute (remote or local)
+        # *** IF Mode == 'Per Session' ***
+        if ((LaunchMode.from_args(args) is LaunchMode.per_session) and
+                args.launch_compute):
             compute_node.launch(experiment, cloud=cloud,
                                 main_class=args.main_class,
                                 no_local_docker=args.no_docker)
 
-        # 5) Run experiments (includes per experiment 'export results' and 'upload results')
+        # 5) Run experiments
+        # This includes per experiment 'export results' and 'upload results'
         if args.exps_file:
             experiment.run_sweeps(compute_node, cloud, args)
             experiment.persist_prefix_history(cloud)
 
-    except Exception as err: # pylint: disable=W0703
+    except Exception as err:  # pylint: disable=W0703
         failed = True
 
-        logging.error("Something failed running sweeps generally. If the error "
-                      "occurred in a specific parameter set it should have been caught there. "
-                      "Attempt to shut down infrastructure if running, and exit.")
+        logging.error("Something failed running sweeps generally. If the "
+                      "error occurred in a specific parameter set it should "
+                      "have been caught there. Attempt to shut down "
+                      "infrastructure if running, and exit.")
         logging.error(err)
 
         print('-'*60)
@@ -320,7 +373,8 @@ def main():
         # Shutdown the Docker container
         print("Attempting to shutdown Docker container...")
         if host_node.remote() and compute_node.container_id:
-            utils.remote_run(host_node, 'docker stop ' + compute_node.container_id)
+            utils.remote_run(host_node,
+                             'docker stop ' + compute_node.container_id)
         elif not host_node.remote() and not args.no_docker:
             utils.docker_stop()
 
@@ -341,7 +395,8 @@ def main():
 
     # Log the experiment runtime in d:h:m:s:ms format
     exp_runtime = utils.format_timedelta(exp_end_time - exp_start_time)
-    print("Experiment finished in %d days, %d hr, %d min, %d s" % tuple(exp_runtime))
+    print("Experiment finished in %d days, %d hr, %d min, %d s" %
+          tuple(exp_runtime))
 
     if failed:
         exit(1)
