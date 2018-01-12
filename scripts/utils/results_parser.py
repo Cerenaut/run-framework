@@ -11,6 +11,7 @@ CSV_HEADER = ['Prefix', 'Jenkins Job', 'Phase', 'Training Accuracy',
 
 CSV_FILENAME = 'exported_diary_build-{0}.csv'
 
+
 def setup_arg_parsing():
     """
     Parse the commandline arguments
@@ -47,7 +48,8 @@ def main():
     args = setup_arg_parsing()
 
     # Setup logging
-    log_format = "[%(filename)s:%(lineno)s - %(funcName)s() - %(levelname)s] %(message)s"
+    log_format = ("[%(filename)s:%(lineno)s - %(funcName)s() ",
+                  "- %(levelname)s] %(message)s")
     logging.basicConfig(format=log_format, level=logger_level(args.logging))
 
     # Parse and extract results
@@ -95,7 +97,8 @@ def parse_results(input_filename):
             # PHASE 2
             else:
                 # Capture Phase 1 prefix and initialise dictionary
-                if re.search('Dataset from phase 1 experiment prefix', line, re.IGNORECASE):
+                if re.search('Dataset from phase 1 experiment prefix',
+                             line, re.IGNORECASE):
                     ph1_prefix = line[-12:].strip()
                     if not results[ph1_prefix]:
                         results[ph1_prefix] = {}
@@ -117,30 +120,39 @@ def parse_results(input_filename):
                         ph2_prefix = line[-12:].strip()
                         results[ph1_prefix]['cm'][ph2_prefix] = {}
                         results[ph1_prefix]['f1'][ph2_prefix] = {}
-                        results[ph1_prefix]['ph2_info'][ph2_prefix] = exp_info_buffer
+                        results[ph1_prefix]['ph2_info'][ph2_prefix] = (
+                            exp_info_buffer
+                        )
                         cm_index, f1_index = -1, -1
                         exp_info_buffer = []
 
                     if ph2_prefix:
-                        results[ph1_prefix]['ph2_info'][ph2_prefix].append(line)
+                        results[ph1_prefix]['ph2_info'][ph2_prefix]
+                        .append(line)
                     else:
                         exp_info_buffer.append(line)
 
                 else:
                     # Confusion Matrix
                     if re.search('Errors:', line, re.IGNORECASE):
-                        is_cm = True; is_f1 = False; cm_index += 1
+                        is_cm = True
+                        is_f1 = False
+                        cm_index += 1
                         results[ph1_prefix]['cm'][ph2_prefix][cm_index] = []
 
                     # F-Score
                     if re.search('F-Score:\n', line):
-                        is_cm = False; is_f1 = True; f1_index += 1
+                        is_cm = False
+                        is_f1 = True
+                        f1_index += 1
                         results[ph1_prefix]['f1'][ph2_prefix][f1_index] = []
 
                     if is_cm:
-                        results[ph1_prefix]['cm'][ph2_prefix][cm_index].append(line.lstrip())
+                        results[ph1_prefix]['cm'][ph2_prefix][cm_index]
+                        .append(line.lstrip())
                     if is_f1:
-                        results[ph1_prefix]['f1'][ph2_prefix][f1_index].append(line.lstrip())
+                        results[ph1_prefix]['f1'][ph2_prefix][f1_index]
+                        .append(line.lstrip())
                     if re.search('Overall F-Score:', line):
                         is_f1 = False
     return results
@@ -164,7 +176,8 @@ def export_results(results, build_no, target_path):
             # Phase 1
             build = 'Build #{0}'.format(build_no)
             ph1_info = "".join(results[ph1_i]['ph1_info']).rstrip()
-            csv_writer.writerow([ph1_i, build, 'Phase 1', 'N/A', 'N/A', ph1_info])
+            csv_writer.writerow([ph1_i, build, 'Phase 1', 'N/A', 'N/A',
+                                 ph1_info])
 
             # Sort Phase 2 Prefixes
             ph2_prefixes = results[ph1_i]['ph2_info'].keys()
@@ -174,24 +187,27 @@ def export_results(results, build_no, target_path):
             for ph2_i in ph2_prefixes:
                 exp_info = "".join(results[ph1_i]['ph2_info'][ph2_i]).rstrip()
                 cm_train = "".join(results[ph1_i]['cm'][ph2_i][0]).rstrip()
-                cm_test  = "".join(results[ph1_i]['cm'][ph2_i][1]).rstrip()
-                f1_test  = "".join(results[ph1_i]['f1'][ph2_i][1]).rstrip()
+                cm_test = "".join(results[ph1_i]['cm'][ph2_i][1]).rstrip()
+                f1_test = "".join(results[ph1_i]['f1'][ph2_i][1]).rstrip()
 
                 train_acc = ''
                 match_train_acc = re.search('=(.+?)% correct', cm_train)
                 if match_train_acc:
                     train_acc = '{0}%'.format(match_train_acc.group(1).strip())
                 else:
-                    logging.warn('Failed to parse training accuracy from confusion matrix')
-                    
+                    logging.warn('Failed to parse training accuracy from '
+                                 'confusion matrix')
+
                 test_acc = ''
                 match_test_acc = re.search('=(.+?)% correct', cm_test)
                 if match_test_acc:
                     test_acc = '{0}%'.format(match_test_acc.group(1).strip())
                 else:
-                    logging.warn('Failed to parse test accuracy from confusion matrix')
+                    logging.warn('Failed to parse test accuracy from '
+                                 'confusion matrix')
 
-                csv_writer.writerow([ph2_i, build, 'Phase 2', train_acc, test_acc, exp_info, cm_test, f1_test])
+                csv_writer.writerow([ph2_i, build, 'Phase 2', train_acc,
+                                     test_acc, exp_info, cm_test, f1_test])
             csv_writer.writerow([])
 
     logging.info('Exported: %s' % export_filepath)

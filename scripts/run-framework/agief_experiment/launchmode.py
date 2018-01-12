@@ -7,4 +7,6 @@ class LaunchMode(Enum):
 
     @classmethod
     def from_args(cls, args):
-        return cls.per_session if args.launch_per_session else cls.per_experiment
+        return (cls.per_session
+                if args.launch_per_session
+                else cls.per_experiment)
