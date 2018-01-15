@@ -16,7 +16,9 @@ class Compute:
                  host_node,
                  port=8491):
 
-        """ If remote_node is unspecified, then assumes use of a local Compute node """
+        """
+        If remote_node is unspecified, then assumes use of a local Compute node
+        """
 
         self.port = port
         self.host_node = host_node
@@ -33,7 +35,8 @@ class Compute:
         param_dic = {'entity': entity_name}
         r = requests.get(self.base_url() + '/config', params=param_dic)
 
-        logging.debug("Get config: /config with params " + json.dumps(param_dic))
+        logging.debug("Get config: /config with params " +
+                      json.dumps(param_dic))
         logging.debug("  response text = " + r.text)
         logging.debug("  url: " + r.url)
 
@@ -43,8 +46,9 @@ class Compute:
     def wait_till_param(self, entity_name, param_path, value, max_tries=-1):
         """
         Return when the the config parameter has achieved the value specified
-        entity = name of entity, param_path = path to parameter, delimited by '.'
-        
+        entity = name of entity, param_path = path to parameter,
+        delimited by '.'
+
         If there are too many connection errors, exit the whole program.
         """
 
@@ -56,12 +60,14 @@ class Compute:
         param_runtime = 0
         connection_error_count = 0
 
-        print("... Waiting for param to achieve value (try every " + str(wait_period) + "s): " + entity_name +
+        print("... Waiting for param to achieve value (try every " +
+              str(wait_period) + "s): " + entity_name +
               "." + param_path + " = " + str(value))
 
         def print_age(idx, age_str):
             #     utils.restart_line()
-            print("Try = [%d]%s" % (idx, age_str))  # add a comma at the end to remove newline
+            # add a comma at the end to remove newline
+            print("Try = [%d]%s" % (idx, age_str))
 
         while True:
             i += 1
@@ -72,11 +78,13 @@ class Compute:
 
             if 0 < max_tries < i:
                 print_age(i, age_string)
-                msg = "ERROR: Tried " + str(max_tries) + " times, without success, AGIEF is considered hung."
+                msg = "ERROR: Tried " + str(max_tries) + " times, without " \
+                      "success, AGIEF is considered hung."
                 raise Exception(msg)
 
             if connection_error_count > max_connection_error:
-                msg = "ERROR: too many connection errors: " + str(max_connection_error)
+                msg = "ERROR: too many connection errors: " + \
+                      str(max_connection_error)
                 raise Exception(msg)
 
             if i % 5 == 0:
@@ -87,15 +95,20 @@ class Compute:
 
                 if 'value' in config:
                     age = dpath.util.get(config, 'value.age', '.')
-                    param_runtime = dpath.util.get(config, 'value.runTime', '.')
-                    parameter = dpath.util.get(config, 'value.' + param_path, '.')
+                    param_runtime = dpath.util.get(config, 'value.runTime',
+                                                   '.')
+                    parameter = dpath.util.get(config, 'value.' + param_path,
+                                               '.')
                     if parameter == value:
                         logging.debug(
-                            "... parameter: " + entity_name + "." + param_path + ", has achieved value: " + str(
+                            "... parameter: " + entity_name + "." +
+                            param_path + ", has achieved value: " + str(
                                 value) + ".")
                         break
             except KeyError:
-                logging.warning("KeyError Exception: Trying to access a keypath in config object, that DOES NOT exist!")
+                logging.warning("KeyError Exception: Trying to access a "
+                                "keypath in config object, that DOES NOT "
+                                "exist!")
             except requests.exceptions.ConnectionError:
                 logging.error("Oops, ConnectionError exception")
                 connection_error_count += 1
@@ -121,7 +134,8 @@ class Compute:
         print("\n....... Import experiment")
 
         if not is_entity_file and not is_data_files:
-            logging.warning("No input files specified (that may be intentional)")
+            logging.warning("No input files specified (that may be "
+                            "intentional)")
             return
 
         print("     Input files: ")
@@ -136,7 +150,8 @@ class Compute:
 
             with open(entity_filepath, 'rb') as entity_data_file:
                 files = {'entity-file': entity_data_file}
-                response = requests.post(self.base_url() + '/import', files=files)
+                response = requests.post(self.base_url() + '/import',
+                                         files=files)
 
                 logging.debug("Import entity file")
                 logging.debug("  response text = " + response.text)
@@ -150,7 +165,8 @@ class Compute:
 
                 with open(data_filepath, 'rb') as data_data_file:
                     files = {'data-file': data_data_file}
-                    response = requests.post(self.base_url() + '/import', files=files)
+                    response = requests.post(self.base_url() + '/import',
+                                             files=files)
 
                     logging.debug("Import data file")
                     logging.debug("  response text = " + response.text)
@@ -159,8 +175,8 @@ class Compute:
 
     def import_compute_experiment(self, filepaths, is_data):
         """
-        Load data files into AGIEF compute node,
-        by requesting it to load a local file (i.e. file on the compute machine)
+        Load data files into AGIEF compute node, by requesting it to load a
+        local file (i.e. file on the compute machine)
 
         :param filepaths: full path to file on compute node
         :param is_data: if true, then load 'data', otherwise load 'entity'
@@ -184,10 +200,12 @@ class Compute:
 
         for filepath in filepaths:
             payload = {'type': import_type, 'file': filepath}
-            response = requests.get(self.base_url() + '/import-local', params=payload)
+            response = requests.get(self.base_url() + '/import-local',
+                                    params=payload)
 
             if response.status_code == 400:
-                msg = "Compute error response from /import-local - import experiment from Data files on Compute"
+                msg = "Compute error response from /import-local - import " \
+                      "experiment from Data files on Compute"
                 raise Exception(msg)
 
             logging.debug("Import data file")
@@ -210,28 +228,37 @@ class Compute:
         # wait for the task to finish (poll API for 'Terminated' config param)
         self.wait_till_param(experiment_entity, 'terminated', True)
 
-    def export_root_entity(self, filepath, root_entity, export_type, is_compute_save=False):
+    def export_root_entity(self, filepath, root_entity, export_type,
+                           is_compute_save=False):
         """
         Export the subtree specified by root entity - either we save locally,
         or specify the Compute node to save it itself
         :param filepath: if specified, then receive a string
         :param root_entity:
-        :param export_type: 'entity' for the entity tree or 'data' for the persisted data for that entity tree
-        :param is_compute_save: boolean, if false (default) then returned as string and then we save the file
-        if true then 'Compute' saves the file, using the path to a folder (for the compute machine) specified by filepath
+        :param export_type: 'entity' for the entity tree or 'data' for the
+                            persisted data for that entity tree
+        :param is_compute_save: boolean, if false (default) then returned as
+                                string and then we save the file
+                                if true then 'Compute' saves the file, using
+                                the path to a folder (for the compute machine)
+                                specified by filepath
         :return:
         """
 
         if not is_compute_save:
             payload = {'entity': root_entity, 'type': export_type}
         else:
-            payload = {'entity': root_entity, 'type': export_type, "export-location": filepath}
+            payload = {
+                'entity': root_entity,
+                'type': export_type,
+                'export-location': filepath
+            }
 
         response = requests.get(self.base_url() + '/export', params=payload)
 
         if response.status_code == 400:
-            logging.error("Could not export type '%s' for the entity tree with root node '%s'", export_type,
-                          root_entity)
+            logging.error("Could not export type '%s' for the entity tree "
+                          "with root node '%s'", export_type, root_entity)
             return
 
         if is_compute_save:
@@ -247,7 +274,8 @@ class Compute:
             with open(filepath, 'w') as data_file:
                 data_file.write(json.dumps(output_json, indent=4))
 
-    def export_subtree(self, root_entity, entity_filepath, data_filepath, is_export_compute=False):
+    def export_subtree(self, root_entity, entity_filepath, data_filepath,
+                       is_export_compute=False):
         """
         Export the full state of a subtree from the running instance of AGIEF
         that consists of entity graph and the data
@@ -256,14 +284,16 @@ class Compute:
         print("\n....... Export Experiment")
         logging.debug("Exporting data for root entity: %s", root_entity)
 
-        self.export_root_entity(entity_filepath, root_entity, 'entity', is_export_compute)
-        self.export_root_entity(data_filepath, root_entity, 'data', is_export_compute)
+        self.export_root_entity(entity_filepath, root_entity, 'entity',
+                                is_export_compute)
+        self.export_root_entity(data_filepath, root_entity, 'data',
+                                is_export_compute)
 
     def _wait_up(self):
         wait_period = 3
 
-        print("\n....... Wait till framework has started (try every {} seconds),   at = {}".format(str(wait_period),
-                                                                                                   self.base_url()))
+        print("\n....... Wait till framework has started (try every {} "
+              "seconds),   at = {}".format(str(wait_period), self.base_url()))
 
         i = 0
         while True:
@@ -275,7 +305,8 @@ class Compute:
 
             if version is None:
                 # utils.restart_line()
-                print("Try = [%d / 120]" % i)  # add comma at the end to remove newline
+                # add comma at the end to remove newline
+                print("Try = [%d / 120]" % i)
                 time.sleep(wait_period)
             else:
                 break
@@ -300,13 +331,16 @@ class Compute:
         if response.status_code == 400:
             raise Exception(response.text)
 
-        logging.debug("set_parameter_db: entity_name = " + entity_name + ", param_path = " + param_path + ', value = ' + value)
+        logging.debug("set_parameter_db: entity_name = " + entity_name +
+                      ", param_path = " + param_path + ', value = ' + value)
         logging.debug("response = " + response.text)
 
     @staticmethod
-    def set_parameter_inputfile(entity_filepath, entity_name, param_path, value):
+    def set_parameter_inputfile(entity_filepath, entity_name, param_path,
+                                value):
         """
-        Set parameter at 'param_path' for entity 'entity_name', in the input file specified by 'entity_filepath'
+        Set parameter at 'param_path' for entity 'entity_name', in the input
+        file specified by 'entity_filepath'
 
         :param entity_filepath: modify values in this file (full path)
         :param entity_name: the fully qualified entity name, WITH Prefix
@@ -323,7 +357,8 @@ class Compute:
         with open(entity_filepath) as data_file:
             data = json.load(data_file)
 
-        # get the first element in the array with dictionary field "entity-name" = entity_name
+        # get the first element in the array with dictionary field
+        # "entity-name" = entity_name
         entity = dict()
         for entity_i in data:
             if not entity_i["name"] == entity_name:
@@ -332,7 +367,8 @@ class Compute:
             break
 
         if not entity:
-            msg = "\nERROR: Could not find an entity in the input file matching the entity name specified in the " \
+            msg = "\nERROR: Could not find an entity in the input file " \
+                  "matching the entity name specified in the " \
                   "experiment file in field 'file-entities'.\n"
             msg += "\tEntity input file: " + entity_filepath + "\n"
             msg += "\tEntity name: " + entity_name
@@ -345,7 +381,8 @@ class Compute:
         changed = dpath.util.set(config, param_path, value, '.')
 
         if changed == 0:
-            msg = "\nERROR: Could not set the config in entity at param path.\n"
+            msg = "\nERROR: Could not set the config in entity at param " \
+                  "path.\n"
             msg += "\tEntity = " + entity_name + "\n"
             msg += "\tParam_path = " + param_path
             raise Exception(msg)
@@ -362,8 +399,8 @@ class Compute:
 
     def version(self, is_suppress_console_output=False):
         """
-        Find out the version from the running framework, through the RESTful API. Return the string,
-        or None if it could not retrieve the version.
+        Find out the version from the running framework, through the RESTful
+        API. Return the string, or None if it could not retrieve the version.
         """
 
         version = None
@@ -379,25 +416,32 @@ class Compute:
             version = None
 
             if not is_suppress_console_output:
-                logging.error("Error connecting to agief to retrieve the version.")
+                logging.error("Error connecting to agief to retrieve the "
+                              "version.")
 
         return version
 
-    def launch(self, experiment, cloud=None, use_ecs=False, ecs_task_name=None, main_class=None, no_local_docker=False):
+    def launch(self, experiment, cloud=None, use_ecs=False, ecs_task_name=None,
+               main_class=None, no_local_docker=False):
         """
-        Launch Compute remotely if cloud is given and self.remote() is True, or locally otherwise.
-        Hang until Compute is up and running.
+        Launch Compute remotely if cloud is given and self.remote() is True,
+        or locally otherwise. Hang until Compute is up and running.
 
         :param experiment: an Experiment object.
         :param cloud: a Cloud object (may be None for local runs).
-        :param use_ecs: if True, launch on AWS ECS (elastic container service). Assumes that ECS is set up to have the
-                        necessary task, and container instances are running. 
-        :param ecs_task_name: the ECS task name to use (ignored if use_ecs is False). 
-        :param main_class: if given and the run is local, use run-demo.sh, which builds entity graph and data from the
-                           relevant demo project defined by the main class.
-                           WARNING: In this case, the properties file used is hardcoded to node.properties and the
-                           prefix used is Experiment.TEMPLATE_PREFIX.
-        :param no_local_docker: if True, do not use Docker when running locally.
+        :param use_ecs: if True, launch on AWS ECS (elastic container service).
+                        Assumes that ECS is set up to have the  necessary task,
+                        and container instances are running.
+        :param ecs_task_name: the ECS task name to use
+                              (ignored if use_ecs is False).
+        :param main_class: if given and the run is local, use run-demo.sh,
+                           which builds entity graph and data from the relevant
+                           demo project defined by the main class.
+                           WARNING: In this case, the properties file used is
+                           hardcoded to node.properties and the  prefix used
+                           is Experiment.TEMPLATE_PREFIX.
+        :param no_local_docker: if True, do not use Docker when
+                                running locally.
         :return: task ARN if use_ecs is True, None otherwise.
         """
 
@@ -409,10 +453,12 @@ class Compute:
                 # Using ECS - the elastic container service
                 print("Launching Compute on AWS-ECS")
                 if not ecs_task_name:
-                    raise ValueError("ERROR: you must specify a Task Name to run on aws-ecs")
+                    raise ValueError("ERROR: you must specify a Task Name "
+                                     "to run on aws-ecs")
                 task_arn = cloud.ecs_run_task(ecs_task_name)
             else:
-                # Launch Compute Node on remote running machine (whether that is ec2 or one of our machines)
+                # Launch Compute Node on remote running machine
+                # (whether that is ec2 or one of our machines)
                 print("launching Compute on remote machine")
                 output = cloud.remote_docker_launch_compute(self.host_node)
                 if output:
@@ -420,23 +466,31 @@ class Compute:
                     print("Docker Container ID: " + self.container_id)
         else:
             print("Launching Compute locally")
-            print("NOTE: Generating run_stdout.log and run_stderr.log (in the current folder)")
+            print("NOTE: Generating run_stdout.log and run_stderr.log "
+                  "(in the current folder)")
 
             if main_class:
                 cmd = "%s node.properties %s %s" % (
-                    experiment.experiment_utils.agi_binpath("/node_coordinator/run-demo.sh"),
+                    experiment.experiment_utils.agi_binpath(
+                        "/node_coordinator/run-demo.sh"
+                    ),
                     main_class,
                     Experiment.TEMPLATE_PREFIX)
             elif no_local_docker:
-                cmd = experiment.experiment_utils.agi_binpath("/node_coordinator/run.sh")
+                cmd = experiment.experiment_utils.agi_binpath(
+                    "/node_coordinator/run.sh"
+                )
             else:
-                cmd = experiment.experiment_utils.agi_binpath("/node_coordinator/run-in-docker.sh -d")
+                cmd = experiment.experiment_utils.agi_binpath(
+                    "/node_coordinator/run-in-docker.sh -d"
+                )
 
             logging.debug("Running: " + cmd)
 
-            # we can't hold on to the stdout and stderr streams for logging, because it will hang on this line
-            # instead, logging to a file
-            subprocess.Popen("%s > run_stdout.log 2> run_stderr.log" % cmd, shell=True, executable="/bin/bash")
+            # we can't hold on to the stdout and stderr streams for logging,
+            # because it will hang on this line instead, logging to a file
+            subprocess.Popen("%s > run_stdout.log 2> run_stderr.log" % cmd,
+                             shell=True, executable="/bin/bash")
 
         # TODO: fail if there are hard errors?
 
@@ -445,14 +499,17 @@ class Compute:
         return task_arn
 
     def shutdown_compute(self, cloud, args, task_arn):
-        """ Close compute: terminate and then if running on AWS ECS, stop the task. """
+        """
+        Close compute: terminate and then if running on AWS ECS, stop the task.
+        """
 
         print("\n....... Shutdown System")
 
         self.terminate()
 
-        # note that container should be set up to terminate once compute has been terminated
-        # however, it doesn't hurt to clean up by making sure that the container is killed
+        # Note that container should be set up to terminate once compute has
+        # been terminated. However, it doesn't hurt to clean up by making sure
+        # that the container is killed
 
         # if ecs, then stop the task
         if args.remote_type == "aws" and (task_arn is not None):
@@ -462,9 +519,11 @@ class Compute:
         if cloud and self.remote():
             # ensure we have the container id
             if self.container_id:
-                utils.remote_run(self.host_node, 'docker stop ' + self.container_id)
+                utils.remote_run(self.host_node,
+                                 'docker stop ' + self.container_id)
             else:
-                logging.warning("Docker did not shut down, could not locate container id")
+                logging.warning("Docker did not shut down, could not "
+                                "locate container id")
         elif not args.no_docker:
             # stops local docker
                 utils.docker_stop()
