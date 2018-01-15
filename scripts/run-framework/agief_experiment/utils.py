@@ -24,6 +24,7 @@ def replace_in_file(src_string, dest_string, file_path):
         print(line)
     f.close()
 
+
 def create_folder(filepath):
     if not os.path.exists(os.path.dirname(filepath)):
         try:
@@ -56,7 +57,9 @@ def filepath_from_env_variable(filename, path_env):
 
 
 def cleanpath(path, filename):
-    """ given a path and a filename, return the fully qualified filename with path"""
+    """
+    Given a path and a filename, return the fully qualified filename with path
+    """
 
     path_from_env = path.strip()
     filename = filename.strip()
@@ -66,8 +69,11 @@ def cleanpath(path, filename):
 
 
 def run_bashscript_repeat(cmd, max_repeats, wait_period):
-    """ Run a shell command repeatedly until exit status shows success.
-    Run command 'cmd' a maximum of 'max_repeats' times and wait 'wait_period' between attempts. """
+    """
+    Run a shell command repeatedly until exit status shows success.
+    Run command 'cmd' a maximum of 'max_repeats' times and
+    wait 'wait_period' between attempts.
+    """
 
     logging.debug("running cmd = " + cmd)
 
@@ -80,19 +86,23 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period):
                                  stderr=subprocess.PIPE,
                                  executable="/bin/bash")
 
-        output, error = child.communicate()  # get the outputs. NOTE: This will block until shell command returns.
+        # get the outputs.
+        # NOTE: This will block until shell command returns.
+        output, error = child.communicate()
         exit_status = child.returncode
 
         logging.debug("Exit status: " + str(exit_status))
         logging.debug("Stdout: " + output)
 
-        if len(error): logging.error("Stderr: " + error)
+        if len(error):
+            logging.error("Stderr: " + error)
 
         if exit_status == 0:
             success = True
             break
 
-        logging.warning("Run bash script was unsuccessful on attempt " + str(i))
+        logging.warning("Run bash script was unsuccessful on attempt " +
+                        str(i))
         logging.debug("Wait " + str(wait_period) + ", and try again.")
 
         time.sleep(wait_period)
@@ -104,13 +114,16 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period):
 
 
 def check_validity(files):
-    """ Check validity of files, and exit if they do not exist or not specified """
+    """
+    Check validity of files, and exit if they do not exist or not specified
+    """
 
     is_valid = True
     file_paths = []
 
     for f in files:
-        if os.path.isfile(f) and os.path.exists(f):  # TODO for some reason exists() not working
+        # TODO for some reason exists() not working
+        if os.path.isfile(f) and os.path.exists(f):
             file_paths.append(f)
         else:
             is_valid = False
@@ -122,7 +135,8 @@ def check_validity(files):
 
 def is_valid_filename(filepath):
     fileName, fileExtension = os.path.splitext(filepath)
-    if fileExtension: return True
+    if fileExtension:
+        return True
     return False
 
 
@@ -134,17 +148,20 @@ def compress_file(source_filepath):
     """
 
     if os.path.isfile(source_filepath) and os.path.exists(source_filepath):
-        zipf = zipfile.ZipFile(source_filepath + '.zip', 'w', zipfile.ZIP_DEFLATED)
+        zipf = zipfile.ZipFile(source_filepath + '.zip', 'w',
+                               zipfile.ZIP_DEFLATED)
         zipf.write(source_filepath)
         zipf.close()
     else:
         logging.error("this file is not valid: " + source_filepath)
+
 
 def compress_files(zipfilepath, source_filepaths):
     with zipfile.ZipFile(zipfilepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for filepath in source_filepaths:
             if os.path.isfile(filepath) and os.path.exists(filepath):
                 zipf.write(filepath, os.path.basename(filepath))
+
 
 def compress_folder_contents(source_path):
     """
@@ -164,8 +181,8 @@ def compress_folder_contents(source_path):
 
 def match_file_by_name(source_path, name):
     """
-    Looks for a file with a matching name to the one provided inside the specified
-    source directory. It then returns the filepath for that file.
+    Looks for a file with a matching name to the one provided inside the
+    specified source directory. It then returns the filepath for that file.
     :param source_path: the source folder where the file is located
     :param name: name or partial name of the file to match
     :return:
@@ -178,7 +195,8 @@ def match_file_by_name(source_path, name):
                 ret = os.path.abspath(root + "/" + matching_files[0])
                 return ret
             else:
-                logging.warning("no files matching '" + name + "' found in: " + source_path)
+                logging.warning("no files matching '" + name +
+                                "' found in: " + source_path)
     else:
         logging.warning("this folder is not valid: " + source_path)
 
@@ -187,11 +205,12 @@ def match_file_by_name(source_path, name):
 
 def move_file(source_filepath, dest_path, create_dest=False):
     """
-    Moves a file from the source path to the provided destination path. An optional
-    parameter can be provided to create the destination folder.
+    Moves a file from the source path to the provided destination path.
+    An optional parameter can be provided to create the destination folder.
     :param source_filepath: the path to the file that needs to be moved
     :param dest_path: the destination folder that the file will be moved to
-    :param create_dest: (optional) if specified, the destination folder will be created
+    :param create_dest: (optional) if specified, the destination folder will
+    be created
     :return:
     """
     if create_dest is True:
@@ -214,7 +233,7 @@ def remove_file(source_filepath, silent=False):
     Removes a file using the default os.remove method with the option for
     silent removal to avoid raising errors when the file is not found.
     :param source_filepath: the path to the file that needs to be removed
-    :param silent: (optional) if True, no error will be raised if file not found
+    :param silent: if True, no error will be raised if file not found
     :return:
     """
     try:
@@ -227,31 +246,39 @@ def remove_file(source_filepath, silent=False):
 
 def get_entityfile_config(entity):
     """
-        Get the config field straight out of an exported Entity, and turn it into valid JSON 
-        NOTE: Works with Import/Export API, which does not treat config string as a valid json string
+    Get the config field straight out of an exported Entity,
+    and turn it into valid JSON
+
+    NOTE: Works with Import/Export API, which does not treat config
+    string as a valid json string
     """
 
     config_str = entity["config"]
 
     logging.debug("Raw configStr   = " + config_str)
 
-    # configStr = configStr.replace("\\\"", "\"")       --> don't need this anymore, depends on python behaviour
+    # don't need this anymore, depends on python behaviour
+    # configStr = configStr.replace("\\\"", "\"")
     config = json.loads(config_str)
 
     return config
 
 
 def set_entityfile_config(entity, config):
-    """ 
-        Get a valid json config string, and put it back in the exported entity in a way that can be Imported 
-        i.e. with escape characters so that it is a dumb string
-        
-        NOTE: Works with Import/Export API, which does not treat config string as a valid json string
+    """
+    Get a valid json config string, and put it back in the exported entity in
+    a way that can be Imported i.e. with escape characters
+    so that it is a dumb string
+
+    NOTE: Works with Import/Export API, which does not treat config
+    string as a valid json string
     """
 
     # put the escape characters back in the config str and write back to file
     config_str = json.dumps(config)
-    # configStr = configStr.replace("\"", "\\\"")       --> don't need this anymore, depends on python behaviour
+
+    # don't need this anymore, depends on python behaviour
+    # configStr = configStr.replace("\"", "\\\"")
 
     logging.debug("Modified configStr   = " + config_str)
 
@@ -260,16 +287,16 @@ def set_entityfile_config(entity, config):
 
 def format_timedelta(td):
     # Split td.seconds into minutes and seconds
-    m       = td.seconds / 60;
-    seconds = td.seconds % 60;
+    m = td.seconds / 60
+    seconds = td.seconds % 60
 
     # Split m into hours and minutes.
-    h       = m / 60;
-    minutes = m % 60;
+    h = m / 60
+    minutes = m % 60
 
     # Split h into days and hours
-    days    = h / 24;
-    hours   = h % 24;
+    days = h / 24
+    hours = h % 24
 
     return days, hours, minutes, seconds
 
@@ -347,6 +374,7 @@ def remote_run(host_node, cmd):
     ssh.close()
 
     return output
+
 
 def logger_level(level):
     """

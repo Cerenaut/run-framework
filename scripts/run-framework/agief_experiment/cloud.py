@@ -7,14 +7,28 @@ import logging
 
 class Cloud:
 
-    subnet_id = 'subnet-0b1a206e'   # ec2 instances will be launched into this subnet (in a vpc)
-    cluster = 'default'             # for ecs, which cluster to use
-    mainkeyname = 'nextpair'        # when creating ec2 instances, the root ssh key to use
-    ec2_compute_securitygroup_id = 'sg-98d574fc'    # for compute hosts, which the security group to use
-    availability_zone = 'ap-southeast-2a'           # az for all ec2 instances
-    placement_group = 'MNIST-PGroup'                # placement group for ec2 instances
-    # client_token = 'this_is_the_client_token_la_la_34'  # Unique, case-sensitive identifier you provide to ensure
-    # the idempotency of the request.
+    # EC2 instances will be launched into this subnet (in a vpc)
+    subnet_id = 'subnet-0b1a206e'
+
+    # For ECS, which cluster to use
+    cluster = 'default'
+
+    # When creating EC2 instances, the root ssh key to use
+    mainkeyname = 'nextpair'
+
+    # For compute hosts, which the security group to use
+    ec2_compute_securitygroup_id = 'sg-98d574fc'
+
+    # AZ for all EC2 instances
+    availability_zone = 'ap-southeast-2a'
+
+    # Placement group for EC2 instances
+    placement_group = 'MNIST-PGroup'
+
+    # Unique, case-sensitive identifier you provide to ensure
+    # client_token = 'this_is_the_client_token_la_la_34'
+
+    # The idempotency of the request.
     network_interface_id = 'eni - b2acd4d4'
 
     def __init__(self):
@@ -25,28 +39,36 @@ class Cloud:
         Sync experiment from this machine to remote machine
         """
 
-        print ("\n....... Use remote-sync-experiment.sh to rsync relevant folders.")
+        print("\n....... Use remote-sync-experiment.sh to "
+              "rsync relevant folders.")
 
-        cmd = "../remote/remote-sync-experiment.sh " + remote.host_key_user_variables()
+        cmd = ("../remote/remote-sync-experiment.sh " +
+               remote.host_key_user_variables())
         utils.run_bashscript_repeat(cmd, 15, 6)
 
     def remote_download_output(self, prefix, host_node):
-        """ Download /output/prefix folder from remote storage (s3) to remote machine. 
+        """ Download /output/prefix folder from remote storage (s3) to remote machine.
         :param host_node:
         :param prefix:
         :type host_node: RemoteNode
         """
 
-        print ("\n....... Use remote-download-output.sh to copy /output files from s3 (typically input and data "
-               "files) with prefix = " + prefix + ", to remote machine.")
+        print("\n....... Use remote-download-output.sh to copy /output files "
+              "from s3 (typically input and data files) with "
+              "prefix = " + prefix + ", to remote machine.")
 
-        cmd = "../remote/remote-download-output.sh " + " " + prefix + " " + host_node.host_key_user_variables()
+        cmd = ("../remote/remote-download-output.sh " + " " + prefix +
+               " " + host_node.host_key_user_variables())
         utils.run_bashscript_repeat(cmd, 15, 6)
 
     def remote_docker_launch_compute(self, host_node):
-        """ Assumes there exists a private key for the given ec2 instance, at keypath """
+        """
+        Assumes there exists a private key for the given
+        ec2 instance, at keypath
+        """
 
-        print ("\n....... Launch compute node in a docker container on a remote host.")
+        print("\n....... Launch compute node in a docker container "
+              "on a remote host.")
 
         commands = '''
             export VARIABLES_FILE={0}
@@ -60,7 +82,7 @@ class Cloud:
     def ecs_run_task(self, task_name):
         """ Run task 'task_name' and return the Task ARN """
 
-        print ("\n....... Running task on ecs ")
+        print("\n....... Running task on ecs ")
         client = boto3.client('ecs')
         response = client.run_task(
             cluster=self.cluster,
@@ -80,7 +102,8 @@ class Cloud:
             exit(1)
 
         if len(response['tasks']) <= 0:
-            logging.error("could not retrieve task arn when initiating task on AWS - something has gone wrong.")
+            logging.error("could not retrieve task arn when initiating task "
+                          "on AWS - something has gone wrong.")
             exit(1)
 
         task_arn = response['tasks'][0]['taskArn']
@@ -88,7 +111,7 @@ class Cloud:
 
     def ecs_stop_task(self, task_arn):
 
-        print ("\n....... Stopping task on ecs ")
+        print("\n....... Stopping task on ecs ")
         client = boto3.client('ecs')
 
         response = client.stop_task(
@@ -104,8 +127,8 @@ class Cloud:
         Run the chosen instance specified by instance_id
         :return: the instance AWS public and private ip addresses
         """
-        
-        print ("\n....... Starting ec2 (instance id " + instance_id + ")")
+
+        print("\n....... Starting ec2 (instance id " + instance_id + ")")
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
         response = instance.start()
@@ -125,9 +148,11 @@ class Cloud:
         :return: ip addresses: public and private, and instance id
         """
 
-        print ("\n....... Launching ec2 from AMI (AMI id " + ami_id + ", with minimum " + str(min_ram) + "GB RAM)")
+        print("\n....... Launching ec2 from AMI (AMI id " + ami_id +
+              ", with minimum " + str(min_ram) + "GB RAM)")
 
-        instance_type = None      # minimum size, 15GB on machine, leaves 13GB for compute
+        # minimum size, 15GB on machine, leaves 13GB for compute
+        instance_type = None
         ram_allocated = 8
         if min_ram < 6:
             instance_type = 'm4.large'      # 8
@@ -142,7 +167,8 @@ class Cloud:
             logging.error("cannot create an ec2 instance with that much RAM")
             exit(1)
 
-        print ("\n............. RAM to be allocated: " + str(ram_allocated) + " GB RAM")
+        print("\n............. RAM to be allocated: " + str(ram_allocated) +
+              " GB RAM")
 
         ec2 = boto3.resource('ec2')
         subnet = ec2.Subnet(self.subnet_id)
@@ -222,7 +248,8 @@ class Cloud:
         return {'ip_public': ip_public, 'ip_private': ip_private}
 
     def ec2_stop(self, instance_id):
-        print("\n...... Closing ec2 instance (instance id " + str(instance_id) + ")")
+        print("\n...... Closing ec2 instance (instance id " +
+              str(instance_id) + ")")
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instance_id)
 
@@ -233,15 +260,17 @@ class Cloud:
         print("stop ec2: ", response)
 
     def remote_upload_runfilename_s3(self, host_node, prefix, dest_name):
-        cmd = "../remote/remote-upload-runfilename.sh " + " " + prefix + " " + dest_name \
-              + host_node.host_key_user_variables()
+        cmd = ("../remote/remote-upload-runfilename.sh " + " " + prefix +
+               " " + dest_name +
+               host_node.host_key_user_variables())
         try:
             utils.run_bashscript_repeat(cmd, 3, 3)
         except Exception as e:
             logging.error("Remote Upload Failed for this file")
             logging.error("Exception: %s", e)
 
-    def remote_upload_output_s3(self, host_node, prefix, no_compress, csv_output):
+    def remote_upload_output_s3(self, host_node, prefix, no_compress,
+                                csv_output):
         cmd = "../remote/remote-upload-output.sh " + prefix + " "
         cmd += host_node.host_key_user_variables() + " "
         cmd += str(no_compress) + " " + str(csv_output)
@@ -250,11 +279,13 @@ class Cloud:
     def upload_folder_s3(self, bucket_name, key, source_folderpath):
 
         if not os.path.exists(source_folderpath):
-            logging.warning("folder does not exist, cannot upload: " + source_folderpath)
+            logging.warning("folder does not exist, cannot upload: " +
+                            source_folderpath)
             return
 
         if not os.path.isdir(source_folderpath):
-            logging.warning("path is not a folder, cannot upload: " + source_folderpath)
+            logging.warning("path is not a folder, cannot upload: " +
+                            source_folderpath)
             return
 
         for root, dirs, files in os.walk(source_folderpath):
@@ -269,10 +300,12 @@ class Cloud:
 
         try:
             if os.stat(source_filepath).st_size == 0:
-                logging.warning("file is empty, cannot upload: " + source_filepath)
+                logging.warning("file is empty, cannot upload: " +
+                                source_filepath)
                 return
         except OSError:
-            logging.warning("file does not exist, cannot upload: " + source_filepath)
+            logging.warning("file does not exist, cannot upload: " +
+                            source_filepath)
             return
 
         s3 = boto3.resource('s3')
@@ -288,11 +321,14 @@ class Cloud:
                 exists = False
 
         if not exists:
-            logging.warning("s3 bucket " + bucket_name + " does not exist, creating it now.")
+            logging.warning("s3 bucket " + bucket_name +
+                            " does not exist, creating it now.")
             s3.create_bucket(Bucket=bucket_name)
 
-        print(" ... file = " + source_filepath + ", to bucket = " + bucket_name + ", key = " + key)
-        response = s3.Object(bucket_name=bucket_name, key=key).put(Body=open(source_filepath, 'rb'))
+        print(" ... file = " + source_filepath + ", to bucket = " +
+              bucket_name + ", key = " + key)
+        response = s3.Object(bucket_name=bucket_name,
+                             key=key).put(Body=open(source_filepath, 'rb'))
 
         logging.debug("Response = : ", response)
 

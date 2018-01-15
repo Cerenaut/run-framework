@@ -25,7 +25,9 @@ class ValueSeries:
         self.overflow = False
 
     def next_val(self):
-        """ Iterate through If the value exceeds the maximum, then return false """
+        """
+        Iterate through IF the value exceeds the maximum, then return false
+        """
 
         if not self.overflow:
             next_idx = self.idx + 1
@@ -34,7 +36,9 @@ class ValueSeries:
                 self.idx = 0
                 self.overflow = True
             elif self.series[next_idx] == self.REPEAT_CHAR:
-                pass  # don't advance, stay on the last value if it is followed by the repeat char (e.g. '*')
+                # don't advance, stay on the last value if
+                # it is followed by the repeat char (e.g. '*')
+                pass
             else:
                 self.idx = next_idx
 

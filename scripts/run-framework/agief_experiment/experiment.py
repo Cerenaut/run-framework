@@ -15,11 +15,13 @@ from agief_experiment import utils
 
 
 class Experiment:
-    """ 
-        An experiment consists of multiple runs (i.e. parameter sweep), each run is a test of one set of parameters.
-        This class encapsulates functionality related to conducting a parameter sweep with behaviours related to
-        starting and stopping the Compute, starting and stopping the framework and importing exporting data.
-        It does _not_ relate to setting up the infrastructure.
+    """
+        An experiment consists of multiple runs (i.e. parameter sweep), each
+        run is a test of one set of parameters. This class encapsulates
+        functionality related to conducting a parameter sweep with behaviours
+        related to starting and stopping the Compute, starting and stopping
+        the framework and importing exporting data.  It does _not_ relate to
+        setting up the infrastructure.
     """
 
     PREFIX_DELIMITER = "--"
@@ -32,7 +34,8 @@ class Experiment:
     LOG_FILENAME = "log4j2.log"
     PREFIXES_FILENAME = "prefixes.txt"
 
-    def __init__(self, debug_no_run, launch_mode, exps_file, no_compress, csv_output):
+    def __init__(self, debug_no_run, launch_mode, exps_file, no_compress,
+                 csv_output):
         self.exps_file = exps_file
         self.debug_no_run = debug_no_run
         self.launch_mode = launch_mode
@@ -51,12 +54,15 @@ class Experiment:
 
         use_prefix_file = False
         if use_prefix_file:
-            prefix_filepath = self.experiment_utils.filepath_from_exp_variable('prefix.txt',
-                                                                               ExperimentUtils.agi_exp_home)
+            prefix_filepath = (self.experiment_utils
+                               .filepath_from_exp_variable('prefix.txt',
+                                                           ExperimentUtils
+                                                           .agi_exp_home))
 
-            if not os.path.isfile(prefix_filepath) or not os.path.exists(prefix_filepath):
-                logging.warning("no prefix.txt file could be found, using the default root entity name: "
-                      "'experiment'")
+            if not os.path.isfile(prefix_filepath) or (
+               not os.path.exists(prefix_filepath)):
+                logging.warning("no prefix.txt file could be found, using the "
+                                "default root entity name: 'experiment'")
                 return None
 
             with open(prefix_filepath, 'r') as myfile:
@@ -85,8 +91,8 @@ class Experiment:
         # Upload prefix history to S3
         prefixes_list = self.prefixes_history.splitlines()
         self.upload_experiment_file(cloud, prefixes_list[0],
-                                           self.PREFIXES_FILENAME,
-                                           filename)
+                                    self.PREFIXES_FILENAME,
+                                    filename)
 
     def info(self, sweep_param_vals):
 
@@ -95,10 +101,13 @@ class Experiment:
         message += "Experiment Information\n"
         message += "==============================================\n"
 
-        message += "Datetime: " + datetime.datetime.now().strftime("%y %m %d - %H %M") + "\n"
-        message += "Folder: " + self.experiment_utils.experiment_folder() + "\n"
+        message += "Datetime: " + (datetime.datetime.now()
+                                   .strftime("%y %m %d - %H %M")) + "\n"
+        message += ("Folder: " + self.experiment_utils.experiment_folder() +
+                    "\n")
         message += "Githash: " + self.experiment_utils.githash() + "\n"
-        message += "Variables file: " + self.experiment_utils.variables_filepath() + "\n"
+        message += ("Variables file: " +
+                    self.experiment_utils.variables_filepath() + "\n")
         message += "Prefix: " + self.prefix() + "\n"
         message += "==============================================\n"
 
@@ -111,7 +120,8 @@ class Experiment:
         return message
 
     def log_results_config(self, compute_node):
-        config_exp = compute_node.get_entity_config(self.entity_with_prefix("experiment"))
+        config_exp = compute_node.get_entity_config(
+                        self.entity_with_prefix("experiment"))
 
         reporting_name_key = "reportingEntityName"
         reporting_path_key = "reportingEntityConfigPath"
@@ -128,10 +138,12 @@ class Experiment:
                     param_path = config_exp['value'][reporting_path_key]
                     report = dpath.util.get(config, 'value.' + param_path, '.')
                 else:
-                    logging.warning("No reporting entity config path found in experiment config.")
+                    logging.warning("No reporting entity config path found in "
+                                    "experiment config.")
             except KeyError:
                 logging.warning("KeyError Exception: trying to access path '" +
-                param_path + "' at config.value, but it DOES NOT exist!")
+                                param_path + "' at config.value, but it DOES "
+                                "NOT exist!")
             if report is None:
                 print("\n================================================")
                 print("Reporting Entity Config:")
@@ -139,11 +151,13 @@ class Experiment:
                 print("================================================\n")
             else:
                 print("\n================================================")
-                print("Reporting Entity Config Path (" + entity_name + "-Config.value." + param_path + "):")
+                print("Reporting Entity Config Path (" + entity_name +
+                      "-Config.value." + param_path + "):")
                 print(report)
                 print("================================================\n")
         else:
-            logging.warning("No reportingEntityName has been specified in Experiment config.")
+            logging.warning("No reportingEntityName has been specified in "
+                            "Experiment config.")
 
     def entity_with_prefix(self, entity_name):
         if self.prefix() is None or self.prefix() == "":
@@ -151,20 +165,23 @@ class Experiment:
         else:
             return self.prefix() + self.PREFIX_DELIMITER + entity_name
 
-    def run_parameterset(self, compute_node, cloud, args, entity_filepath, data_filepaths, compute_data_filepaths,
+    def run_parameterset(self, compute_node, cloud, args, entity_filepath,
+                         data_filepaths, compute_data_filepaths,
                          sweep_param_vals=''):
         """
         Import input files
         Run Experiment and Export experiment
         The input files specified by params ('entity_file' and 'data_file')
-        have parameters modified, which are described in parameters 'param_description'
+        have parameters modified, which are described in parameters
+        'param_description'
 
         :param compute_node:
         :param cloud:
         :param args:
         :param entity_filepath:
         :param data_filepaths:
-        :param compute_data_filepaths:      data files on the compute machine, relative to run folder
+        :param compute_data_filepaths: data files on the compute machine,
+                                       relative to run folder
         :param sweep_param_vals:
         :return:
         """
@@ -175,7 +192,9 @@ class Experiment:
         info = self.info(sweep_param_vals)
         print(info)
 
-        info_filepath = self.experiment_utils.outputfile(self.prefix(), "experiment-info.txt")
+        info_filepath = self.experiment_utils.outputfile(
+                            self.prefix(),
+                            "experiment-info.txt")
         utils.create_folder(info_filepath)
         with open(info_filepath, 'w') as data:
             data.write(info)
@@ -183,7 +202,8 @@ class Experiment:
         failed = False
         task_arn = None
         try:
-            is_valid = utils.check_validity([entity_filepath]) and utils.check_validity(data_filepaths)
+            is_valid = utils.check_validity([entity_filepath]) and (
+                            utils.check_validity(data_filepaths))
 
             if not is_valid:
                 msg = "ERROR: One of the input files are not valid:\n"
@@ -191,20 +211,26 @@ class Experiment:
                 msg += json.dumps(data_filepaths)
                 raise Exception(msg)
 
-            if (self.launch_mode is LaunchMode.per_experiment) and args.launch_compute:
-                task_arn = compute_node.launch(self, cloud=cloud, no_local_docker=args.no_docker)
+            if (self.launch_mode is LaunchMode.per_experiment) and (
+                    args.launch_compute):
+                task_arn = compute_node.launch(self,
+                                               cloud=cloud,
+                                               no_local_docker=args.no_docker)
 
             compute_node.import_experiment(entity_filepath, data_filepaths)
-            compute_node.import_compute_experiment(compute_data_filepaths, is_data=True)
+            compute_node.import_compute_experiment(compute_data_filepaths,
+                                                   is_data=True)
 
             self.set_entity_params(compute_node)
             self.set_dataset(compute_node)
 
             if not self.debug_no_run:
-                compute_node.run_experiment(self.entity_with_prefix("experiment"))
+                compute_node.run_experiment(
+                    self.entity_with_prefix("experiment")
+                )
                 self.append_runtime(compute_node.runtime)
-                print("Parameter Sweeps finished in %d days, %d hr, %d min, " \
-                    "%d s" % tuple(compute_node.runtime))
+                print("Parameter Sweeps finished in %d days, %d hr, %d min, "
+                      "%d s" % tuple(compute_node.runtime))
 
             self.remember_prefix()
 
@@ -212,25 +238,33 @@ class Experiment:
             self.log_results_config(compute_node)
 
             if args.export:
-                out_entity_file_path, out_data_file_path = self.experiment_utils.output_names_from_input_names(
-                    self.prefix(),
-                    entity_filepath,
-                    data_filepaths)
-                compute_node.export_subtree(self.entity_with_prefix("experiment"),
-                                            out_entity_file_path,
-                                            out_data_file_path)
+                out_entity_file_path, out_data_file_path = (
+                    self.experiment_utils.output_names_from_input_names(
+                        self.prefix(),
+                        entity_filepath,
+                        data_filepaths)
+                )
+                compute_node.export_subtree(
+                    self.entity_with_prefix("experiment"),
+                    out_entity_file_path,
+                    out_data_file_path
+                )
 
             if args.export_compute:
-                compute_node.export_subtree(self.entity_with_prefix("experiment"),
-                                            self.experiment_utils.outputfile_remote(self.prefix()),
-                                            self.experiment_utils.outputfile_remote(self.prefix()),
-                                            True)
+                compute_node.export_subtree(
+                    self.entity_with_prefix("experiment"),
+                    self.experiment_utils.outputfile_remote(self.prefix()),
+                    self.experiment_utils.outputfile_remote(self.prefix()),
+                    True
+                )
         except Exception as e:
             failed = True
-            logging.error("Experiment failed for some reason, shut down Compute and continue.")
+            logging.error("Experiment failed for some reason, shut down "
+                          "Compute and continue.")
             logging.error(e)
 
-        if (self.launch_mode is LaunchMode.per_experiment) and args.launch_compute:
+        if (self.launch_mode is LaunchMode.per_experiment) and (
+                args.launch_compute):
             compute_node.shutdown_compute(cloud, args, task_arn)
 
         if not failed and args.upload:
@@ -244,7 +278,8 @@ class Experiment:
         Each counter represents one parameter
         """
         val_sweepers = []
-        for param in param_sweep['parameter-set']:  # set of params for one 'sweep'
+        # set of params for one 'sweep'
+        for param in param_sweep['parameter-set']:
             if 'val-series' in param:
                 value_series = ValueSeries(param['val-series'])
             else:
@@ -256,7 +291,8 @@ class Experiment:
                                  'param-path': param['parameter-path']})
         return val_sweepers
 
-    def inc_parameter_set(self, compute_node, args, entity_filepath, val_sweepers):
+    def inc_parameter_set(self, compute_node, args, entity_filepath,
+                          val_sweepers):
         """
         Iterate through counters, incrementing each parameter in the set
         Set the new values in the input file, and then run the experiment
@@ -266,13 +302,17 @@ class Experiment:
         :param args:
         :param entity_filepath:
         :param val_sweepers:
-        :return: reset (True if any counter has reached above max), description of parameters (string)
-                                If reset is False, there MUST be a description of the parameters that have been set
+        :return: reset (True if any counter has reached above max),
+                       description of parameters (string)
+                       If reset is False, there MUST be a description of the
+                       parameters that have been set
         """
 
         if len(val_sweepers) == 0:
-            logging.warning("there are no counters to use to increment the parameter set.")
-            print("         Returning without any action. This may have undesirable consequences.")
+            logging.warning("there are no counters to use to increment the "
+                            "parameter set.")
+            print("         Returning without any action. This may have "
+                  "undesirable consequences.")
             return True, ""
 
         # inc all counters, and set parameter in entity file
@@ -286,15 +326,20 @@ class Experiment:
 
             if overflowed:
                 if args.logging:
-                    logging.debug("Sweeping has concluded for this sweep-set, due to the parameter: " +
-                          val_sweeper['entity-name'] + '.' + val_sweeper['param-path'])
+                    logging.debug("Sweeping has concluded for this sweep-set, "
+                                  "due to the parameter: " +
+                                  val_sweeper['entity-name'] + '.' +
+                                  val_sweeper['param-path'])
                 reset = True
                 break
 
-            set_param = compute_node.set_parameter_inputfile(entity_filepath,
-                                                             self.entity_with_prefix(val_sweeper['entity-name']),
-                                                             val_sweeper['param-path'],
-                                                             val_series.value())
+            set_param = compute_node.set_parameter_inputfile(
+                            entity_filepath,
+                            self.entity_with_prefix(
+                                val_sweeper['entity-name']
+                            ),
+                            val_sweeper['param-path'],
+                            val_series.value())
             sweep_param_vals.append(set_param)
             val_series.next_val()
 
@@ -306,19 +351,34 @@ class Experiment:
                 logging.debug("Parameter sweep: " + str(sweep_param_vals))
 
         if reset is False and len(sweep_param_vals) == 0:
-            logging.error("indeterminate state, reset is False, but parameter_description indicates "
-                  "no parameters have been modified. If there is no sweep to conduct, reset should be True.")
+            logging.error("indeterminate state, reset is False, but "
+                          "parameter_description indicates no parameters have "
+                          "been modified. If there is no sweep to conduct, "
+                          "reset should be True.")
             exit(1)
 
         return reset, sweep_param_vals
 
-    def create_all_input_files(self, base_entity_filename, base_data_filenames):
+    def create_all_input_files(self, base_entity_filename,
+                               base_data_filenames):
         self.reset_prefix()
-        return (self.experiment_utils.create_input_files(self.prefix(), self.TEMPLATE_PREFIX, [base_entity_filename])[0],
-                self.experiment_utils.create_input_files(self.prefix(), self.TEMPLATE_PREFIX, base_data_filenames))
+        return (
+            self.experiment_utils.create_input_files(
+                self.prefix(),
+                self.TEMPLATE_PREFIX,
+                [base_entity_filename]
+            )[0],
+            self.experiment_utils.create_input_files(
+                self.prefix(),
+                self.TEMPLATE_PREFIX,
+                base_data_filenames
+            )
+        )
 
     def run_sweeps(self, compute_node, cloud, args):
-        """ Perform parameter sweep steps, and run experiment for each step. """
+        """
+        Perform parameter sweep steps, and run experiment for each step.
+        """
 
         print("\n........ Run Sweeps")
 
@@ -341,7 +401,8 @@ class Experiment:
         for exp_i in filedata['experiments']:
             import_files = exp_i['import-files']  # import files dictionary
 
-            logging.debug("Import Files Dictionary = \n" + json.dumps(import_files, indent=4))
+            logging.debug("Import Files Dictionary = \n" +
+                          json.dumps(import_files, indent=4))
 
             base_entity_filename = import_files['file-entities']
             base_data_filenames = import_files['file-data']
@@ -350,37 +411,57 @@ class Experiment:
             if 'load-local-files' in exp_i:
                 load_local_files = exp_i['load-local-files']
                 if 'file-data' in load_local_files:
-                    exp_ll_data_filepaths = list(map(self.experiment_utils.runpath, load_local_files['file-data']))
+                    exp_ll_data_filepaths = list(
+                        map(self.experiment_utils.runpath,
+                            load_local_files['file-data'])
+                    )
 
-            run_parameterset_partial = functools.partial(self.run_parameterset,
-                                                         compute_node=compute_node,
-                                                         cloud=cloud,
-                                                         args=args,
-                                                         compute_data_filepaths=exp_ll_data_filepaths)
+            run_parameterset_partial = (
+                functools.partial(
+                    self.run_parameterset,
+                    compute_node=compute_node,
+                    cloud=cloud,
+                    args=args,
+                    compute_data_filepaths=exp_ll_data_filepaths)
+            )
 
-            if 'parameter-sweeps' not in exp_i or len(exp_i['parameter-sweeps']) == 0:
+            if 'parameter-sweeps' not in exp_i or (
+                    len(exp_i['parameter-sweeps']) == 0):
                 print("No parameters to sweep, just run once.")
-                exp_entity_filepath, exp_data_filepaths = self.create_all_input_files(base_entity_filename,
-                                                                                      base_data_filenames)
-                run_parameterset_partial(entity_filepath=exp_entity_filepath, data_filepaths=exp_data_filepaths)
+                exp_entity_filepath, exp_data_filepaths = (
+                    self.create_all_input_files(base_entity_filename,
+                                                base_data_filenames)
+                )
+                run_parameterset_partial(entity_filepath=exp_entity_filepath,
+                                         data_filepaths=exp_data_filepaths)
             else:
-                for param_sweep in exp_i['parameter-sweeps']:  # array of sweep definitions
+                # array of sweep definitions
+                for param_sweep in exp_i['parameter-sweeps']:
                     counters = self.setup_parameter_sweepers(param_sweep)
                     while True:
-                        exp_entity_filepath, exp_data_filepaths = self.create_all_input_files(base_entity_filename,
-                                                                                              base_data_filenames)
-                        reset, sweep_param_vals = self.inc_parameter_set(compute_node, args,
-                                                                         exp_entity_filepath, counters)
+                        exp_entity_filepath, exp_data_filepaths = (
+                            self.create_all_input_files(
+                                base_entity_filename,
+                                base_data_filenames)
+                        )
+                        reset, sweep_param_vals = self.inc_parameter_set(
+                            compute_node, args,
+                            exp_entity_filepath,
+                            counters
+                        )
                         if reset:
                             break
-                        run_parameterset_partial(entity_filepath=exp_entity_filepath,
-                                                 data_filepaths=exp_data_filepaths,
-                                                 sweep_param_vals=sweep_param_vals)
+                        run_parameterset_partial(
+                            entity_filepath=exp_entity_filepath,
+                            data_filepaths=exp_data_filepaths,
+                            sweep_param_vals=sweep_param_vals
+                        )
 
     def set_entity_params(self, compute_node):
         print("\n....... Set Entity Parameters")
 
-        with open(self.experiment_utils.experiment_def_file()) as data_exps_file:
+        with open(self.experiment_utils.experiment_def_file()) as (
+                data_exps_file):
             data = json.load(data_exps_file)
 
         for exp_i in data['experiments']:
@@ -390,25 +471,34 @@ class Experiment:
                 value = param['value']
 
                 if utils.is_valid_filename(value):
-                    value = value.replace(self.TEMPLATE_OUTPUT_PREFIX, self.prefix())
+                    value = value.replace(self.TEMPLATE_OUTPUT_PREFIX,
+                                          self.prefix())
                     value = self.experiment_utils.runpath(value)
 
-                compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, value)
+                compute_node.set_parameter_db(
+                    self.entity_with_prefix(entity_name),
+                    param_path,
+                    value
+                )
 
     def set_dataset(self, compute_node):
         """
-        The dataset can be located in different locations on different machines. The location can be set in the
-        experiments definition file (experiments.json). This method parses that file, finds the parameters to set
-        relative to the AGI_DATA_HOME env variable, and sets the specified parameters.
+        The dataset can be located in different locations on different
+        machines. The location can be set in the experiments definition file
+        (experiments.json). This method parses that file, finds the parameters
+        to set relative to the AGI_DATA_HOME env variable, and sets the
+        specified parameters.
         """
 
         print("\n....... Set Dataset")
 
-        with open(self.experiment_utils.experiment_def_file()) as data_exps_file:
+        with open(self.experiment_utils.experiment_def_file()) as (
+                data_exps_file):
             data = json.load(data_exps_file)
 
         for exp_i in data['experiments']:
-            for param in exp_i['dataset-parameters']:  # array of sweep definitions
+            # array of sweep definitions
+            for param in exp_i['dataset-parameters']:
                 entity_name = param['entity-name']
                 param_path = param['parameter-path']
                 data_filenames = param['value']
@@ -418,17 +508,27 @@ class Experiment:
                 data_paths = ""
                 for data_filename in data_filenames_arr:
                     if data_paths != "":
-                        # IMPORTANT: if space added here, additional characters ('+') get added, probably due to encoding
+                        # IMPORTANT: if space added here, additional
+                        # characters ('+') get added, probably due to encoding
                         # issues on the request
                         data_paths += ","
                     data_paths += self.experiment_utils.datapath(data_filename)
 
-                compute_node.set_parameter_db(self.entity_with_prefix(entity_name), param_path, data_paths)
+                compute_node.set_parameter_db(
+                    self.entity_with_prefix(entity_name),
+                    param_path, data_paths
+                )
 
     def generate_input_files_locally(self, compute_node):
-        entity_filepath, data_filepaths = self.experiment_utils.inputfiles_for_generation()
+        entity_filepath, data_filepaths = (
+            self.experiment_utils.inputfiles_for_generation()
+        )
+
         # write to the first listed data path name
-        compute_node.export_subtree(root_entity=self.entity_with_prefix("experiment"),
+        compute_node.export_subtree(
+                                    root_entity=(
+                                        self.entity_with_prefix("experiment")
+                                    ),
                                     entity_filepath=entity_filepath,
                                     data_filepath=data_filepaths[0])
 
@@ -436,7 +536,8 @@ class Experiment:
         """ Upload the results of the experiment to the cloud storage (s3)
 
         :param compute_node: the compute node doing the compute
-        :param export_compute: boolean, indicates if export is conducted on the compute node itself
+        :param export_compute: boolean, indicates if export is conducted on
+                               the compute node itself
         :type cloud: Cloud
         :type compute_node: Compute
         """
@@ -451,14 +552,18 @@ class Experiment:
                                     folder_path)
 
         # upload experiments definition file (if it exists)
-        self.upload_experiment_file(cloud,
-                                    self.prefix(),
-                                    self.experiment_utils.experiments_def_filename,
-                                    self.experiment_utils.experiment_def_file())
+        self.upload_experiment_file(
+            cloud,
+            self.prefix(),
+            self.experiment_utils.experiments_def_filename,
+            self.experiment_utils.experiment_def_file()
+        )
 
         # upload log4j configuration file that was used
         if compute_node.remote():
-            cloud.remote_upload_runfilename_s3(compute_node.host_node, self.prefix(), self.LOG_FILENAME)
+            cloud.remote_upload_runfilename_s3(compute_node.host_node,
+                                               self.prefix(),
+                                               self.LOG_FILENAME)
         else:
             log_filepath = self.experiment_utils.runpath(self.LOG_FILENAME)
             self.upload_experiment_file(cloud,
@@ -474,25 +579,35 @@ class Experiment:
         if compute_node.remote() and export_compute:
             print "\n --- Upload from exported file on remote machine."
             # remote upload of /output/[prefix] folder
-            cloud.remote_upload_output_s3(compute_node.host_node, self.prefix(), self.no_compress, self.csv_output)
+            cloud.remote_upload_output_s3(compute_node.host_node,
+                                          self.prefix(), self.no_compress,
+                                          self.csv_output)
         # otherwise, compress it here before upload if applicable
         elif self.no_compress is False:
             folder_path_big = self.experiment_utils.runpath("output-big/")
 
             # locate the output data file
-            output_data_filepath = utils.match_file_by_name(folder_path, 'data')
+            output_data_filepath = utils.match_file_by_name(folder_path,
+                                                            'data')
 
             if output_data_filepath is None:
-                logging.warning("No data file found. This should only happen if you are running remote via ssh, " \
-                      "and exporting data by saving on compute.")
+                logging.warning("No data file found. This should only happen "
+                                "if you are running remote via ssh, and "
+                                "exporting data by saving on compute.")
             else:
                 files_to_compress = [output_data_filepath]
-                archive_filename = self.experiment_utils.outputfile(self.prefix(), "data.zip")
+                archive_filename = self.experiment_utils.outputfile(
+                                        self.prefix(),
+                                        "data.zip")
 
                 if self.csv_output:
                     # Get features and labels CSV files
-                    output_labels_filepath = utils.match_file_by_name(folder_path, self.LABELS_FILENAME)
-                    output_features_filepath = utils.match_file_by_name(folder_path, self.FEATURES_FILENAME)
+                    output_labels_filepath = utils.match_file_by_name(
+                                                folder_path,
+                                                self.LABELS_FILENAME)
+                    output_features_filepath = utils.match_file_by_name(
+                                                folder_path,
+                                                self.FEATURES_FILENAME)
 
                     files_to_compress.append(output_labels_filepath)
                     files_to_compress.append(output_features_filepath)
@@ -503,11 +618,13 @@ class Experiment:
                 # Move uncompressed files to /output-big directory
                 utils.move_file(output_data_filepath, folder_path_big, True)
                 if self.csv_output:
-                    utils.move_file(output_labels_filepath, folder_path_big, True)
-                    utils.move_file(output_features_filepath, folder_path_big, True)
+                    utils.move_file(output_labels_filepath, folder_path_big,
+                                    True)
+                    utils.move_file(output_features_filepath, folder_path_big,
+                                    True)
 
-
-        # for both, upload the output folder on this machine (where script is running)
+        # for both, upload the output folder on this machine
+        # (where script is running)
         self.upload_experiment_file(cloud,
                                     self.prefix(),
                                     "output",
@@ -517,15 +634,18 @@ class Experiment:
     def upload_experiment_file(cloud, prefix, dest_name, source_path):
         """
         Upload experiment to s3.
-        :param prefix: experiment prefix (used in the full name of uploaded bucket)
-        :param dest_name: the name for the eventual uploaded s3 object (it can be file or folder)
+        :param prefix: experiment prefix (used in the full name of
+                       uploaded bucket)
+        :param dest_name: the name for the eventual uploaded s3 object
+                          (it can be file or folder)
         :param source_path: the file or folder to be uploaded
         :type cloud: Cloud
         :return:
         """
 
-        print "  --- uploading exp file to S3: prefix = " + prefix + ", destination file/folder = " + dest_name \
-              + ", source file/folder = " + source_path
+        print("  --- uploading exp file to S3: prefix = " + prefix +
+              ", destination file/folder = " + dest_name +
+              ", source file/folder = " + source_path)
 
         bucket_name = "agief-project"
         key = "experiment-output/" + prefix + "/" + dest_name
@@ -536,7 +656,11 @@ class Experiment:
             cloud.upload_folder_s3(bucket_name, key, source_path)
 
     def append_runtime(self, runtime):
-        info_filepath = self.experiment_utils.outputfile(self.prefix(), "experiment-info.txt")
+        info_filepath = self.experiment_utils.outputfile(
+                            self.prefix(),
+                            "experiment-info.txt"
+                        )
 
         with open(info_filepath, 'a') as data:
-            data.write("\nExperiment Runtime: %d days, %d hr, %d min, %d s" % tuple(runtime))
+            data.write("\nExperiment Runtime: %d days, %d hr, %d min, %d s" %
+                       tuple(runtime))
