@@ -245,7 +245,7 @@ def main():
     args = setup_arg_parsing()
 
     # setup logging
-    log_format = ("[%(filename)s:%(lineno)s - %(funcName)s() ",
+    log_format = ("[%(filename)s:%(lineno)s - %(funcName)s() " +
                   "- %(levelname)s] %(message)s")
     logging.basicConfig(format=log_format,
                         level=utils.logger_level(args.logging))
@@ -271,9 +271,9 @@ def main():
     cloud = Cloud()
 
     if args.upload and not (args.export or args.export_compute):
-        logging.warning("Uploading experiment to S3 is enabled, but "
-                        "'export experiment' is not, so the most important "
-                        "files (output entity.json and data.json) "
+        logging.warning("Uploading experiment to S3 is enabled, but " +
+                        "'export experiment' is not, so the most important " +
+                        "files (output entity.json and data.json) " +
                         "will be missing")
 
     if args.remote_type != "local":

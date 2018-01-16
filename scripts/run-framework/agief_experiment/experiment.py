@@ -61,8 +61,8 @@ class Experiment:
 
             if not os.path.isfile(prefix_filepath) or (
                not os.path.exists(prefix_filepath)):
-                logging.warning("no prefix.txt file could be found, using the "
-                                "default root entity name: 'experiment'")
+                logging.warning("no prefix.txt file could be found, using " +
+                                "the default root entity name: 'experiment'")
                 return None
 
             with open(prefix_filepath, 'r') as myfile:
@@ -138,8 +138,8 @@ class Experiment:
                     param_path = config_exp['value'][reporting_path_key]
                     report = dpath.util.get(config, 'value.' + param_path, '.')
                 else:
-                    logging.warning("No reporting entity config path found in "
-                                    "experiment config.")
+                    logging.warning("No reporting entity config path found " +
+                                    "in experiment config.")
             except KeyError:
                 logging.warning("KeyError Exception: trying to access path '" +
                                 param_path + "' at config.value, but it DOES "
@@ -156,7 +156,7 @@ class Experiment:
                 print(report)
                 print("================================================\n")
         else:
-            logging.warning("No reportingEntityName has been specified in "
+            logging.warning("No reportingEntityName has been specified in " +
                             "Experiment config.")
 
     def entity_with_prefix(self, entity_name):
@@ -259,7 +259,7 @@ class Experiment:
                 )
         except Exception as e:
             failed = True
-            logging.error("Experiment failed for some reason, shut down "
+            logging.error("Experiment failed for some reason, shut down " +
                           "Compute and continue.")
             logging.error(e)
 
@@ -309,9 +309,9 @@ class Experiment:
         """
 
         if len(val_sweepers) == 0:
-            logging.warning("there are no counters to use to increment the "
+            logging.warning("there are no counters to use to increment the " +
                             "parameter set.")
-            print("         Returning without any action. This may have "
+            print("         Returning without any action. This may have " +
                   "undesirable consequences.")
             return True, ""
 
@@ -326,8 +326,8 @@ class Experiment:
 
             if overflowed:
                 if args.logging:
-                    logging.debug("Sweeping has concluded for this sweep-set, "
-                                  "due to the parameter: " +
+                    logging.debug("Sweeping has concluded for this " +
+                                  "sweep-set, due to the parameter: " +
                                   val_sweeper['entity-name'] + '.' +
                                   val_sweeper['param-path'])
                 reset = True
@@ -351,10 +351,10 @@ class Experiment:
                 logging.debug("Parameter sweep: " + str(sweep_param_vals))
 
         if reset is False and len(sweep_param_vals) == 0:
-            logging.error("indeterminate state, reset is False, but "
-                          "parameter_description indicates no parameters have "
-                          "been modified. If there is no sweep to conduct, "
-                          "reset should be True.")
+            logging.error("indeterminate state, reset is False, but " +
+                          "parameter_description indicates no parameters " +
+                          "have been modified. If there is no sweep to " +
+                          "conduct, reset should be True.")
             exit(1)
 
         return reset, sweep_param_vals
@@ -591,9 +591,9 @@ class Experiment:
                                                             'data')
 
             if output_data_filepath is None:
-                logging.warning("No data file found. This should only happen "
-                                "if you are running remote via ssh, and "
-                                "exporting data by saving on compute.")
+                logging.warning("No data file found. This should only " +
+                                "happen if you are running remote via ssh, " +
+                                "and exporting data by saving on compute.")
             else:
                 files_to_compress = [output_data_filepath]
                 archive_filename = self.experiment_utils.outputfile(

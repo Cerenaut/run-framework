@@ -106,8 +106,8 @@ class Compute:
                                 value) + ".")
                         break
             except KeyError:
-                logging.warning("KeyError Exception: Trying to access a "
-                                "keypath in config object, that DOES NOT "
+                logging.warning("KeyError Exception: Trying to access a " +
+                                "keypath in config object, that DOES NOT " +
                                 "exist!")
             except requests.exceptions.ConnectionError:
                 logging.error("Oops, ConnectionError exception")
@@ -257,7 +257,7 @@ class Compute:
         response = requests.get(self.base_url() + '/export', params=payload)
 
         if response.status_code == 400:
-            logging.error("Could not export type '%s' for the entity tree "
+            logging.error("Could not export type '%s' for the entity tree " +
                           "with root node '%s'", export_type, root_entity)
             return
 
@@ -416,7 +416,7 @@ class Compute:
             version = None
 
             if not is_suppress_console_output:
-                logging.error("Error connecting to agief to retrieve the "
+                logging.error("Error connecting to agief to retrieve the " +
                               "version.")
 
         return version
@@ -453,7 +453,7 @@ class Compute:
                 # Using ECS - the elastic container service
                 print("Launching Compute on AWS-ECS")
                 if not ecs_task_name:
-                    raise ValueError("ERROR: you must specify a Task Name "
+                    raise ValueError("ERROR: you must specify a Task Name " +
                                      "to run on aws-ecs")
                 task_arn = cloud.ecs_run_task(ecs_task_name)
             else:
@@ -466,7 +466,7 @@ class Compute:
                     print("Docker Container ID: " + self.container_id)
         else:
             print("Launching Compute locally")
-            print("NOTE: Generating run_stdout.log and run_stderr.log "
+            print("NOTE: Generating run_stdout.log and run_stderr.log " +
                   "(in the current folder)")
 
             if main_class:
@@ -522,7 +522,7 @@ class Compute:
                 utils.remote_run(self.host_node,
                                  'docker stop ' + self.container_id)
             else:
-                logging.warning("Docker did not shut down, could not "
+                logging.warning("Docker did not shut down, could not " +
                                 "locate container id")
         elif not args.no_docker:
             # stops local docker
