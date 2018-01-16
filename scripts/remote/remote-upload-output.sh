@@ -36,7 +36,7 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 
 	csv_files=""
 	if [ "$csv_output" = "True" ]; then
-		csv_files="*.csv"
+		csv_files="$upload_folder/*.csv"
 	fi
 
 	if [ "$no_compress" = "False" ]; then
@@ -44,8 +44,8 @@ ssh -v -p $port -i $keyfile ${user}@${host} -o 'StrictHostKeyChecking no' prefix
 		mkdir -p $output_big_folder
 
 		matching_files=( $(find $upload_folder -name '*data*.json') )
-		zip -j $upload_folder/data.zip ${matching_files[0]} $upload_folder/$csv_files
-		mv -t $output_big_folder ${matching_files[0]} $upload_folder/$csv_files
+		zip -j $upload_folder/data.zip ${matching_files[0]} $csv_files
+		mv -t $output_big_folder ${matching_files[0]} $csv_files
 	fi
 
 	cmd="aws s3 cp $upload_folder s3://agief-project/experiment-output/$prefix/output --recursive"
