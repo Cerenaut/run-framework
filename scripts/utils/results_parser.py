@@ -48,7 +48,7 @@ def main():
     args = setup_arg_parsing()
 
     # Setup logging
-    log_format = ("[%(filename)s:%(lineno)s - %(funcName)s() ",
+    log_format = ("[%(filename)s:%(lineno)s - %(funcName)s() " +
                   "- %(levelname)s] %(message)s")
     logging.basicConfig(format=log_format, level=logger_level(args.logging))
 
@@ -127,8 +127,8 @@ def parse_results(input_filename):
                         exp_info_buffer = []
 
                     if ph2_prefix:
-                        results[ph1_prefix]['ph2_info'][ph2_prefix]
-                        .append(line)
+                        results[ph1_prefix]['ph2_info'][ph2_prefix] \
+                            .append(line)
                     else:
                         exp_info_buffer.append(line)
 
@@ -148,11 +148,11 @@ def parse_results(input_filename):
                         results[ph1_prefix]['f1'][ph2_prefix][f1_index] = []
 
                     if is_cm:
-                        results[ph1_prefix]['cm'][ph2_prefix][cm_index]
-                        .append(line.lstrip())
+                        results[ph1_prefix]['cm'][ph2_prefix][cm_index] \
+                            .append(line.lstrip())
                     if is_f1:
-                        results[ph1_prefix]['f1'][ph2_prefix][f1_index]
-                        .append(line.lstrip())
+                        results[ph1_prefix]['f1'][ph2_prefix][f1_index] \
+                            .append(line.lstrip())
                     if re.search('Overall F-Score:', line):
                         is_f1 = False
     return results
