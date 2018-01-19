@@ -123,38 +123,46 @@ class Experiment:
         config_exp = compute_node.get_entity_config(
                         self.entity_with_prefix("experiment"))
 
-        reporting_name_key = "reportingEntityName"
+        reporting_entities_key = "reportingEntities"
         reporting_path_key = "reportingEntityConfigPath"
-        if 'value' in config_exp and reporting_name_key in config_exp['value']:
-            # get the reporting entity's config
-            entity_name = config_exp['value'][reporting_name_key]
-            config = compute_node.get_entity_config(entity_name)
 
-            # get the relevant param, or if not there, show the whole config
-            report = None
-            param_path = None
-            try:
-                if reporting_path_key in config_exp['value']:
-                    param_path = config_exp['value'][reporting_path_key]
-                    report = dpath.util.get(config, 'value.' + param_path, '.')
+        if 'value' in config_exp and (
+                reporting_entities_key in config_exp['value']):
+            # get the reporting entity's config
+            entity_names = config_exp['value'][reporting_entities_key]
+            entity_names = [x.strip() for x in entity_names.split(',')]
+
+            print(entity_names)
+            for entity_name in entity_names:
+                config = compute_node.get_entity_config(entity_name)
+
+                # get the relevant param, or if not there,
+                # show the whole config
+                report = None
+                param_path = None
+                try:
+                    if reporting_path_key in config_exp['value']:
+                        param_path = config_exp['value'][reporting_path_key]
+                        report = dpath.util.get(config, 'value.' +
+                                                param_path, '.')
+                    else:
+                        logging.warning("No reporting entity config path " +
+                                        "found in experiment config.")
+                except KeyError:
+                    logging.warning("KeyError Exception: trying to access " +
+                                    "path '" + param_path + "' at " +
+                                    "config.value, but it DOES NOT exist!")
+                if report is None:
+                    print("\n================================================")
+                    print("Reporting Entity Config:")
+                    print(json.dumps(config, indent=4))
+                    print("================================================\n")
                 else:
-                    logging.warning("No reporting entity config path found " +
-                                    "in experiment config.")
-            except KeyError:
-                logging.warning("KeyError Exception: trying to access path '" +
-                                param_path + "' at config.value, but it DOES "
-                                "NOT exist!")
-            if report is None:
-                print("\n================================================")
-                print("Reporting Entity Config:")
-                print(json.dumps(config, indent=4))
-                print("================================================\n")
-            else:
-                print("\n================================================")
-                print("Reporting Entity Config Path (" + entity_name +
-                      "-Config.value." + param_path + "):")
-                print(report)
-                print("================================================\n")
+                    print("\n================================================")
+                    print("Reporting Entity Config Path (" + entity_name +
+                          "-Config.value." + param_path + "):")
+                    print(report)
+                    print("================================================\n")
         else:
             logging.warning("No reportingEntityName has been specified in " +
                             "Experiment config.")
