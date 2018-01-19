@@ -132,7 +132,6 @@ class Experiment:
             entity_names = config_exp['value'][reporting_entities_key]
             entity_names = [x.strip() for x in entity_names.split(',')]
 
-            print(entity_names)
             for entity_name in entity_names:
                 config = compute_node.get_entity_config(entity_name)
 
