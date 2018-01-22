@@ -173,6 +173,13 @@ class Cloud:
         ec2 = boto3.resource('ec2')
         subnet = ec2.Subnet(self.subnet_id)
 
+        # Set the correct Logz.io token in EC2
+        logzio_token = os.getenv("AGI_LOGZIO_TOKEN")
+        user_data = '''
+        #!/bin/sh
+        echo export AGI_LOGZIO_TOKEN=%s >> /etc/environment
+        ''' % (logzio_token)
+
         instance = subnet.create_instances(
             DryRun=False,
             ImageId=ami_id,
@@ -200,7 +207,8 @@ class Cloud:
             #     'Arn': 'string',
             #     'Name': 'string'
             # },
-            EbsOptimized=False
+            EbsOptimized=False,
+            UserData=user_data
         )
 
         instance_id = instance[0].instance_id
