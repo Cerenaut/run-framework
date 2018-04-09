@@ -1,8 +1,9 @@
 import boto3
 import os
 import botocore
-import utils
 import logging
+
+from agief_experiment import utils
 
 
 class Cloud:
@@ -47,7 +48,7 @@ class Cloud:
         utils.run_bashscript_repeat(cmd, 15, 6)
 
     def sync_tf_experiment(self, remote):
-            """
+        """
         Sync experiment from this machine to remote machine
         """
 

@@ -1,13 +1,12 @@
 import os
-import subprocess
-import requests
 import time
 import json
-import dpath.util
-
-import utils
 import logging
+import requests
+import dpath.util
+import subprocess
 
+from agief_experiment import utils
 from agief_experiment.experiment import Experiment
 
 

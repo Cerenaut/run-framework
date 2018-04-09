@@ -584,7 +584,7 @@ class Experiment:
 
         # if data was saved on compute, upload data from there
         if compute_node.remote() and export_compute:
-            print "\n --- Upload from exported file on remote machine."
+            print("\n --- Upload from exported file on remote machine.")
             # remote upload of /output/[prefix] folder
             cloud.remote_upload_output_s3(compute_node.host_node,
                                           self.prefix(), self.no_compress,

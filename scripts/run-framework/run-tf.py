@@ -7,11 +7,14 @@ import sys
 import json
 import logging
 import datetime
+import traceback
 
 import numpy as np
 import tensorflow as tf
 
 from agief_experiment import utils
+from agief_experiment.cloud import Cloud
+from agief_experiment.compute import Compute
 from agief_experiment.host_node import HostNode
 
 
@@ -49,9 +52,6 @@ def setup_arg_parsing():
                              '(default=%(default)s). THIS IS IGNORED IF '
                              'RUNNING ON AWS (in which case the IP of the '
                              'instance specified by the Instance ID is used)')
-    parser.add_argument('--port', dest='port', required=False,
-                        help='Port where the Compute node will be running '
-                             '(default=%(default)s).')
     parser.add_argument('--user', dest='user', required=False,
                         help='If remote, the "user" on the remote '
                              'Compute node (default=%(default)s).')
@@ -63,6 +63,9 @@ def setup_arg_parsing():
                         help='If remote, the path to the remote '
                              'VARIABLES_FILE to use on the remote '
                              'Compute node (default=%(default)s).')
+    parser.add_argument('--ssh_keypath', dest='ssh_keypath', required=False,
+                        help='Path to the private key for the remote machine, '
+                             'used for comms over ssh (default=%(default)s).')
 
     parser.add_argument('--logging', dest='logging', required=False,
                         help='Logging level (default=%(default)s). '
@@ -70,17 +73,11 @@ def setup_arg_parsing():
 
     parser.set_defaults(remote_type='local')  # i.e. not remote
     parser.set_defaults(host='localhost')
-    parser.set_defaults(port='8491')
     parser.set_defaults(ssh_port='22')
     parser.set_defaults(user='ec2-user')
-    parser.set_defaults(remote_variables_file='/home/ec2-user/agief-project/'
-                                              'variables/variables-ec2.sh')
-    parser.set_defaults(
-        ssh_keypath=utils.filepath_from_env_variable(
-                        '.ssh/ecs-key.pem',
-                        'HOME'
-                    )
-    )
+    parser.set_defaults(remote_variables_file='/home/ec2-user/agief-python/'
+                                              'agi-tensorflow/variables/'
+                                              'variables-tf.sh')
 
     parser.set_defaults(logging='warning')
 
@@ -98,15 +95,14 @@ def get_hparams_sweeps(sweeps):
     return hparams_sweeps
 
 
-def training_command(variables_file, exp_params, dataset_params, hparams):
-    project_dir =
+def training_op(variables_file, exp_params, dataset_params, hparams):
     command = '''
         export VARIABLES_FILE={variables_file}
         source {variables_file}
         source activate tensorflow
         cd $TF_HOME/{model_dir}
         python experiment.py --data_dir=$TF_DATA/{data_dir} \
-        --summary_dir=TF_SUMMARY/{summary_dir} --shift={shift} --pad={pad} \
+        --summary_dir=$TF_SUMMARY/{summary_dir} --shift={shift} --pad={pad} \
         --batch_size={batch_size} --dataset={dataset} \
         --num_gpus={num_gpus} --max_steps={max_steps} \
         --hparams_override={hparams_override}
@@ -165,7 +161,7 @@ def main():
     else:
         host_node = HostNode(args.host, args.user)
 
-    compute_node = Compute(host_node, args.port)
+    compute_node = Compute(host_node)
 
     ips = {'ip_public': args.host, 'ip_private': None}
     ips_pg = {'ip_public': None, 'ip_private': None}
@@ -175,7 +171,6 @@ def main():
     failed = False
     try:
         compute_node.host_node.host = ips['ip_public']
-        compute_node.port = args.port
 
         # Sync experiment
         if args.sync:
@@ -183,12 +178,18 @@ def main():
 
         # Run sweeps
         for i, hparams in enumerate(hparams_sweeps):
-            command = training_command(host_node.remote_variables_file,
-                                       config['experiment-parameters'],
-                                       config['dataset-parameters'],
-                                       hparams)
+            # Start experiment
+            utils.remote_run(
+                host_node,
+                training_op(host_node.remote_variables_file,
+                            config['experiment-parameters'],
+                            config['dataset-parameters'],
+                            hparams))
 
-            utils.remote_run(host_node, command)
+        # TODO: Export experiment
+
+        # TODO: Classification
+
     except Exception as err:  # pylint: disable=W0703
         failed = True
 
@@ -205,7 +206,7 @@ def main():
     # TODO: Shutdown framework
 
     # Record experiment end time
-    exp_end_time = datetime.now()
+    exp_end_time = datetime.datetime.now()
 
     # Log the experiment runtime in d:h:m:s:ms format
     exp_runtime = utils.format_timedelta(exp_end_time - exp_start_time)

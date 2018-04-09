@@ -1,9 +1,10 @@
 import json
-import utils
 import os
 import shutil
 import subprocess
 import logging
+
+from agief_experiment import utils
 
 
 class ExperimentUtils:
