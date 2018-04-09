@@ -9,9 +9,6 @@ import logging
 import datetime
 import traceback
 
-import numpy as np
-import tensorflow as tf
-
 from agief_experiment import utils
 from agief_experiment.cloud import Cloud
 from agief_experiment.compute import Compute
