@@ -5,3 +5,5 @@ numpy
 paramiko
 pep8
 autopep8
+numpy
+tensorflow
