@@ -46,6 +46,18 @@ class Cloud:
                remote.host_key_user_variables())
         utils.run_bashscript_repeat(cmd, 15, 6)
 
+    def sync_tf_experiment(self, remote):
+            """
+        Sync experiment from this machine to remote machine
+        """
+
+        print("\n....... Use remote-sync-tf-experiment.sh to "
+              "rsync relevant folders.")
+
+        cmd = ("../remote/remote-sync-tf-experiment.sh " +
+               remote.host_key_user_variables())
+        utils.run_bashscript_repeat(cmd, 15, 6)
+
     def remote_download_output(self, prefix, host_node):
         """ Download /output/prefix folder from remote storage (s3) to remote machine.
         :param host_node:

@@ -1,7 +1,6 @@
 dpath
 boto3
 requests
-enum
 numpy
 paramiko
 pep8

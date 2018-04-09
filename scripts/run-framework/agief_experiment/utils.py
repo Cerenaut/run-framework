@@ -28,7 +28,7 @@ def replace_in_file(src_string, dest_string, file_path):
 def create_folder(filepath):
     if not os.path.exists(os.path.dirname(filepath)):
         try:
-            os.makedirs(os.path.dirname(filepath), 0777)
+            os.makedirs(os.path.dirname(filepath))
         except OSError as exc:  # Guard against race condition
             if exc.errno != errno.EEXIST:
                 raise
@@ -363,9 +363,16 @@ def remote_run(host_node, cmd):
         exit
     '''.format(cmd)
 
+    def decode(s):
+        try:
+            return str(s, encoding='utf8')
+        except:
+            return s
+
     # Execute command and the capture output
     stdin.write(cmd)
     output = stdout.readlines()
+    output = list(map(lambda x: decode(x), output))
 
     logging.debug("Stdout: " + ''.join(output))
 
