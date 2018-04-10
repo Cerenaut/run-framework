@@ -115,7 +115,7 @@ def classify_op(variables_file, summary_dir, dataset, model, last_step,
         variables_file=variables_file,
         summary_dir=summary_dir,
         dataset=dataset,
-        model_dir=model_dir
+        model_dir=model_dir,
         model=model,
         last_step=last_step
     )
