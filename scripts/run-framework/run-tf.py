@@ -259,7 +259,7 @@ def main():
                 prefix_file.write(','.join(prefixes))
 
         if args.phase == 'eval' or args.phase == 'classify':
-            if prefixes is None:
+            if args.prefixes is None:
                 raise Exception('No prefixes provided.')
 
             prefixes = [x.strip() for x in args.prefixes.split(',')]
