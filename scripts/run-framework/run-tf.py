@@ -207,7 +207,7 @@ def main():
             cloud.sync_tf_experiment(compute_node.host_node)
 
         # Run sweeps
-        prefixes = ['180410-1018', '180410-1023', '180410-1028']
+        prefixes = []
         for i, hparams in enumerate(hparams_sweeps):
             run_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
             prefixes.append(run_prefix)
