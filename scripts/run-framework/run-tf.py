@@ -100,7 +100,8 @@ def get_hparams_sweeps(sweeps):
     return hparams_sweeps
 
 
-def classify_op(variables_file, summary_dir, dataset, model, last_step):
+def classify_op(variables_file, summary_dir, dataset, model, last_step,
+                model_dir):
     command = '''
         export VARIABLES_FILE={variables_file}
         source {variables_file}
@@ -114,6 +115,7 @@ def classify_op(variables_file, summary_dir, dataset, model, last_step):
         variables_file=variables_file,
         summary_dir=summary_dir,
         dataset=dataset,
+        model_dir=model_dir
         model=model,
         last_step=last_step
     )
@@ -292,7 +294,8 @@ def main():
                                     summary_dir,
                                     classify_sweep['dataset'],
                                     model,
-                                    config['train-parameters']['max_steps']))
+                                    config['train-parameters']['max_steps'],
+                                    config['experiment-parameters']['model']))
 
     except Exception as err:  # pylint: disable=W0703
         failed = True
