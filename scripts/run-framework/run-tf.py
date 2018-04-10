@@ -99,11 +99,11 @@ def eval_op(variables_file, exp_params, train_params, summary_dir,
         source {variables_file}
         source activate tensorflow
         cd $TF_HOME/{model_dir}
-        python experiment.py --data_dir=$TF_DATA/{data_dir} --train=False \
+        python experiment.py --data_dir=$TF_DATA/{data_dir} --train=false \
         --checkpoint=$TF_SUMMARY/{summary_dir}/train/model.ckpt-{max_steps} \
         --summary_dir=$TF_SUMMARY/{summary_dir} --shift=0 --pad={pad} \
         --eval_set={eval_set} --eval_size={eval_size} --batch_size=100 \
-        --eval_shard={eval_shard} --dataset={dataset} --num_gpus={num_gpus}
+        --eval_shard={eval_shard} --dataset={dataset} --num_gpus={num_gpus} \
         --hparams_override={hparams_override}
     '''.format(
             variables_file=variables_file,
@@ -134,7 +134,7 @@ def train_op(vars_file, exp_params, train_params, summary_dir, hparams):
         --summary_dir=$TF_SUMMARY/{summary_dir} --shift={shift} --pad={pad} \
         --batch_size={batch_size} --dataset={dataset} \
         --num_gpus={num_gpus} --max_steps={max_steps} \
-        --hparams_override={hparams_override}
+        --hparams_override={hparams_override} \
         --summary_override=true
     '''.format(
             variables_file=vars_file,
