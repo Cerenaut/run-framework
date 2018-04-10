@@ -92,7 +92,39 @@ def get_hparams_sweeps(sweeps):
     return hparams_sweeps
 
 
-def training_op(variables_file, exp_params, dataset_params, hparams):
+def eval_op(variables_file, exp_params, dataset_params, summary_dir,
+            eval_sweep, hparams):
+    command = '''
+        export VARIABLES_FILE={variables_file}
+        source {variables_file}
+        source activate tensorflow
+        cd $TF_HOME/{model_dir}
+        python experiment.py --data_dir=$TF_DATA/{data_dir} --train=False \
+        --checkpoint=$TF_SUMMARY/{summary_dir}/train/model.ckpt-{max_steps} \
+        --summary_dir=$TF_SUMMARY/{summary_dir} --shift=0 --pad={pad} \
+        --eval_set={eval_set} --eval_size={eval_size} --batch_size=100 \
+        --eval_shard={eval_shard} --dataset={dataset} --num_gpus={num_gpus}
+        --hparams_override={hparams_override}
+    '''.format(
+            variables_file=variables_file,
+            model_dir=exp_params['model'],
+            num_gpus=exp_params['num_gpus'],
+            max_steps=exp_params['max_steps'],
+            summary_dir=summary_dir,
+            pad=eval_sweep['pad'],
+            dataset=eval_sweep['dataset'],
+            data_dir=dataset_params['dataset_path'],
+            eval_set=eval_sweep['eval_set'],
+            eval_shard=eval_sweep['eval_shard'],
+            eval_size=eval_sweep['eval_size']
+            hparams_override=hparams)
+
+    logging.info(command)
+
+    return command
+
+
+def train_op(vars_file, exp_params, train_params, summary_dir, hparams):
     command = '''
         export VARIABLES_FILE={variables_file}
         source {variables_file}
@@ -103,17 +135,18 @@ def training_op(variables_file, exp_params, dataset_params, hparams):
         --batch_size={batch_size} --dataset={dataset} \
         --num_gpus={num_gpus} --max_steps={max_steps} \
         --hparams_override={hparams_override}
+        --summary_override=true
     '''.format(
-            variables_file=variables_file,
+            variables_file=vars_file,
             model_dir=exp_params['model'],
             num_gpus=exp_params['num_gpus'],
-            max_steps=exp_params['max_steps'],
-            summary_dir=exp_params['summary_dir'],
-            pad=dataset_params['pad'],
-            shift=dataset_params['shift'],
-            dataset=dataset_params['dataset'],
-            batch_size=dataset_params['batch_size'],
-            data_dir=dataset_params['dataset_path'],
+            max_steps=train_params['max_steps'],
+            summary_dir=summary_dir,
+            pad=train_params['pad'],
+            shift=train_params['shift'],
+            dataset=train_params['dataset'],
+            batch_size=train_params['batch_size'],
+            data_dir=train_params['dataset_path'],
             hparams_override=hparams)
 
     logging.info(command)
@@ -148,7 +181,7 @@ def main():
 
     with open(exps_filepath) as config_file:
         config = json.load(config_file)
-        hparams_sweeps = get_hparams_sweeps(config['parameter-sweeps'])
+        hparams_sweeps = get_hparams_sweeps(config['train-sweeps'])
 
     cloud = Cloud()
 
@@ -174,18 +207,36 @@ def main():
             cloud.sync_tf_experiment(compute_node.host_node)
 
         # Run sweeps
+        prefixes = ['180410-1018', '180410-1023', '180410-1028']
         for i, hparams in enumerate(hparams_sweeps):
+            run_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
+            prefixes.append(run_prefix)
+
+            summary_dir = os.path.join(
+                config['experiment-parameters']['summary_dir'],
+                run_prefix)
+
             # Start experiment
             utils.remote_run(
                 host_node,
-                training_op(host_node.remote_variables_file,
+                train_op(host_node.remote_variables_file,
+                         config['experiment-parameters'],
+                         config['train-parameters'],
+                         summary_dir, hparams))
+
+        for i, prefix in enumerate(prefixes):
+
+            # Export experiment for each prefix
+            for j, eval_sweep in enumerate(config['eval-sweeps']):
+                # Start experiment
+                utils.remote_run(
+                    host_node,
+                    eval_op(host_node.remote_variables_file,
                             config['experiment-parameters'],
-                            config['dataset-parameters'],
-                            hparams))
+                            config['train-parameters'],
+                            summary_dir, eval_sweep, hparams_sweeps[i]))
 
-        # TODO: Export experiment
-
-        # TODO: Classification
+            # TODO: Classification
 
     except Exception as err:  # pylint: disable=W0703
         failed = True
