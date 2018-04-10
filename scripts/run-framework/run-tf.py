@@ -116,7 +116,7 @@ def eval_op(variables_file, exp_params, dataset_params, summary_dir,
             data_dir=dataset_params['dataset_path'],
             eval_set=eval_sweep['eval_set'],
             eval_shard=eval_sweep['eval_shard'],
-            eval_size=eval_sweep['eval_size']
+            eval_size=eval_sweep['eval_size'],
             hparams_override=hparams)
 
     logging.info(command)
