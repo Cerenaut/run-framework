@@ -92,7 +92,7 @@ def get_hparams_sweeps(sweeps):
     return hparams_sweeps
 
 
-def eval_op(variables_file, exp_params, dataset_params, summary_dir,
+def eval_op(variables_file, exp_params, train_params, summary_dir,
             eval_sweep, hparams):
     command = '''
         export VARIABLES_FILE={variables_file}
@@ -109,11 +109,11 @@ def eval_op(variables_file, exp_params, dataset_params, summary_dir,
             variables_file=variables_file,
             model_dir=exp_params['model'],
             num_gpus=exp_params['num_gpus'],
-            max_steps=exp_params['max_steps'],
+            max_steps=train_params['max_steps'],
             summary_dir=summary_dir,
             pad=eval_sweep['pad'],
             dataset=eval_sweep['dataset'],
-            data_dir=dataset_params['dataset_path'],
+            data_dir=train_params['dataset_path'],
             eval_set=eval_sweep['eval_set'],
             eval_shard=eval_sweep['eval_shard'],
             eval_size=eval_sweep['eval_size'],
