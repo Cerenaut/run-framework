@@ -24,6 +24,13 @@ def setup_arg_parsing():
 
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
 
+    parser.add_argument('--step_phase', dest='phase',
+                        help='Choose the specific experiment phase to run.'
+                             'Options: train, eval or classify')
+    parser.add_argument('--prefixes', dest='prefixes',
+                        help='The prefixes to use for classify/eval.'
+                             'Must be comma separated.')
+
     # main program flow
     parser.add_argument('--step_remote', dest='remote_type',
                         help='Run Compute on remote machine. This parameter '
@@ -68,6 +75,7 @@ def setup_arg_parsing():
                         help='Logging level (default=%(default)s). '
                              'Options: debug, info, warning, error, critical')
 
+    parser.set_defaults(prefixes=None)
     parser.set_defaults(remote_type='local')  # i.e. not remote
     parser.set_defaults(host='localhost')
     parser.set_defaults(ssh_port='22')
@@ -228,49 +236,60 @@ def main():
             cloud.sync_tf_experiment(compute_node.host_node)
 
         # Run sweeps
-        prefixes = []
-        print('........ Training\n')
-        for i, hparams in enumerate(hparams_sweeps):
-            run_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
-            prefixes.append(run_prefix)
+        if args.phase == 'train':
+            prefixes = []
+            print('........ Training\n')
+            for i, hparams in enumerate(hparams_sweeps):
+                run_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
+                prefixes.append(run_prefix)
 
-            summary_dir = os.path.join(
-                config['experiment-parameters']['summary_dir'],
-                run_prefix)
+                summary_dir = os.path.join(
+                    config['experiment-parameters']['summary_dir'],
+                    run_prefix)
 
-            # Start experiment
-            utils.remote_run(
-                host_node,
-                train_op(host_node.remote_variables_file,
-                         config['experiment-parameters'],
-                         config['train-parameters'],
-                         summary_dir, hparams))
-
-        print('........ Evaluating and Exporting\n')
-        for i, prefix in enumerate(prefixes):
-            summary_dir = os.path.join(
-                config['experiment-parameters']['summary_dir'],
-                prefix)
-
-            print('Prefix: {0}'.format(prefix))
-
-            # Export experiment for each prefix
-            for j, eval_sweep in enumerate(config['eval-sweeps']):
                 # Start experiment
                 utils.remote_run(
                     host_node,
-                    eval_op(host_node.remote_variables_file,
-                            config['experiment-parameters'],
-                            config['train-parameters'],
-                            summary_dir, eval_sweep, hparams_sweeps[i]))
+                    train_op(host_node.remote_variables_file,
+                             config['experiment-parameters'],
+                             config['train-parameters'],
+                             summary_dir, hparams))
 
-            # Classification
-            for j, classify_sweep in enumerate(config['classify-sweeps']):
-                for model in classify_sweep['model']:
-                    # Start experiment
-                    utils.remote_run(
-                        host_node,
-                        classify_op(host_node.remote_variables_file,
+            with open('prefixes.txt', 'w') as prefix_file:
+                prefix_file.write(prefixes.join(','))
+
+        if args.phase == 'eval' or args.phase == 'classify':
+            if prefixes is None:
+                raise Exception('No prefixes provided.')
+
+            prefixes = [x.strip() for x in args.prefixes.split(',')]
+
+            for i, prefix in enumerate(prefixes):
+                summary_dir = os.path.join(
+                    config['experiment-parameters']['summary_dir'],
+                    prefix)
+
+                if args.phase == 'eval':
+                    # Export experiment for each prefix
+                    print('........ Evaluating: {0}\n'.format(prefix))
+                    for eval_sweep in config['eval-sweeps']:
+                        utils.remote_run(
+                            host_node,
+                            eval_op(
+                                host_node.remote_variables_file,
+                                config['experiment-parameters'],
+                                config['train-parameters'],
+                                summary_dir, eval_sweep, hparams_sweeps[i]))
+
+                if args.phase == 'classify':
+                    # Classification
+                    print('........ Classifying: {0}\n'.format(prefix))
+                    for classify_sweep in config['classify-sweeps']:
+                        for model in classify_sweep['model']:
+                            utils.remote_run(
+                                host_node,
+                                classify_op(
+                                    host_node.remote_variables_file,
                                     summary_dir,
                                     classify_sweep['dataset'],
                                     model,
