@@ -92,6 +92,25 @@ def get_hparams_sweeps(sweeps):
     return hparams_sweeps
 
 
+def classify_op(variables_file, summary_dir, dataset, model, last_step):
+    command = '''
+        export VARIABLES_FILE={variables_file}
+        source {variables_file}
+        source activate tensorflow
+        cd $TF_HOME/{model_dir}
+        python classifier.py --model={model} --dataset={dataset} \
+        --data_dir=$TF_SUMMARY/{summary_dir}/classify/output \
+        --summary_dir=$TF_SUMMARY/{summary_dir}/classify \
+        --last_step={last_step}
+    '''.format(
+        variables_file=variables_file,
+        summary_dir=summary_dir,
+        dataset=dataset
+        model=model,
+        last_step=last_step
+    )
+
+
 def eval_op(variables_file, exp_params, train_params, summary_dir,
             eval_sweep, hparams):
     command = '''
@@ -106,18 +125,19 @@ def eval_op(variables_file, exp_params, train_params, summary_dir,
         --eval_shard={eval_shard} --dataset={dataset} --num_gpus={num_gpus} \
         --hparams_override={hparams_override}
     '''.format(
-            variables_file=variables_file,
-            model_dir=exp_params['model'],
-            num_gpus=exp_params['num_gpus'],
-            max_steps=train_params['max_steps'],
-            summary_dir=summary_dir,
-            pad=eval_sweep['pad'],
-            dataset=eval_sweep['dataset'],
-            data_dir=train_params['dataset_path'],
-            eval_set=eval_sweep['eval_set'],
-            eval_shard=eval_sweep['eval_shard'],
-            eval_size=eval_sweep['eval_size'],
-            hparams_override=hparams)
+        variables_file=variables_file,
+        model_dir=exp_params['model'],
+        num_gpus=exp_params['num_gpus'],
+        max_steps=train_params['max_steps'],
+        summary_dir=summary_dir,
+        pad=eval_sweep['pad'],
+        dataset=eval_sweep['dataset'],
+        data_dir=train_params['dataset_path'],
+        eval_set=eval_sweep['eval_set'],
+        eval_shard=eval_sweep['eval_shard'],
+        eval_size=eval_sweep['eval_size'],
+        hparams_override=hparams
+    )
 
     logging.info(command)
 
@@ -135,19 +155,20 @@ def train_op(vars_file, exp_params, train_params, summary_dir, hparams):
         --batch_size={batch_size} --dataset={dataset} \
         --num_gpus={num_gpus} --max_steps={max_steps} \
         --hparams_override={hparams_override} \
-        --summary_override=true
+        --summary_override=true --save_step=100
     '''.format(
-            variables_file=vars_file,
-            model_dir=exp_params['model'],
-            num_gpus=exp_params['num_gpus'],
-            max_steps=train_params['max_steps'],
-            summary_dir=summary_dir,
-            pad=train_params['pad'],
-            shift=train_params['shift'],
-            dataset=train_params['dataset'],
-            batch_size=train_params['batch_size'],
-            data_dir=train_params['dataset_path'],
-            hparams_override=hparams)
+        variables_file=vars_file,
+        model_dir=exp_params['model'],
+        num_gpus=exp_params['num_gpus'],
+        max_steps=train_params['max_steps'],
+        summary_dir=summary_dir,
+        pad=train_params['pad'],
+        shift=train_params['shift'],
+        dataset=train_params['dataset'],
+        batch_size=train_params['batch_size'],
+        data_dir=train_params['dataset_path'],
+        hparams_override=hparams
+     )
 
     logging.info(command)
 
@@ -243,7 +264,17 @@ def main():
                             config['train-parameters'],
                             summary_dir, eval_sweep, hparams_sweeps[i]))
 
-            # TODO: Classification
+            # Classification
+            for j, classify_sweep in enumerate(config['classify-sweeps']):
+                for model in classify_sweep['model']:
+                    # Start experiment
+                    utils.remote_run(
+                        host_node,
+                        classify_op(host_node.remote_variables_file,
+                                    summary_dir,
+                                    classify_sweep['dataset'],
+                                    model,
+                                    config['train-parameters']['max_steps']))
 
     except Exception as err:  # pylint: disable=W0703
         failed = True
