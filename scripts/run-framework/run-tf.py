@@ -113,7 +113,7 @@ def classify_op(variables_file, summary_dir, dataset, model, last_step):
     '''.format(
         variables_file=variables_file,
         summary_dir=summary_dir,
-        dataset=dataset
+        dataset=dataset,
         model=model,
         last_step=last_step
     )
