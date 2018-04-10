@@ -120,6 +120,10 @@ def classify_op(variables_file, summary_dir, dataset, model, last_step,
         last_step=last_step
     )
 
+    logging.info(command)
+
+    return command
+
 
 def eval_op(variables_file, exp_params, train_params, summary_dir,
             eval_sweep, hparams):
