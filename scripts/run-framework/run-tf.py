@@ -71,10 +71,10 @@ def setup_arg_parsing():
     parser.set_defaults(remote_type='local')  # i.e. not remote
     parser.set_defaults(host='localhost')
     parser.set_defaults(ssh_port='22')
-    parser.set_defaults(user='ec2-user')
-    parser.set_defaults(remote_variables_file='/home/ec2-user/agief-python/'
+    parser.set_defaults(user='ubuntu')
+    parser.set_defaults(remote_variables_file='/home/ubuntu/agief-python/'
                                               'agi-tensorflow/variables/'
-                                              'variables-tf.sh')
+                                              'variables-compute.sh')
 
     parser.set_defaults(logging='warning')
 
