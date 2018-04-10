@@ -27,7 +27,7 @@ echo "Using port " = $port
 ################################################################################
 
 # code
-cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' $TF_HOME/ ${user}@${host}:~/agief-python/agi-tensorflow --exclude={\"*.git/*\"}"
+cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' --exclude='.git/' $TF_HOME/ ${user}@${host}:~/agief-python/agi-tensorflow"
 echo $cmd
 eval $cmd
 status=$?
