@@ -130,12 +130,11 @@ def eval_op(variables_file, exp_params, train_params, summary_dir,
         --checkpoint=$TF_SUMMARY/{summary_dir}/train/model.ckpt-{max_steps} \
         --summary_dir=$TF_SUMMARY/{summary_dir} --shift=0 --pad={pad} \
         --eval_set={eval_set} --eval_size={eval_size} --batch_size=100 \
-        --eval_shard={eval_shard} --dataset={dataset} --num_gpus={num_gpus} \
+        --eval_shard={eval_shard} --dataset={dataset} --num_gpus=1 \
         --hparams_override={hparams_override}
     '''.format(
         variables_file=variables_file,
         model_dir=exp_params['model'],
-        num_gpus=exp_params['num_gpus'],
         max_steps=train_params['max_steps'],
         summary_dir=summary_dir,
         pad=eval_sweep['pad'],
