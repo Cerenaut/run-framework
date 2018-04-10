@@ -256,7 +256,7 @@ def main():
                              summary_dir, hparams))
 
             with open('prefixes.txt', 'w') as prefix_file:
-                prefix_file.write(prefixes.join(','))
+                prefix_file.write(','.join(prefixes))
 
         if args.phase == 'eval' or args.phase == 'classify':
             if prefixes is None:
