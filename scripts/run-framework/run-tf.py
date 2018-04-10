@@ -208,6 +208,7 @@ def main():
 
         # Run sweeps
         prefixes = []
+        print('........ Training\n')
         for i, hparams in enumerate(hparams_sweeps):
             run_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
             prefixes.append(run_prefix)
@@ -224,7 +225,13 @@ def main():
                          config['train-parameters'],
                          summary_dir, hparams))
 
+        print('........ Evaluating and Exporting\n')
         for i, prefix in enumerate(prefixes):
+            summary_dir = os.path.join(
+                config['experiment-parameters']['summary_dir'],
+                prefix)
+
+            print('Prefix: {0}'.format(prefix))
 
             # Export experiment for each prefix
             for j, eval_sweep in enumerate(config['eval-sweeps']):
