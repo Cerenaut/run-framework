@@ -168,7 +168,7 @@ def train_op(vars_file, exp_params, train_params, summary_dir, hparams):
         --batch_size={batch_size} --dataset={dataset} \
         --num_gpus={num_gpus} --max_steps={max_steps} \
         --hparams_override={hparams_override} \
-        --summary_override=true --save_step=100
+        --summary_override=true
     '''.format(
         variables_file=vars_file,
         model_dir=exp_params['model'],
