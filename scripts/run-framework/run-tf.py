@@ -9,6 +9,8 @@ import logging
 import datetime
 import traceback
 
+import googleapiclient.discovery
+
 from agief_experiment import utils
 from agief_experiment.cloud import Cloud
 from agief_experiment.compute import Compute
@@ -16,9 +18,9 @@ from agief_experiment.host_node import HostNode
 
 
 def setup_arg_parsing():
-    """
+    '''
     Parse the commandline arguments
-    """
+    '''
     import argparse
     from argparse import RawTextHelpFormatter
 
@@ -71,6 +73,15 @@ def setup_arg_parsing():
                         help='Path to the private key for the remote machine, '
                              'used for comms over ssh (default=%(default)s).')
 
+    # GCP details details
+    parser.add_argument('--instanceid', dest='instanceid', required=False,
+                        help='Instance ID of the GCP container instance - to '
+                             'start a GCP instance')
+    parser.add_argument('--zone', dest='zone', required=False,
+                        help='The GCP instance region zone, e.g. us-east1-b.')
+    parser.add_argument('--project', dest='project', required=False,
+                        help='GCP project name.')
+
     parser.add_argument('--logging', dest='logging', required=False,
                         help='Logging level (default=%(default)s). '
                              'Options: debug, info, warning, error, critical')
@@ -80,6 +91,7 @@ def setup_arg_parsing():
     parser.set_defaults(host='localhost')
     parser.set_defaults(ssh_port='22')
     parser.set_defaults(user='ubuntu')
+    parser.set_defaults(zone='us-east1-b')
     parser.set_defaults(remote_variables_file='/home/ubuntu/agief-python/'
                                               'agi-tensorflow/variables/'
                                               'variables-compute.sh')
@@ -188,10 +200,27 @@ def train_op(vars_file, exp_params, train_params, summary_dir, hparams):
     return command
 
 
+def wait_for_operation(compute, project, zone, operation):
+    print('Waiting for operation to finish...')
+    while True:
+        result = compute.zoneOperations().get(
+            project=project,
+            zone=zone,
+            operation=operation).execute()
+
+        if result['status'] == 'DONE':
+            print("done.")
+            if 'error' in result:
+                raise Exception(result['error'])
+            return result
+
+        time.sleep(1)
+
+
 def main():
-    """
+    '''
     The main scope of the run-framework containing the high level code
-    """
+    '''
 
     print('------------------------------------------')
     print('----          run-framework           ----')
@@ -212,12 +241,9 @@ def main():
     logging.debug('Arguments: %s', args)
 
     exps_filepath = args.exps_file if args.exps_file else ''
-
     with open(exps_filepath) as config_file:
         config = json.load(config_file)
         hparams_sweeps = get_hparams_sweeps(config['train-sweeps'])
-
-    cloud = Cloud()
 
     if args.remote_type != 'local':
         host_node = HostNode(args.host, args.user, args.ssh_keypath,
@@ -225,13 +251,28 @@ def main():
     else:
         host_node = HostNode(args.host, args.user)
 
+    cloud = Cloud()
     compute_node = Compute(host_node)
+    gcp_compute = googleapiclient.discovery.build('compute', 'v1')
 
+    # Setup Infrastructure
     ips = {'ip_public': args.host, 'ip_private': None}
-    ips_pg = {'ip_public': None, 'ip_private': None}
     instance_id = None
-    # TODO: setup AWS/GCP infrastructure
 
+    if args.remote_type == 'gcp':
+        # Start GCP Compute using instanceid
+        # TODO: Add option to launch new instances
+        if args.instanceid:
+            instance_id = args.instanceid
+            operation = gcp_compute.instances().start(
+                zone=args.zone, project=args.project, instance=instance_id
+            ).execute()
+            wait_for_operation(
+                gcp_compute, args.project, args.project, operation['name'])
+
+    # Infrastructure has been started
+    # Try to run experiment, and if fails with exception,
+    # still shut down infrastructure
     failed = False
     try:
         compute_node.host_node.host = ips['ip_public']
@@ -304,24 +345,32 @@ def main():
     except Exception as err:  # pylint: disable=W0703
         failed = True
 
-        logging.error("Something failed running sweeps generally. If the "
-                      "error occurred in a specific parameter set it should "
-                      "have been caught there. Attempt to shut down "
-                      "infrastructure if running, and exit.")
+        logging.error('Something failed running sweeps generally. If the '
+                      'error occurred in a specific parameter set it should '
+                      'have been caught there. Attempt to shut down '
+                      'infrastructure if running, and exit.')
         logging.error(err)
 
         print('-'*60)
         traceback.print_exc(file=sys.stdout)
         print('-'*60)
 
-    # TODO: Shutdown framework
+    # Shutdown framework
+    if args.shutdown:
+        # Shutdown infrastructure
+        if args.remote_type == 'gcp:
+            shutdown_op = gcp_compute.instances().stop(
+                zone=args.zone, project=args.project, instance=instance_id
+            ).execute()
+            wait_for_operation(
+                gcp_compute, args.project, args.project, shutdown_op['name'])
 
     # Record experiment end time
     exp_end_time = datetime.datetime.now()
 
     # Log the experiment runtime in d:h:m:s:ms format
     exp_runtime = utils.format_timedelta(exp_end_time - exp_start_time)
-    print("Experiment finished in %d days, %d hr, %d min, %d s" %
+    print('Experiment finished in %d days, %d hr, %d min, %d s' %
           tuple(exp_runtime))
 
     if failed:
