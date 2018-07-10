@@ -1,8 +1,10 @@
 dpath
 boto3
 requests
-enum
 numpy
 paramiko
 pep8
 autopep8
+numpy
+tensorflow
+google-api-python-client
