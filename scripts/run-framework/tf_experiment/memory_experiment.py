@@ -42,13 +42,11 @@ class MemoryExperiment(Experiment):
         DIR=$(dirname "$RUN_DIR/$script")
         cd $DIR
 
-        cmd="python -u $SCRIPT {flags} --hparams_override={hparams}"
-        echo $cmd
-        eval $cmd
+        python -u $SCRIPT {flags} --hparams_override="{hparams}"
     '''.format(
         anaenv='tensorflow',
         flags=flags,
-        hparams=hparams
+        hparams=str(hparams)
     )
 
     logging.info(command)

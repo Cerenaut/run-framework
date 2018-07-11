@@ -97,6 +97,7 @@ def setup_arg_parsing():
                            'Options: debug, info, warning, error, critical')
 
   parser.set_defaults(prefixes=None)
+  parser.set_defaults(exp_type='memory')
   parser.set_defaults(remote_type='local')  # i.e. not remote
   parser.set_defaults(host='localhost')
   parser.set_defaults(ssh_port='22')
