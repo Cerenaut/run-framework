@@ -23,11 +23,11 @@ echo "Using remote_variables_file = " $remote_variables_file
 echo "Using port " = $port
 
 ################################################################################
-# Sync agi-tensorflow
+# Sync agief-remote-run
 ################################################################################
 
 # code
-cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' --exclude='.git/' $TF_HOME/ ${user}@${host}:~/agief-python/agi-tensorflow"
+cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' --exclude='.git/' $AGI_CODE_HOME	/ ${user}@${host}:~/agief-remote-run"
 echo $cmd
 eval $cmd
 status=$?
