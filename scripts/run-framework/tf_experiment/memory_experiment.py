@@ -40,9 +40,9 @@ class MemoryExperiment(Experiment):
         prefix=experiment_prefix
     )
 
-    output = utils.remote_run(host_node, command)
-    print(output)
-    experiment_id = int(output[-1])
+    remote_output = utils.remote_run(host_node, command)
+    command_output = remote_output[-4].rstrip()
+    experiment_id = int(command_output.strip()[-1])
 
     return experiment_id
 
