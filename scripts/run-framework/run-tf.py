@@ -176,12 +176,14 @@ def main():
   try:
     compute_node.host_node.host = ips['ip_public']
 
+    # Create new experiment
+    experiment = EXPERIMENTS[args.exp_type]()
+
     # Sync experiment
     if args.sync:
-      cloud.sync_tf_experiment(compute_node.host_node)
+      experiment.sync_experiment(compute_node.host_node)
 
-    # Choose an experiment and run sweeps
-    experiment = EXPERIMENTS[args.exp_type]()
+    # Run sweeps
     experiment.run_sweeps(config, args, host_node, config['parameter-sweeps'])
 
   except Exception as err:  # pylint: disable=W0703
