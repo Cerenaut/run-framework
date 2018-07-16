@@ -3,8 +3,6 @@
 import logging
 import datetime
 
-import mlflow
-
 from agief_experiment import utils
 from tf_experiment.experiment import Experiment
 
@@ -14,7 +12,11 @@ class MemoryExperiment(Experiment):
   def run_sweeps(self, config, args, host_node, hparams_sweeps):
     """Run the sweeps"""
     experiment_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
-    experiment_id = mlflow.create_experiment(experiment_prefix)
+    experiment_id = utils.remote_run(
+        host_node,
+        'mlflow experiments create {prefix}'.format(prefix=experiment_prefix))
+
+    print(experiment_id)
 
     for _, hparams in enumerate(hparams_sweeps):
       # Start experiment
