@@ -42,12 +42,11 @@ class MemoryExperiment(Experiment):
     command = '''
         source /media/data/anaconda3/bin/activate {anaenv}
 
-        export RUN_DIR=$HOME/agief-remote-run
-        export SCRIPT=$RUN_DIR/memory/experiment.py
+        export RUN_DIR=$HOME/agief-remote-run/memory
+        export SCRIPT=$RUN_DIR/experiment.py
 
-        DIR=$(dirname "$RUN_DIR/$script")
-        cd $DIR
-
+        cd $RUN_DIR
+        pip install -r requirements.txt
         python -u $SCRIPT {flags} --hparams_override="{hparams}"
     '''.format(
         anaenv='tensorflow',
