@@ -1,5 +1,8 @@
 """MemoryExperiment class."""
 
+import logging
+import datetime
+
 import mlflow
 from tf_experiment.experiment import Experiment
 

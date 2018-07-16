@@ -13,7 +13,6 @@ import traceback
 import googleapiclient.discovery
 
 from agief_experiment import utils
-from agief_experiment.cloud import Cloud
 from agief_experiment.compute import Compute
 from agief_experiment.host_node import HostNode
 
@@ -62,9 +61,9 @@ def setup_arg_parsing():
                            'machine to remote. Requires setting '
                            '--step_remote and key path with --ssh_keypath')
   parser.add_argument('--step_shutdown', dest='shutdown',
-                        action='store_true',
-                        help='Shutdown instances and Compute '
-                             '(if --launch_per_session) after other stages.')
+                      action='store_true',
+                      help='Shutdown instances and Compute '
+                           '(if --launch_per_session) after other stages.')
 
   # how to reach the Compute node
   parser.add_argument('--host', dest='host', required=False,
@@ -159,7 +158,6 @@ def main():
   else:
     host_node = HostNode(args.host, args.user)
 
-  cloud = Cloud()
   compute_node = Compute(host_node)
   gcp_compute = googleapiclient.discovery.build('compute', 'v1')
 
