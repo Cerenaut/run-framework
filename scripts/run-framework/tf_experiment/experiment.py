@@ -1,5 +1,7 @@
 """Experiment base class."""
 
+from agief_experiment import utils
+
 class Experiment(object):
   """Base class for TensorFlow-based experiments."""
 
