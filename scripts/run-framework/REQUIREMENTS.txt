@@ -8,4 +8,5 @@ autopep8
 numpy
 tensorflow
 google-api-python-client
+oauth2client
 mlflow
