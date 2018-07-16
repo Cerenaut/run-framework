@@ -11,12 +11,8 @@ class MemoryExperiment(Experiment):
 
   def run_sweeps(self, config, args, host_node, hparams_sweeps):
     """Run the sweeps"""
-    experiment_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
-    experiment_id = utils.remote_run(
-        host_node,
-        'mlflow experiments create {prefix}'.format(prefix=experiment_prefix))
 
-    print(experiment_id)
+    experiment_id = self._create_experiment()
 
     for _, hparams in enumerate(hparams_sweeps):
       # Start experiment
@@ -29,6 +25,23 @@ class MemoryExperiment(Experiment):
     for key, value in exp_opts.items():
       flags += '--{0}={1} '.format(key, value)
     return flags
+
+  def _create_experiment(self):
+    """Creates new MLFlow experiment remotely."""
+    experiment_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
+
+    command = '''
+      source /media/data/anaconda3/bin/activate {anaenv}
+      mlflow experiments create {prefix}
+    '''.format(
+        anaenv='tensorflow',
+        prefix=experiment_prefix
+    )
+
+    output = utils.remote_run(host_node, command)
+    experiment_id = int(output.split()[-1])
+
+    return experiment_id
 
   def _run_command(self, experiment_id, config, hparams):
     """Start the training procedure via SSH."""
