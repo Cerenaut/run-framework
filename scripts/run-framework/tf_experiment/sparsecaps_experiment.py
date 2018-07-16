@@ -1,5 +1,9 @@
 """SparseCapsExperiment class."""
 
+import logging
+import datetime
+
+from agief_experiment import utils
 from tf_experiment.experiment import Experiment
 
 class SparseCapsExperiment(Experiment):

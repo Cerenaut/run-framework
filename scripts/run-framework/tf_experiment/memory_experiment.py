@@ -4,6 +4,8 @@ import logging
 import datetime
 
 import mlflow
+
+from agief_experiment import utils
 from tf_experiment.experiment import Experiment
 
 class MemoryExperiment(Experiment):
