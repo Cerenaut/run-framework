@@ -32,6 +32,8 @@ class MemoryExperiment(Experiment):
 
     command = '''
       source /media/data/anaconda3/bin/activate {anaenv}
+
+      cd $HOME/agief-remote-run/memory
       mlflow experiments create {prefix}
     '''.format(
         anaenv='tensorflow',
