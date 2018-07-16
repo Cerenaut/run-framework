@@ -75,7 +75,7 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period):
     wait 'wait_period' between attempts.
     """
 
-    logging.debug("running cmd = " + cmd)
+    logging.debug("running cmd = %s", str(cmd))
 
     success = False
     exit_status = 0
@@ -91,19 +91,18 @@ def run_bashscript_repeat(cmd, max_repeats, wait_period):
         output, error = child.communicate()
         exit_status = child.returncode
 
-        logging.debug("Exit status: " + str(exit_status))
-        logging.debug("Stdout: " + output)
+        logging.debug("Exit status: %s", str(exit_status))
+        logging.debug("Stdout: %s", str(output))
 
         if len(error):
-            logging.error("Stderr: " + error)
+            logging.error("Stderr: %s", str(error))
 
         if exit_status == 0:
             success = True
             break
 
-        logging.warning("Run bash script was unsuccessful on attempt " +
-                        str(i))
-        logging.debug("Wait " + str(wait_period) + ", and try again.")
+        logging.warning("Run bash script was unsuccessful on attempt %s", str(i))
+        logging.debug("Wait %ss, and try again.", str(wait_period))
 
         time.sleep(wait_period)
 

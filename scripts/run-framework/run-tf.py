@@ -61,6 +61,10 @@ def setup_arg_parsing():
                       help='Sync the code and run folder. Copy from local '
                            'machine to remote. Requires setting '
                            '--step_remote and key path with --ssh_keypath')
+  parser.add_argument('--step_shutdown', dest='shutdown',
+                        action='store_true',
+                        help='Shutdown instances and Compute '
+                             '(if --launch_per_session) after other stages.')
 
   # how to reach the Compute node
   parser.add_argument('--host', dest='host', required=False,
