@@ -1,5 +1,7 @@
 """SparseCapsExperiment class."""
 
+from tf_experiment.experiment import Experiment
+
 class SparseCapsExperiment(Experiment):
   """Experiment class for the SparseCaps project."""
 

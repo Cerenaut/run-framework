@@ -1,6 +1,7 @@
 """MemoryExperiment class."""
 
 import mlflow
+from tf_experiment.experiment import Experiment
 
 class MemoryExperiment(Experiment):
   """Experiment class for the Memory project."""
