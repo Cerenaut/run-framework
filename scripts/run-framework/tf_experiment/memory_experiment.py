@@ -43,7 +43,7 @@ class MemoryExperiment(Experiment):
         source /media/data/anaconda3/bin/activate {anaenv}
 
         export RUN_DIR=$HOME/agief-remote-run
-        export SCRIPT=$RUN_DIR/$script
+        export SCRIPT=$RUN_DIR/memory/experiment.py
 
         DIR=$(dirname "$RUN_DIR/$script")
         cd $DIR
