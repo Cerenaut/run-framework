@@ -12,7 +12,7 @@ class MemoryExperiment(Experiment):
   def run_sweeps(self, config, args, host_node, hparams_sweeps):
     """Run the sweeps"""
 
-    experiment_id = self._create_experiment()
+    experiment_id = self._create_experiment(host_node)
 
     for _, hparams in enumerate(hparams_sweeps):
       # Start experiment
@@ -26,7 +26,7 @@ class MemoryExperiment(Experiment):
       flags += '--{0}={1} '.format(key, value)
     return flags
 
-  def _create_experiment(self):
+  def _create_experiment(self, host_node):
     """Creates new MLFlow experiment remotely."""
     experiment_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
 
