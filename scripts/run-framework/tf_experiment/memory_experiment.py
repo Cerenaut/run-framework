@@ -67,7 +67,7 @@ class MemoryExperiment(Experiment):
         pip install -r $RUN_DIR/classifier_component/requirements.txt
 
         EXP_DEF="/tmp/experiment-definition.{prefix}.json"
-        echo "{config_json}" > $EXP_DEF
+        echo '{config_json}' > $EXP_DEF
 
         DIR=$(dirname "$SCRIPT")
         cd $DIR
