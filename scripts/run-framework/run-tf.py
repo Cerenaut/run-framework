@@ -151,8 +151,8 @@ def main():
 
   exps_filepath = args.exps_file if args.exps_file else ''
   with open(exps_filepath) as config_file:
-    config_json = config_file
-    config = json.load(config_json)
+    config_json = config_file.read()
+    config = json.load(config_file)
 
   if args.remote_type != 'local':
     host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file, args.ssh_port)
