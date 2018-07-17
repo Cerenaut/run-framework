@@ -12,13 +12,13 @@ class MemoryExperiment(Experiment):
   def run_sweeps(self, config, args, host_node, hparams_sweeps):
     """Run the sweeps"""
 
-    experiment_id = self._create_experiment(host_node)
+    experiment_id, experiment_prefix = self._create_experiment(host_node)
 
+    # Start experiment
     for _, hparams in enumerate(hparams_sweeps):
-      # Start experiment
       utils.remote_run(
           host_node,
-          self._run_command(experiment_id, config, hparams))
+          self._run_command(experiment_id, experiment_prefix, config, hparams))
 
   def _build_flags(self, exp_opts):
     flags = ''
@@ -44,9 +44,9 @@ class MemoryExperiment(Experiment):
     command_output = remote_output[-4].rstrip()
     experiment_id = int(command_output.strip()[-1])
 
-    return experiment_id
+    return experiment_id, experiment_prefix
 
-  def _run_command(self, experiment_id, config, hparams):
+  def _run_command(self, experiment_id, experiment_prefix, config, hparams):
     """Start the training procedure via SSH."""
 
     exp_opts = config['experiment-options']
@@ -66,13 +66,19 @@ class MemoryExperiment(Experiment):
         pip install -r $RUN_DIR/memory/requirements.txt
         pip install -r $RUN_DIR/classifier_component/requirements.txt
 
+        EXP_DEF="/tmp/experiment-definition.{prefix}.json"
+        echo "{config}" > $EXP_DEF
+
         DIR=$(dirname "$SCRIPT")
         cd $DIR
 
-        python -u $SCRIPT {flags} --hparams_override="{hparams}"
+        python -u $SCRIPT {flags} --experiment_def=$EXP_DEF --experiment_dir=$DIR/run/{prefix} \
+        --hparams_override="{hparams}"
     '''.format(
         anaenv='tensorflow',
         flags=flags,
+        prefix=experiment_prefix,
+        config=config,
         hparams=str(hparams)
     )
 
