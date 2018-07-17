@@ -9,12 +9,12 @@ from tf_experiment.experiment import Experiment
 class SparseCapsExperiment(Experiment):
   """Experiment class for the SparseCaps project."""
 
-  def run_sweeps(self, config, args, host_node, hparams_sweeps):
+  def run_sweeps(self, config, config_json, args, host_node):
     """Run the sweeps"""
     if args.phase == 'train':
       prefixes = []
       print('........ Training\n')
-      hparams_sweeps = self._parse_hparams_sweeps(hparams_sweeps)
+      hparams_sweeps = self._parse_hparams_sweeps(config['parameter-sweeps'])
 
       for i, hparams in enumerate(hparams_sweeps):
         run_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')

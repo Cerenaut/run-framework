@@ -14,6 +14,6 @@ class Experiment(object):
     cmd = '../remote/remote-sync-tf-experiment.sh ' + remote.host_key_user_variables()
     utils.run_bashscript_repeat(cmd, 15, 6)
 
-  def run_sweeps(self, config, args, host_node, hparams_sweeps):
+  def run_sweeps(self, config, config_json, args, host_node):
     """Run the sweeps"""
     raise NotImplementedError('Not implemented')

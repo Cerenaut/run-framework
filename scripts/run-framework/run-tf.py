@@ -151,7 +151,8 @@ def main():
 
   exps_filepath = args.exps_file if args.exps_file else ''
   with open(exps_filepath) as config_file:
-    config = json.load(config_file)
+    config_json = config_file
+    config = json.load(config_json)
 
   if args.remote_type != 'local':
     host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file, args.ssh_port)
@@ -186,7 +187,7 @@ def main():
       experiment.sync_experiment(compute_node.host_node)
 
     # Run sweeps
-    experiment.run_sweeps(config, args, host_node, config['parameter-sweeps'])
+    experiment.run_sweeps(config, config_json, args, host_node)
 
   except Exception as err:  # pylint: disable=W0703
     failed = True
