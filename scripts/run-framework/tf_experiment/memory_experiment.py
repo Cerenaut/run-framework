@@ -1,3 +1,18 @@
+# Copyright (C) 2018 Project AGI
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """MemoryExperiment class."""
 
 import logging
@@ -31,12 +46,18 @@ class MemoryExperiment(Experiment):
     experiment_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
 
     command = '''
-      source /media/data/anaconda3/bin/activate {anaenv}
+      source {remote_env} {anaenv}
 
-      cd $HOME/agief-remote-run/memory
+      export RUN_DIR=$HOME/agief-remote-run
+
+      pip install -r $RUN_DIR/memory/requirements.txt
+      pip install -r $RUN_DIR/classifier_component/requirements.txt
+
+      cd $RUN_DIR/memory
       mlflow experiments create {prefix}
     '''.format(
         anaenv='tensorflow',
+        remote_env=host_node.remote_env_path,
         prefix=experiment_prefix
     )
 
@@ -58,13 +79,10 @@ class MemoryExperiment(Experiment):
     flags = self._build_flags(exp_opts)
 
     command = '''
-        source /media/data/anaconda3/bin/activate {anaenv}
+        source {remote_env} {anaenv}
 
         export RUN_DIR=$HOME/agief-remote-run
         export SCRIPT=$RUN_DIR/memory/experiment.py
-
-        pip install -r $RUN_DIR/memory/requirements.txt
-        pip install -r $RUN_DIR/classifier_component/requirements.txt
 
         EXP_DEF="/tmp/experiment-definition.{prefix}.json"
         echo '{config_json}' > $EXP_DEF
@@ -76,6 +94,7 @@ class MemoryExperiment(Experiment):
         --hparams_override="{hparams}"
     '''.format(
         anaenv='tensorflow',
+        remote_env=host_node.remote_env_path,
         flags=flags,
         prefix=experiment_prefix,
         config_json=config_json,

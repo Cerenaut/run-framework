@@ -85,6 +85,9 @@ def setup_arg_parsing():
   parser.add_argument('--ssh_keypath', dest='ssh_keypath', required=False,
                       help='Path to the private key for the remote machine, '
                            'used for comms over ssh (default=%(default)s).')
+  parser.add_argument('--remote_env_path', dest='remote_env_path', required=False,
+                      help='Path to the Python environment for activatation on '
+                           'the remote machine (default=%(default)s).')
 
   # GCP details details
   parser.add_argument('--instanceid', dest='instanceid', required=False,
@@ -106,6 +109,7 @@ def setup_arg_parsing():
   parser.set_defaults(ssh_port='22')
   parser.set_defaults(user='ubuntu')
   parser.set_defaults(zone='us-east1-b')
+  parser.set_defaults(remote_env_path='activate')
   parser.set_defaults(remote_variables_file='/home/ubuntu/agief-python/'
                                             'agi-tensorflow/variables/'
                                             'variables-compute.sh')
@@ -155,7 +159,8 @@ def main():
     config = json.loads(config_json)
 
   if args.remote_type != 'local':
-    host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file, args.ssh_port)
+    host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file, args.ssh_port,
+                         args.remote_env_path)
   else:
     host_node = HostNode(args.host, args.user)
 

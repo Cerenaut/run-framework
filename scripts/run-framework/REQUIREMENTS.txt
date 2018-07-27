@@ -7,5 +7,4 @@ pep8
 autopep8
 numpy
 google-api-python-client
-oauth2client
 mlflow
