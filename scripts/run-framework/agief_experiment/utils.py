@@ -339,28 +339,16 @@ def remote_run(host_node, cmd):
     Runs a set of commands on a remote machine over SSH using paramiko.
 
     :param host_node: HostNode object
-    :param commands: The commands to be executed
-    :param verbose: Set to True to display the stdout
+    :param cmd: The commands to be executed
     """
     logging.debug("running cmd = " + cmd)
 
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     # Connect to remote machine using HostNode details
-    ssh.connect(host_node.host, username=host_node.user,
-                key_filename=host_node.keypath, port=int(host_node.ssh_port))
-
-    # Setup shell with input/output
-    channel = ssh.invoke_shell()
-    stdin = channel.makefile('wb')
-    stdout = channel.makefile('rb')
-
-    # The last command MUST be 'exit' to avoiding hanging
-    cmd = '''
-        {0}
-        exit
-    '''.format(cmd)
+    client.connect(host_node.host, username=host_node.user,
+                   key_filename=host_node.keypath, port=int(host_node.ssh_port))
 
     def decode(s):
         try:
@@ -369,15 +357,18 @@ def remote_run(host_node, cmd):
             return s
 
     # Execute command and the capture output
-    stdin.write(cmd)
+    _, stdout, stderr = client.exec_command(cmd)
+
     output = stdout.readlines()
     output = list(map(lambda x: decode(x), output))
 
-    logging.debug("Stdout: " + ''.join(output))
+    error = stderr.readlines()
+    error = list(map(lambda x: decode(x), error))
 
-    stdout.close()
-    stdin.close()
-    ssh.close()
+    if error:
+      raise ValueError(''.join(error))
+
+    logging.debug("stdout = " + ''.join(output))
 
     return output
 
