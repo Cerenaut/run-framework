@@ -50,8 +50,8 @@ class MemoryExperiment(Experiment):
 
       export RUN_DIR=$HOME/agief-remote-run
 
-      pip install -r $RUN_DIR/memory/requirements.txt
-      pip install -r $RUN_DIR/classifier_component/requirements.txt
+      pip install -q -r $RUN_DIR/memory/requirements.txt
+      pip install -q -r $RUN_DIR/classifier_component/requirements.txt
 
       cd $RUN_DIR/memory
       mlflow experiments create {prefix}
