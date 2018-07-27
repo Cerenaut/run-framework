@@ -33,7 +33,7 @@ class MemoryExperiment(Experiment):
     for _, hparams in enumerate(config['parameter-sweeps']):
       utils.remote_run(
           host_node,
-          self._run_command(experiment_id, experiment_prefix, config, config_json, hparams))
+          self._run_command(host_node, experiment_id, experiment_prefix, config, config_json, hparams))
 
   def _build_flags(self, exp_opts):
     flags = ''
@@ -67,7 +67,7 @@ class MemoryExperiment(Experiment):
 
     return experiment_id, experiment_prefix
 
-  def _run_command(self, experiment_id, experiment_prefix, config, config_json, hparams):
+  def _run_command(self, host_node, experiment_id, experiment_prefix, config, config_json, hparams):
     """Start the training procedure via SSH."""
 
     exp_opts = config['experiment-options']
