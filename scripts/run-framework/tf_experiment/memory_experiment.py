@@ -77,6 +77,9 @@ class MemoryExperiment(Experiment):
 
     # Build command-line flags from the dict
     flags = self._build_flags(exp_opts)
+    now = datetime.datetime.now()
+    summary_dir = 'summaries_' + now.strftime("%Y%m%d-%H%M%S") + '/'
+    prefix_path = os.path.join(experiment_prefix, summary_dir)
 
     command = '''
         source {remote_env} {anaenv}
@@ -90,13 +93,13 @@ class MemoryExperiment(Experiment):
         DIR=$(dirname "$SCRIPT")
         cd $DIR
 
-        python -u $SCRIPT {flags} --experiment_def=$EXP_DEF --experiment_dir=$DIR/run/{prefix} \
+        python -u $SCRIPT {flags} --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{prefix} \
         --hparams_override="{hparams}"
     '''.format(
         anaenv='tensorflow',
         remote_env=host_node.remote_env_path,
         flags=flags,
-        prefix=experiment_prefix,
+        prefix=prefix_path,
         config_json=config_json,
         hparams=str(hparams)
     )
