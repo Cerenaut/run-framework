@@ -15,6 +15,7 @@
 
 """MemoryExperiment class."""
 
+import os
 import logging
 import datetime
 
