@@ -379,7 +379,8 @@ def remote_run(host_node, cmd):
   error = list(map(decode, error))
 
   if error:
-    raise ValueError(''.join(error))
+    logging.error(''.join(error))
+    # raise ValueError(''.join(error))
 
   logging.debug("stdout = %s", ''.join(output))
 
