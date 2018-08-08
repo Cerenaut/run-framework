@@ -25,6 +25,8 @@ import sys
 import time
 import logging
 import datetime
+import socket
+import io
 
 import paramiko
 
@@ -367,25 +369,21 @@ def remote_run(host_node, cmd):
       return s
 
   # Execute command and the capture output
-  chan = client.get_transport().open_session()
-  _, stdout, stderr = chan.exec_command(cmd, environment={
+  _, stdout, stderr = client.exec_command(cmd, environment={
       'LC_ALL': 'C.UTF-8',
       'LANG': 'C.UTF-8'
   })
-  status = chan.recv_exit_status()
-  client.close()
 
-  print(status)
-
-  output = stdout.readlines()
+  # Combine stdout and stderr
+  output = stdout.readlines() + stderr.readlines()
   output = list(map(decode, output))
 
-  error = stderr.readlines()
-  error = list(map(decode, error))
+  # Get exit status code
+  exit_status = stdout.channel.recv_exit_status()
+  client.close()
 
-  if error:
-    logging.error(''.join(error))
-    # raise ValueError(''.join(error))
+  if exit_status > 0:
+    raise ValueError('SSH connection closed with exit status code: ' + str(exit_status))
 
   logging.debug("stdout = %s", ''.join(output))
 
