@@ -367,10 +367,15 @@ def remote_run(host_node, cmd):
       return s
 
   # Execute command and the capture output
-  _, stdout, stderr = client.exec_command(cmd, environment={
+  chan = client.get_transport().open_session()
+  _, stdout, stderr = chan.exec_command(cmd, environment={
       'LC_ALL': 'C.UTF-8',
       'LANG': 'C.UTF-8'
   })
+  status = chan.recv_exit_status()
+  client.close()
+
+  print(status)
 
   output = stdout.readlines()
   output = list(map(decode, output))
