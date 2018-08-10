@@ -382,10 +382,10 @@ def remote_run(host_node, cmd):
   exit_status = stdout.channel.recv_exit_status()
   client.close()
 
+  logging.debug("stdout = %s", ''.join(output))
+  
   if exit_status > 0:
     raise ValueError('SSH connection closed with exit status code: ' + str(exit_status))
-
-  logging.debug("stdout = %s", ''.join(output))
 
   return output
 
