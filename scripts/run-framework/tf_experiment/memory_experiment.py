@@ -68,9 +68,7 @@ class MemoryExperiment(Experiment):
 
     return experiment_id, experiment_prefix
 
-  def _run_com("- Run Command -----------")
-  print("-- -------- PREFIX = " + experiment_prefix)mand(self, host_node, experiment_id, experiment_prefix, config, config_json, hparams):
-  print("-- Summary path = " + summary_path)
+  def _run_command(self, host_node, experiment_id, experiment_prefix, config, config_json, hparams):
     """Start the training procedure via SSH."""
 
     exp_opts = config['experiment-options']
