@@ -369,13 +369,10 @@ def remote_run(host_node, cmd):
       return s
 
   # Execute command and the capture output
-  _, stdout, stderr = client.exec_command(cmd, get_pty=True, environment={
+  _, stdout, stderr = client.exec_command(cmd, environment={
       'LC_ALL': 'C.UTF-8',
       'LANG': 'C.UTF-8'
   })
-
-  for line in iter(stdout.readline, ""):
-    print(line, end="")
 
   # Combine stdout and stderr
   output = stdout.readlines() + stderr.readlines()
@@ -385,7 +382,7 @@ def remote_run(host_node, cmd):
   exit_status = stdout.channel.recv_exit_status()
   client.close()
 
-  # logging.debug("stdout = %s", ''.join(output))
+  logging.debug("stdout = %s", ''.join(output))
 
   if exit_status > 0:
     raise ValueError('SSH connection closed with exit status code: ' + str(exit_status))
