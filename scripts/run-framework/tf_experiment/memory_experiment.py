@@ -31,10 +31,15 @@ class MemoryExperiment(Experiment):
     experiment_id, experiment_prefix = self._create_experiment(host_node)
 
     # Start experiment
-    for _, hparams in enumerate(config['parameter-sweeps']):
+    if 'parameter-sweeps' not in config or not config['parameter-sweeps']:
       utils.remote_run(
           host_node,
-          self._run_command(host_node, experiment_id, experiment_prefix, config, config_json, hparams))
+          self._run_command(host_node, experiment_id, experiment_prefix, config_json))
+    else:
+      for _, hparams in enumerate(config['parameter-sweeps']):
+        utils.remote_run(
+            host_node,
+            self._run_command(host_node, experiment_id, experiment_prefix, config_json, hparams))
 
   def _build_flags(self, exp_opts):
     flags = ''
@@ -68,16 +73,10 @@ class MemoryExperiment(Experiment):
 
     return experiment_id, experiment_prefix
 
-  def _run_command(self, host_node, experiment_id, experiment_prefix, config, config_json, hparams):
+  def _run_command(self, host_node, experiment_id, experiment_prefix, config_json, hparams=''):
     """Start the training procedure via SSH."""
 
-    exp_opts = config['experiment-options']
-    exp_opts.update({
-        'experiment_id': experiment_id
-    })
-
     # Build command-line flags from the dict
-    flags = self._build_flags(exp_opts)
     now = datetime.datetime.now()
     summary_dir = 'summaries_' + now.strftime("%Y%m%d-%H%M%S") + '/'
     summary_path = os.path.join(experiment_prefix, summary_dir)
@@ -94,20 +93,20 @@ class MemoryExperiment(Experiment):
         DIR=$(dirname "$SCRIPT")
         cd $DIR
 
-        python -u $SCRIPT {flags} --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
-        --hparams_override="{hparams}"
+        python -u $SCRIPT --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
+        --experiment_id={experiment_id} --hparams_sweep="{hparams}"
     '''.format(
-        anaenv='tensorflow',
         remote_env=host_node.remote_env_path,
-        flags=flags,
-        summary_path=summary_path,
+        anaenv='tensorflow',
         prefix=experiment_prefix,
         config_json=config_json,
+        summary_path=summary_path,
+        experiment_id=experiment_id,
         hparams=str(hparams)
     )
 
     logging.info(command)
-    
+
     print("---------- Run Command -----------")
     print("-- PREFIX: " + experiment_prefix)
     print("-- Summary path: " + summary_path)
