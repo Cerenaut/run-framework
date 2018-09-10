@@ -25,6 +25,7 @@ import sys
 import time
 import logging
 import datetime
+import itertools
 import socket
 import io
 
@@ -362,27 +363,27 @@ def remote_run(host_node, cmd):
   client.connect(host_node.host, username=host_node.user,
                  key_filename=host_node.keypath, port=int(host_node.ssh_port))
 
-  def decode(s):
-    try:
-      return str(s, encoding='utf8')
-    except TypeError:
-      return s
-
   # Execute command and the capture output
-  _, stdout, stderr = client.exec_command(cmd, environment={
+  _, stdout, _ = client.exec_command(cmd, get_pty=True, environment={
       'LC_ALL': 'C.UTF-8',
       'LANG': 'C.UTF-8'
   })
 
-  # Combine stdout and stderr
-  output = stdout.readlines() + stderr.readlines()
-  output = list(map(decode, output))
+  def line_buffered(f):
+    line_buf = ""
+    while not f.channel.exit_status_ready():
+      line_buf += f.readline(1024)
+      if line_buf.endswith('\n'):
+        yield line_buf
+        line_buf = ''
+
+  for line_out in line_buffered(stdout):
+    output.append(line_out)
+    sys.stdout.write(line_out)
 
   # Get exit status code
   exit_status = stdout.channel.recv_exit_status()
   client.close()
-
-  logging.debug("stdout = %s", ''.join(output))
 
   if exit_status > 0:
     raise ValueError('SSH connection closed with exit status code: ' + str(exit_status))
