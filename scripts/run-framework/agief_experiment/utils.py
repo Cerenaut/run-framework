@@ -377,6 +377,7 @@ def remote_run(host_node, cmd):
         yield line_buf
         line_buf = ''
 
+  output = []
   for line_out in line_buffered(stdout):
     output.append(line_out)
     sys.stdout.write(line_out)
