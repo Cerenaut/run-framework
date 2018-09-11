@@ -354,7 +354,9 @@ def remote_run(host_node, cmd):
   :param host_node: HostNode object
   :param cmd: The commands to be executed
   """
-  logging.debug("running cmd = %s", cmd)
+  error = []
+  output = []
+  exit_status = -1
 
   client = paramiko.SSHClient()
   client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -362,12 +364,7 @@ def remote_run(host_node, cmd):
   # Connect to remote machine using HostNode details
   client.connect(host_node.host, username=host_node.user,
                  key_filename=host_node.keypath, port=int(host_node.ssh_port))
-
-  # Execute command and the capture output
-  _, stdout, _ = client.exec_command(cmd, get_pty=True, environment={
-      'LC_ALL': 'C.UTF-8',
-      'LANG': 'C.UTF-8'
-  })
+  client.get_transport().set_keepalive(10)
 
   def line_buffered(f):
     line_buf = ""
@@ -377,14 +374,33 @@ def remote_run(host_node, cmd):
         yield line_buf
         line_buf = ''
 
-  output = []
-  for line_out in line_buffered(stdout):
-    output.append(line_out)
-    sys.stdout.write(line_out)
+  try:
+    logging.debug("running cmd = %s", cmd)
 
-  # Get exit status code
-  exit_status = stdout.channel.recv_exit_status()
-  client.close()
+    # Execute command and the capture output
+    _, stdout, stderr = client.exec_command(cmd, get_pty=True, environment={
+        'LC_ALL': 'C.UTF-8',
+        'LANG': 'C.UTF-8'
+    })
+  except SSHException:
+    exit_status = 1
+    client.close()
+  else:
+    # Buffer stdout and continously write to console
+    for line_out in line_buffered(stdout):
+      output.append(line_out)
+      sys.stdout.write(line_out)
+
+    # Capture stderr
+    error = stderr.readlines()
+    if error:
+      logging.debug("stderr = %s", ''.join(error))
+
+    # Get exit status code
+    logging.debug('Waiting for exit status...')
+    exit_status = stdout.channel.recv_exit_status()
+    logging.debug('Exit status received: %s', str(exit_status))
+    client.close()
 
   if exit_status > 0:
     raise ValueError('SSH connection closed with exit status code: ' + str(exit_status))
