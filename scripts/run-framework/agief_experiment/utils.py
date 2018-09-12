@@ -26,6 +26,7 @@ import time
 import logging
 import datetime
 import itertools
+import select
 import socket
 import io
 
@@ -347,16 +348,15 @@ def docker_stop(container_id=None):
   return exit_status
 
 
-def remote_run(host_node, cmd):
+def remote_run(host_node, cmd, timeout=3600):
   """
   Runs a set of commands on a remote machine over SSH using paramiko.
 
   :param host_node: HostNode object
   :param cmd: The commands to be executed
   """
-  error = []
-  output = []
-  exit_status = -1
+  stdout_chunks = []
+  exit_status_code = -1
 
   client = paramiko.SSHClient()
   client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -366,46 +366,80 @@ def remote_run(host_node, cmd):
                  key_filename=host_node.keypath, port=int(host_node.ssh_port))
   client.get_transport().set_keepalive(10)
 
-  def line_buffered(f):
-    line_buf = ""
-    while not f.channel.exit_status_ready():
-      line_buf += f.readline(1024)
-      if line_buf.endswith('\n'):
-        yield line_buf
-        line_buf = ''
-
   try:
-    logging.debug("running cmd = %s", cmd)
+    logging.debug("Executing command remotely = %s", cmd)
 
     # Execute command and the capture output
-    _, stdout, stderr = client.exec_command(cmd, get_pty=True, environment={
+    stdin, stdout, stderr = client.exec_command(cmd, get_pty=True, environment={
         'LC_ALL': 'C.UTF-8',
         'LANG': 'C.UTF-8'
     })
   except SSHException:
-    exit_status = 1
+    exit_status_code = 1
     client.close()
   else:
-    # Buffer stdout and continously write to console
-    for line_out in line_buffered(stdout):
-      output.append(line_out)
-      sys.stdout.write(line_out)
+    # Get the shared channel for stdout/stderr/stdin
+    channel = stdout.channel
 
-    # Capture stderr
-    error = stderr.readlines()
-    if error:
-      logging.debug("stderr = %s", ''.join(error))
+    # stdin is not used
+    stdin.close()
 
-    # Get exit status code
-    logging.debug('Waiting for exit status...')
-    exit_status = stdout.channel.recv_exit_status()
-    logging.debug('Exit status received: %s', str(exit_status))
+    # Indicate that we're not going to write to that channel anymore
+    channel.shutdown_write()
+    channel.settimeout(timeout)
+
+    # Read stdout/stderr in order to prevent read block hangs
+    output = stdout.channel.recv(len(stdout.channel.in_buffer)).decode('utf-8')
+    stdout_chunks.append(output)
+    sys.stdout.write(output)
+
+    # Chunked read to prevent stalls
+    logging.debug('Reading from remote...')
+    while not channel.closed or channel.recv_ready() or channel.recv_stderr_ready():
+      # stop if channel was closed prematurely, and there is no data in the buffers.
+      got_chunk = False
+      readq, _, _ = select.select([stdout.channel], [], [], timeout)
+      for c in readq:
+        if c.recv_ready():
+          output = stdout.channel.recv(len(c.in_buffer)).decode('utf-8')
+          stdout_chunks.append(output)
+          sys.stdout.write(output)
+          got_chunk = True
+        if c.recv_stderr_ready():
+          # Make sure to read stderr to prevent stall
+          stderr.channel.recv_stderr(len(c.in_stderr_buffer))
+          got_chunk = True
+
+      if not got_chunk \
+          and stdout.channel.exit_status_ready() \
+          and not stderr.channel.recv_stderr_ready() \
+          and not stdout.channel.recv_ready():
+        # Indicate that we're not going to read from this channel anymore
+        stdout.channel.shutdown_read()
+
+        # Close the channel
+        stdout.channel.close()
+
+        # Exit as remote side is finished and our buffers are empty
+        logging.debug('Output buffers are empty. Exiting...')
+        break
+
+    # Close all the pseudofiles
+    stdout.close()
+    stderr.close()
+
+    # Get the exit status code
+    logging.debug('Waiting for exit status code...')
+    exit_status_code = stdout.channel.recv_exit_status()
+    logging.debug('Exit status code received: %s', str(exit_status_code))
+
+    # Close the client
     client.close()
 
-  if exit_status > 0:
-    raise ValueError('SSH connection closed with exit status code: ' + str(exit_status))
+  if exit_status_code > 0:
+    raise ValueError('SSH connection closed with exit status code: ' + str(exit_status_code))
 
-  return output
+  return stdout_chunks
 
 
 def logger_level(level):
