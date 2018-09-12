@@ -68,7 +68,7 @@ class MemoryExperiment(Experiment):
     )
 
     remote_output = utils.remote_run(host_node, command)
-    command_output = remote_output[0].strip().split(' ')
+    command_output = remote_output[1].strip().split(' ')
     experiment_id = int(command_output[-1])
 
     return experiment_id, experiment_prefix
