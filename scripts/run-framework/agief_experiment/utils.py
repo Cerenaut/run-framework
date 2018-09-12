@@ -364,7 +364,7 @@ def remote_run(host_node, cmd, timeout=3600):
   # Connect to remote machine using HostNode details
   client.connect(host_node.host, username=host_node.user,
                  key_filename=host_node.keypath, port=int(host_node.ssh_port))
-  client.get_transport().set_keepalive(10)
+  client.get_transport().set_keepalive(60)
 
   try:
     logging.debug("Executing command remotely = %s", cmd)
