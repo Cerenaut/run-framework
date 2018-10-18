@@ -90,7 +90,9 @@ class MemoryExperiment(Experiment):
     hparams = ''
     workflow_opts = ''
     if param_sweeps is not None:
-      hparams = str(param_sweeps['hparams'])
+      if 'hparams' in param_sweeps and param_sweeps['hparams']:
+        hparams = str(param_sweeps['hparams'])
+      if 'workflow_opts' in param_sweeps and param_sweeps['workflow_opts']:
       workflow_opts = str(param_sweeps['workflow_opts'])
 
     command = '''
