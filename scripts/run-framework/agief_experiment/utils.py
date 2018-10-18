@@ -429,7 +429,6 @@ def remote_run(host_node, cmd, timeout=3600):
     stderr.close()
 
     # Get the exit status code
-    logging.debug(stdout_chunks)
     logging.debug('Waiting for exit status code...')
     exit_status_code = stdout.channel.recv_exit_status()
     logging.debug('Exit status code received: %s', str(exit_status_code))
