@@ -93,7 +93,7 @@ class MemoryExperiment(Experiment):
       if 'hparams' in param_sweeps and param_sweeps['hparams']:
         hparams = str(param_sweeps['hparams'])
       if 'workflow_opts' in param_sweeps and param_sweeps['workflow_opts']:
-      workflow_opts = str(param_sweeps['workflow_opts'])
+        workflow_opts = str(param_sweeps['workflow_opts'])
 
     command = '''
         source {remote_env} {anaenv}
