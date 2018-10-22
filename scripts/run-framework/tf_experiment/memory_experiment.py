@@ -37,14 +37,26 @@ class MemoryExperiment(Experiment):
           host_node,
           self._run_command(host_node, experiment_id, experiment_prefix, config_json))
     else:
-      for hparams, workflow_opts in itertools.zip_longest(
-          config['parameter-sweeps']['hparams'],
-          config['parameter-sweeps']['workflow-options']):
-        utils.remote_run(host_node, self._run_command(
-            host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
-                'hparams': hparams,
-                'workflow_opts': workflow_opts
-            }))
+      hparams_sweeps = []
+      workflow_opts_sweeps = []
+
+      if 'hparams' in config['parameter-sweeps'] and config['parameter-sweeps']['hparams']:
+        hparams_sweeps = config['parameter-sweeps']['hparams']
+
+      if 'workflow-options' in config['parameter-sweeps'] and config['parameter-sweeps']['workflow-options']:
+        workflow_opts_sweeps = config['parameter-sweeps']['workflow-options']
+
+      if hparams_sweeps or workflow_opts_sweeps:
+        for hparams, workflow_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps):
+          utils.remote_run(host_node, self._run_command(
+              host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
+                  'hparams': hparams,
+                  'workflow_opts': workflow_opts
+              }))
+      else:
+        utils.remote_run(
+          host_node,
+          self._run_command(host_node, experiment_id, experiment_prefix, config_json))
 
   def _build_flags(self, exp_opts):
     flags = ''
