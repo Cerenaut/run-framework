@@ -5,7 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
+import time
 import json
+import random
 import logging
 import datetime
 import traceback
@@ -45,10 +47,8 @@ def setup_arg_parsing():
   # main program flow
   parser.add_argument('--step_remote', dest='remote_type',
                       help='Run Compute on remote machine. This parameter '
-                           'can specify "simple" or "aws". '
-                           'If "AWS", then launch remote machine on AWS '
-                           '(then --instanceid or --amiid needs to '
-                           'be specified). Requires setting key path '
+                           'can specify "simple", "gcp" or "aws". '
+                           'Requires setting key path '
                            'with --ssh_keypath (default=%(default)s)')
   parser.add_argument('--exps_file', dest='exps_file', required=False,
                       help='Run experiments, defined in the file that is '
@@ -92,7 +92,11 @@ def setup_arg_parsing():
   # GCP details details
   parser.add_argument('--instanceid', dest='instanceid', required=False,
                       help='Instance ID of the GCP container instance - to '
-                           'start a GCP instance')
+                           'start a GCP instance.')
+  parser.add_argument('--instance_template', dest='instance_template', required=False,
+                    help='Instance template to create instance, e.g. docker-instance')
+  parser.add_argument('--machine_type', dest='machine_type', required=False,
+                    help='Instance machine type, e.g. custom-8-32768')
   parser.add_argument('--zone', dest='zone', required=False,
                       help='The GCP instance region zone, e.g. us-east1-b.')
   parser.add_argument('--project', dest='project', required=False,
@@ -173,10 +177,30 @@ def main():
 
   if args.remote_type == 'gcp':
     # Start GCP Compute using instanceid
-    if args.instanceid:
+    if args.instance_template:
+      print('Launching instance...')
+      config = {
+        'name': args.instanceid,
+        'machineType': 'zones/' + args.zone + '/machineTypes/' + args.machine_type,
+      }
+      instance_template = 'projects/' + args.project + '/global/instanceTemplates/' + args.instance_template
+
+      operation = gcp_compute.instances().insert(zone=args.zone, project=args.project,
+        sourceInstanceTemplate=instance_template, body=config).execute()
+      wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
+
+      instance_id = config['name']
+    else:
       instance_id = args.instanceid
-      operation = gcp_compute.instances().start(zone=args.zone, project=args.project, instance=instance_id).execute()
-      wait_for_operation(gcp_compute, args.project, args.project, operation['name'])
+      operation = gcp_compute.instances().start(
+          zone=args.zone, project=args.project, instance=instance_id).execute()
+      wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
+
+    instance_data = gcp_compute.instances().get(
+        zone=args.zone, project=args.project, instance=instance_id).execute()
+
+    ips['ip_private'] = instance_data['networkInterfaces'][0]['networkIP']
+    ips['ip_public'] = instance_data['networkInterfaces'][0]['accessConfigs'][0]['natIP']
 
   # Infrastructure has been started
   # Try to run experiment, and if fails with exception, still shut down infrastructure
@@ -212,8 +236,12 @@ def main():
 
     # Shutdown infrastructure
     if args.remote_type == 'gcp':
-      shutdown_op = gcp_compute.instances().stop(zone=args.zone, project=args.project, instance=instance_id).execute()
-      wait_for_operation(gcp_compute, args.project, args.project, shutdown_op['name'])
+      print('Shutting down instance...')
+      operation = gcp_compute.instances().stop(zone=args.zone, project=args.project, instance=instance_id).execute()
+      wait_for_operation(gcp_compute, args.project, args.project, operation['name'])
+
+      # operation = gcp_compute.instances().delete(zone=args.zone, project=args.project, instance=instance_id).execute()
+      # wait_for_operation(gcp_compute, args.project, args.project, operation['name'])
 
   # Record experiment end time
   exp_end_time = datetime.datetime.now()
