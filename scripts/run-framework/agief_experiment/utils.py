@@ -348,7 +348,7 @@ def docker_stop(container_id=None):
   return exit_status
 
 
-def remote_run(host_node, cmd, timeout=3600):
+def remote_run(host_node, cmd, timeout=3600, max_repeats=15, wait_period=5):
   """
   Runs a set of commands on a remote machine over SSH using paramiko.
 
@@ -362,9 +362,17 @@ def remote_run(host_node, cmd, timeout=3600):
   client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
   # Connect to remote machine using HostNode details
-  client.connect(host_node.host, username=host_node.user,
-                 key_filename=host_node.keypath, port=int(host_node.ssh_port))
-  client.get_transport().set_keepalive(60)
+  for _ in range(1, max_repeats + 1):
+    try:
+      client.connect(host_node.host, username=host_node.user,
+                    key_filename=host_node.keypath, port=int(host_node.ssh_port))
+      client.get_transport().set_keepalive(60)
+      break
+    except (paramiko.ssh_exception.BadHostKeyException,
+            paramiko.ssh_exception.AuthenticationException,
+            paramiko.ssh_exception.SSHException,
+            paramiko.ssh_exception.socket.error):
+      time.sleep(wait_period)
 
   try:
     logging.debug("Executing command remotely = %s", cmd)

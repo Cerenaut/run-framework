@@ -106,8 +106,13 @@ def setup_arg_parsing():
                       help='Logging level (default=%(default)s). '
                            'Options: debug, info, warning, error, critical')
 
+  parser.add_argument('--use_docker', dest='use_docker', action='store_true',
+                    help='If set, then DO NOT launch in a docker '
+                          'container. (default=%(default)s). ')
+
   parser.set_defaults(prefixes=None)
   parser.set_defaults(exp_type='memory')
+  parser.set_defaults(use_docker=False)
   parser.set_defaults(remote_type='local')  # i.e. not remote
   parser.set_defaults(host='localhost')
   parser.set_defaults(ssh_port='22')
@@ -191,6 +196,7 @@ def main():
 
       instance_id = config['name']
     else:
+      print('Starting instance...')
       instance_id = args.instanceid
       operation = gcp_compute.instances().start(
           zone=args.zone, project=args.project, instance=instance_id).execute()
@@ -210,6 +216,10 @@ def main():
 
     # Create new experiment
     experiment = EXPERIMENTS[args.exp_type]()
+    experiment.use_docker = args.use_docker
+
+    if args.use_docker:
+      experiment.docker_image = 'gcr.io/' + args.project + '/tensorflow'
 
     # Sync experiment
     if args.sync:
@@ -238,10 +248,10 @@ def main():
     if args.remote_type == 'gcp':
       print('Shutting down instance...')
       operation = gcp_compute.instances().stop(zone=args.zone, project=args.project, instance=instance_id).execute()
-      wait_for_operation(gcp_compute, args.project, args.project, operation['name'])
+      wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
 
       # operation = gcp_compute.instances().delete(zone=args.zone, project=args.project, instance=instance_id).execute()
-      # wait_for_operation(gcp_compute, args.project, args.project, operation['name'])
+      # wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
 
   # Record experiment end time
   exp_end_time = datetime.datetime.now()

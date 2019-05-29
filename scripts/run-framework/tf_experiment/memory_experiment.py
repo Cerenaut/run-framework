@@ -29,6 +29,11 @@ class MemoryExperiment(Experiment):
   def run_sweeps(self, config, config_json, args, host_node):
     """Run the sweeps"""
 
+    # Launch container in the background
+    if self.use_docker:
+      print('Launching Docker..')
+      self._launch_docker(host_node)
+
     experiment_id, experiment_prefix = self._create_experiment(host_node)
 
     # Start experiment
@@ -64,25 +69,67 @@ class MemoryExperiment(Experiment):
       flags += '--{0}={1} '.format(key, value)
     return flags
 
+  def _launch_docker(self, host_node):
+    """Launch the Docker container on the remote machine."""
+    assert self.docker_image is not None, 'Docker image not provided.'
+
+    command = '''
+      export RUN_DIR=$HOME/agief-remote-run
+
+      docker pull {docker_image}
+      docker run -d  -t --runtime=nvidia --mount type=bind,source=$RUN_DIR,target=$RUN_DIR \
+        {docker_image} bash
+    '''.format(
+        docker_image=self.docker_image
+    )
+
+    remote_output = utils.remote_run(host_node, command)
+    command_output = [s for s in remote_output]
+    command_output = command_output[-1].strip()
+    self.docker_id = command_output
+
+    return command_output
+
   def _create_experiment(self, host_node):
     """Creates new MLFlow experiment remotely."""
     experiment_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
 
-    command = '''
-      source {remote_env} {anaenv}
+    if self.use_docker:
+      command = '''
+        docker exec -it {docker_id} bash -c "
+          source activate {anaenv}
 
-      export RUN_DIR=$HOME/agief-remote-run
+          export RUN_DIR=$HOME/agief-remote-run
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
 
-      pip install -q -r $RUN_DIR/memory/requirements.txt
-      pip install -q -r $RUN_DIR/classifier_component/requirements.txt
+          pip install -q -r \$RUN_DIR/memory/requirements.txt
+          pip install -q -r \$RUN_DIR/classifier_component/requirements.txt
 
-      cd $RUN_DIR/memory
-      mlflow experiments create {prefix}
-    '''.format(
-        anaenv='tensorflow',
-        remote_env=host_node.remote_env_path,
-        prefix=experiment_prefix
-    )
+          cd \$RUN_DIR/memory
+          mlflow experiments create {prefix}
+        "
+      '''.format(
+          docker_id=self.docker_id,
+          anaenv='tensorflow',
+          prefix=experiment_prefix
+      )
+    else:
+      command = '''
+        source {remote_env} {anaenv}
+
+        export RUN_DIR=$HOME/agief-remote-run
+
+        pip install -q -r $RUN_DIR/memory/requirements.txt
+        pip install -q -r $RUN_DIR/classifier_component/requirements.txt
+
+        cd $RUN_DIR/memory
+        mlflow experiments create {prefix}
+      '''.format(
+          anaenv='tensorflow',
+          remote_env=host_node.remote_env_path,
+          prefix=experiment_prefix
+      )
 
     remote_output = utils.remote_run(host_node, command)
     command_output = [s for s in remote_output if 'Created experiment' in s]
@@ -107,7 +154,35 @@ class MemoryExperiment(Experiment):
       if 'workflow_opts' in param_sweeps and param_sweeps['workflow_opts']:
         workflow_opts = str(param_sweeps['workflow_opts'])
 
-    command = '''
+    if self.use_docker:
+      hparams = hparams.replace("'", '\\"')
+      workflow_opts = workflow_opts.replace("'", '\\"')
+
+      command = '''
+        echo '{config_json}' > $HOME/agief-remote-run/memory/experiment-definition.{prefix}.json
+
+        docker exec -it {docker_id} bash -c '
+          export DIR=$HOME/agief-remote-run/memory
+          export SCRIPT=$DIR/experiment.py
+          export EXP_DEF=$DIR/experiment-definition.{prefix}.json
+
+          cd $DIR
+          source activate {anaenv}
+          python -u $SCRIPT --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
+          --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}"
+        '
+      '''.format(
+          anaenv='tensorflow',
+          prefix=experiment_prefix,
+          config_json=config_json,
+          summary_path=summary_path,
+          experiment_id=experiment_id,
+          hparams=hparams,
+          docker_id=self.docker_id,
+          workflow_opts=workflow_opts
+      )
+    else:
+      command = '''
         source {remote_env} {anaenv}
 
         export RUN_DIR=$HOME/agief-remote-run
@@ -121,16 +196,16 @@ class MemoryExperiment(Experiment):
 
         python -u $SCRIPT --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
         --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}"
-    '''.format(
-        remote_env=host_node.remote_env_path,
-        anaenv='tensorflow',
-        prefix=experiment_prefix,
-        config_json=config_json,
-        summary_path=summary_path,
-        experiment_id=experiment_id,
-        hparams=hparams,
-        workflow_opts=workflow_opts
-    )
+      '''.format(
+          remote_env=host_node.remote_env_path,
+          anaenv='tensorflow',
+          prefix=experiment_prefix,
+          config_json=config_json,
+          summary_path=summary_path,
+          experiment_id=experiment_id,
+          hparams=hparams,
+          workflow_opts=workflow_opts
+      )
 
     logging.info(command)
 

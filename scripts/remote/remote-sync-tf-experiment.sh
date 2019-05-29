@@ -27,7 +27,7 @@ echo "Using port " = $port
 ################################################################################
 
 # code
-cmd="rsync -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' --exclude='.git/' $AGI_CODE_HOME/ ${user}@${host}:~/agief-remote-run"
+cmd="rsync --chmod=ug=rwX,o=rX --perms -ave 'ssh -p $port -i $keyfile -o \"StrictHostKeyChecking no\"' $AGI_CODE_HOME/ ${user}@${host}:~/agief-remote-run --exclude='.git/' --filter=':- .gitignore'"
 echo $cmd
 eval $cmd
 status=$?
