@@ -31,16 +31,14 @@ class MemoryExperiment(Experiment):
 
     # Launch container in the background
     if self.use_docker:
-      print('Launching Docker..')
+      print('Launching Docker...')
       self._launch_docker(host_node)
 
     experiment_id, experiment_prefix = self._create_experiment(host_node)
 
     # Start experiment
     if 'parameter-sweeps' not in config or not config['parameter-sweeps']:
-      utils.remote_run(
-          host_node,
-          self._run_command(host_node, experiment_id, experiment_prefix, config_json))
+      self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
     else:
       hparams_sweeps = []
       workflow_opts_sweeps = []
@@ -53,21 +51,30 @@ class MemoryExperiment(Experiment):
 
       if hparams_sweeps or workflow_opts_sweeps:
         for hparams, workflow_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps):
-          utils.remote_run(host_node, self._run_command(
-              host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
-                  'hparams': hparams,
-                  'workflow_opts': workflow_opts
-              }))
+          self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
+              'hparams': hparams,
+              'workflow_opts': workflow_opts
+          })
       else:
-        utils.remote_run(
-          host_node,
-          self._run_command(host_node, experiment_id, experiment_prefix, config_json))
+        self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
 
   def _build_flags(self, exp_opts):
     flags = ''
     for key, value in exp_opts.items():
       flags += '--{0}={1} '.format(key, value)
     return flags
+
+  def _exec_experiment(self, host_node, experiment_id, experiment_prefix,
+                       config_json, param_sweeps=None):
+    utils.remote_run(
+        host_node,
+        self._run_command(host_node, experiment_id, experiment_prefix,
+                          config_json, param_sweeps))
+
+    if self.export:
+       utils.remote_run(
+        host_node,
+        self._upload_command(host_node, experiment_id, experiment_prefix))
 
   def _launch_docker(self, host_node):
     """Launch the Docker container on the remote machine."""
@@ -213,5 +220,23 @@ class MemoryExperiment(Experiment):
     print("-- PREFIX: " + experiment_prefix)
     print("-- Summary path: " + summary_path)
     print("----------------------------------")
+
+    return command
+
+  def _upload_command(self, host_node, experiment_id, experiment_prefix):
+    command = '''
+      export DIR=$HOME/agief-remote-run/memory
+
+      gsutil cp -r $DIR/run/{prefix} gs://project-agi/experiments
+      gsutil cp -r $DIR/experiment-definition.{prefix}.json gs://project-agi/experiments/{prefix}
+      gsutil cp -r $DIR/mlruns/{experiment_id} gs://project-agi/experiments/{prefix}/mlflow-summary
+    '''.format(
+        prefix=experiment_prefix,
+        experiment_id=experiment_id
+    )
+
+    logging.info(command)
+
+    print('Uploading Experiment (prefix=' + experiment_prefix + ')...')
 
     return command

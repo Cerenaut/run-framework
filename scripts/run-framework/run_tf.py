@@ -60,6 +60,8 @@ def setup_arg_parsing():
                       help='Sync the code and run folder. Copy from local '
                            'machine to remote. Requires setting '
                            '--step_remote and key path with --ssh_keypath')
+  parser.add_argument('--step_export', dest='export', action='store_true',
+                      help='Export experiment data to cloud storage.')
   parser.add_argument('--step_shutdown', dest='shutdown',
                       action='store_true',
                       help='Shutdown instances and Compute '
@@ -96,7 +98,7 @@ def setup_arg_parsing():
   parser.add_argument('--instance_template', dest='instance_template', required=False,
                     help='Instance template to create instance, e.g. docker-instance')
   parser.add_argument('--machine_type', dest='machine_type', required=False,
-                    help='Instance machine type, e.g. custom-8-32768')
+                    help='Instance machine type. (default=%(default)s).')
   parser.add_argument('--zone', dest='zone', required=False,
                       help='The GCP instance region zone, e.g. us-east1-b.')
   parser.add_argument('--project', dest='project', required=False,
@@ -107,17 +109,22 @@ def setup_arg_parsing():
                            'Options: debug, info, warning, error, critical')
 
   parser.add_argument('--use_docker', dest='use_docker', action='store_true',
-                    help='If set, then DO NOT launch in a docker '
-                          'container. (default=%(default)s). ')
+                      help='If set, then DO NOT launch in a docker '
+                           'container. (default=%(default)s). ')
+  parser.add_argument('--docker_image', dest='docker_image', required=False,
+                      help='Docker Image URL. (default=%(default)s).')
 
   parser.set_defaults(prefixes=None)
   parser.set_defaults(exp_type='memory')
   parser.set_defaults(use_docker=False)
+  parser.set_defaults(export=False)
   parser.set_defaults(remote_type='local')  # i.e. not remote
   parser.set_defaults(host='localhost')
   parser.set_defaults(ssh_port='22')
-  parser.set_defaults(user='ubuntu')
-  parser.set_defaults(zone='us-east1-b')
+  parser.set_defaults(user='incubator')
+  parser.set_defaults(machine_type='custom-8-32768')
+  parser.set_defaults(docker_image='gcr.io/tensorflow-compute-1/tensorflow')
+  parser.set_defaults(zone='australia-southeast1-c')
   parser.set_defaults(remote_env_path='activate')
   parser.set_defaults(remote_variables_file='/home/ubuntu/agief-python/'
                                             'agi-tensorflow/variables/'
@@ -181,26 +188,31 @@ def main():
   instance_id = None
 
   if args.remote_type == 'gcp':
-    # Start GCP Compute using instanceid
-    if args.instance_template:
-      print('Launching instance...')
+    # Start an existing GCP instance
+    if args.instanceid:
+      instance_id = args.instanceid
+
+      print('Starting instance...')
+      operation = gcp_compute.instances().start(
+          zone=args.zone, project=args.project, instance=instance_id).execute()
+      wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
+
+    # Launch a new GCP instance
+    else:
+      instance_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
+
       config = {
-        'name': args.instanceid,
+        'name': 'agi-vm-' + instance_prefix,
         'machineType': 'zones/' + args.zone + '/machineTypes/' + args.machine_type,
       }
       instance_template = 'projects/' + args.project + '/global/instanceTemplates/' + args.instance_template
 
+      print('Launching instance...')
       operation = gcp_compute.instances().insert(zone=args.zone, project=args.project,
         sourceInstanceTemplate=instance_template, body=config).execute()
       wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
 
       instance_id = config['name']
-    else:
-      print('Starting instance...')
-      instance_id = args.instanceid
-      operation = gcp_compute.instances().start(
-          zone=args.zone, project=args.project, instance=instance_id).execute()
-      wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
 
     instance_data = gcp_compute.instances().get(
         zone=args.zone, project=args.project, instance=instance_id).execute()
@@ -215,11 +227,9 @@ def main():
     compute_node.host_node.host = ips['ip_public']
 
     # Create new experiment
-    experiment = EXPERIMENTS[args.exp_type]()
-    experiment.use_docker = args.use_docker
-
-    if args.use_docker:
-      experiment.docker_image = 'gcr.io/' + args.project + '/tensorflow'
+    experiment = EXPERIMENTS[args.exp_type](export=args.export,
+                                            use_docker=args.use_docker,
+                                            docker_image=args.docker_image)
 
     # Sync experiment
     if args.sync:
@@ -246,12 +256,9 @@ def main():
 
     # Shutdown infrastructure
     if args.remote_type == 'gcp':
-      print('Shutting down instance...')
-      operation = gcp_compute.instances().stop(zone=args.zone, project=args.project, instance=instance_id).execute()
+      print('Terminating instance...')
+      operation = gcp_compute.instances().delete(zone=args.zone, project=args.project, instance=instance_id).execute()
       wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
-
-      # operation = gcp_compute.instances().delete(zone=args.zone, project=args.project, instance=instance_id).execute()
-      # wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
 
   # Record experiment end time
   exp_end_time = datetime.datetime.now()

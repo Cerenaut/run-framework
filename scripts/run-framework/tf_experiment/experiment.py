@@ -20,9 +20,10 @@ from agief_experiment import utils
 class Experiment(object):
   """Base class for TensorFlow-based experiments."""
 
-  def __init__(self):
-    self.use_docker = False
-    self.docker_image = None
+  def __init__(self, export=False, use_docker=False, docker_image=None):
+    self.export = export
+    self.use_docker = use_docker
+    self.docker_image = docker_image
 
   def sync_experiment(self, remote):
     """
