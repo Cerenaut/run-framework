@@ -42,6 +42,7 @@ class MemoryExperiment(Experiment):
     else:
       hparams_sweeps = []
       workflow_opts_sweeps = []
+      experiment_opts_sweeps = []
 
       if 'hparams' in config['parameter-sweeps'] and config['parameter-sweeps']['hparams']:
         hparams_sweeps = config['parameter-sweeps']['hparams']
@@ -49,11 +50,15 @@ class MemoryExperiment(Experiment):
       if 'workflow-options' in config['parameter-sweeps'] and config['parameter-sweeps']['workflow-options']:
         workflow_opts_sweeps = config['parameter-sweeps']['workflow-options']
 
-      if hparams_sweeps or workflow_opts_sweeps:
-        for hparams, workflow_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps):
+      if 'experiment-options' in config['parameter-sweeps'] and config['parameter-sweeps']['experiment-options']:
+        experiment_opts_sweeps = config['parameter-sweeps']['experiment-options']
+
+      if hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps:
+        for hparams, workflow_opts, experiment_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps, experiment_opts_sweeps):
           self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
               'hparams': hparams,
-              'workflow_opts': workflow_opts
+              'workflow_opts': workflow_opts,
+              'experiment_opts': experiment_opts
           })
       else:
         self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
@@ -155,15 +160,20 @@ class MemoryExperiment(Experiment):
 
     hparams = ''
     workflow_opts = ''
+    experiment_opts = ''
+
     if param_sweeps is not None:
       if 'hparams' in param_sweeps and param_sweeps['hparams']:
         hparams = str(param_sweeps['hparams'])
       if 'workflow_opts' in param_sweeps and param_sweeps['workflow_opts']:
         workflow_opts = str(param_sweeps['workflow_opts'])
+      if 'experiment_opts' in param_sweeps and param_sweeps['experiment_opts']:
+        experiment_opts = str(param_sweeps['experiment_opts'])
 
     if self.use_docker:
       hparams = hparams.replace("'", '\\"')
       workflow_opts = workflow_opts.replace("'", '\\"')
+      experiment_opts = experiment_opts.replace("'", '\\"')
 
       command = '''
         echo '{config_json}' > $HOME/agief-remote-run/memory/experiment-definition.{prefix}.json
@@ -176,7 +186,8 @@ class MemoryExperiment(Experiment):
           cd $DIR
           source activate {anaenv}
           python -u $SCRIPT --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
-          --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}"
+          --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}" \
+          --experiment_opts_sweep="{experiment_opts}
         '
       '''.format(
           anaenv='tensorflow',
@@ -186,7 +197,8 @@ class MemoryExperiment(Experiment):
           experiment_id=experiment_id,
           hparams=hparams,
           docker_id=self.docker_id,
-          workflow_opts=workflow_opts
+          workflow_opts=workflow_opts,
+          experiemnt_opts=experiment_opts
       )
     else:
       command = '''
@@ -202,7 +214,8 @@ class MemoryExperiment(Experiment):
         cd $DIR
 
         python -u $SCRIPT --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
-        --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}"
+        --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}" \
+        --experiment_opts_sweep="{experiment_opts}
       '''.format(
           remote_env=host_node.remote_env_path,
           anaenv='tensorflow',
@@ -211,7 +224,8 @@ class MemoryExperiment(Experiment):
           summary_path=summary_path,
           experiment_id=experiment_id,
           hparams=hparams,
-          workflow_opts=workflow_opts
+          workflow_opts=workflow_opts,
+          experiemnt_opts=experiment_opts
       )
 
     logging.info(command)

@@ -382,7 +382,7 @@ def remote_run(host_node, cmd, timeout=3600, max_repeats=15, wait_period=5):
         'LC_ALL': 'C.UTF-8',
         'LANG': 'C.UTF-8'
     })
-  except SSHException:
+  except paramiko.ssh_exception.SSHException:
     exit_status_code = 1
     client.close()
   else:

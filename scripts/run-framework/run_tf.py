@@ -181,13 +181,14 @@ def main():
     host_node = HostNode(args.host, args.user)
 
   compute_node = Compute(host_node)
-  gcp_compute = googleapiclient.discovery.build('compute', 'v1')
 
   # Setup Infrastructure
   ips = {'ip_public': args.host, 'ip_private': None}
   instance_id = None
 
   if args.remote_type == 'gcp':
+    gcp_compute = googleapiclient.discovery.build('compute', 'v1')
+
     # Start an existing GCP instance
     if args.instanceid:
       instance_id = args.instanceid
