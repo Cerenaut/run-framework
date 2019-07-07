@@ -187,7 +187,7 @@ class MemoryExperiment(Experiment):
           source activate {anaenv}
           python -u $SCRIPT --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
           --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}" \
-          --experiment_opts_sweep="{experiment_opts}
+          --experiment_opts_sweep="{experiment_opts}"
         '
       '''.format(
           anaenv='tensorflow',
@@ -215,7 +215,7 @@ class MemoryExperiment(Experiment):
 
         python -u $SCRIPT --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
         --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}" \
-        --experiment_opts_sweep="{experiment_opts}
+        --experiment_opts_sweep="{experiment_opts}"
       '''.format(
           remote_env=host_node.remote_env_path,
           anaenv='tensorflow',
