@@ -198,7 +198,7 @@ class MemoryExperiment(Experiment):
           hparams=hparams,
           docker_id=self.docker_id,
           workflow_opts=workflow_opts,
-          experiemnt_opts=experiment_opts
+          experiment_opts=experiment_opts
       )
     else:
       command = '''
@@ -225,7 +225,7 @@ class MemoryExperiment(Experiment):
           experiment_id=experiment_id,
           hparams=hparams,
           workflow_opts=workflow_opts,
-          experiemnt_opts=experiment_opts
+          experiment_opts=experiment_opts
       )
 
     logging.info(command)
