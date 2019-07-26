@@ -64,7 +64,8 @@ class PAGIExperiment(MemoryExperiment):
       '''.format(
           anaenv='tensorflow',
           remote_env=host_node.remote_env_path,
-          prefix=experiment_prefix
+          prefix=experiment_prefix,
+          project=self.project
       )
 
     remote_output = utils.remote_run(host_node, command)
@@ -148,7 +149,8 @@ class PAGIExperiment(MemoryExperiment):
           experiment_id=experiment_id,
           hparams=hparams,
           workflow_opts=workflow_opts,
-          experiemnt_opts=experiment_opts
+          experiemnt_opts=experiment_opts,
+          project=self.project
       )
 
     logging.info(command)
