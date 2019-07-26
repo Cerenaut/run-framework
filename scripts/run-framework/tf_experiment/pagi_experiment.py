@@ -132,11 +132,12 @@ class PAGIExperiment(MemoryExperiment):
         source {remote_env} {anaenv}
 
         export RUN_DIR=$HOME/agief-remote-run
+        export DIR=$RUN_DIR/{project}
 
         EXP_DEF="/tmp/experiment-definition.{prefix}.json"
         echo '{config_json}' > $EXP_DEF
 
-        cd $RUN_DIR/{project}
+        cd $DIR
 
         pagi run --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
         --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}" \
