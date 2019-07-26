@@ -17,10 +17,11 @@
 
 from agief_experiment import utils
 
-class Experiment(object):
+class Experiment:
   """Base class for TensorFlow-based experiments."""
 
-  def __init__(self, export=False, use_docker=False, docker_image=None):
+  def __init__(self, project=None, export=False, use_docker=False, docker_image=None):
+    self.project = project
     self.export = export
     self.use_docker = use_docker
     self.docker_image = docker_image

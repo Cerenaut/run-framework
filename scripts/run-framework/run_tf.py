@@ -18,10 +18,12 @@ from agief_experiment import utils
 from agief_experiment.compute import Compute
 from agief_experiment.host_node import HostNode
 
+from tf_experiment.pagi_experiment import PAGIExperiment
 from tf_experiment.memory_experiment import MemoryExperiment
 from tf_experiment.sparsecaps_experiment import SparseCapsExperiment
 
 EXPERIMENTS = {
+    'pagi': PAGIExperiment,
     'memory': MemoryExperiment,
     'sparse_caps': SparseCapsExperiment
 }
@@ -37,6 +39,8 @@ def setup_arg_parsing():
 
   parser.add_argument('--step_exp', dest='exp_type',
                       help='Choose which experiment type to run.')
+  parser.add_argument('--exp_project', dest='exp_project',
+                      help='Choose which project to run.')
   parser.add_argument('--step_phase', dest='phase',
                       help='Choose the specific experiment phase to run.'
                            'Options: train, eval or classify')
@@ -116,6 +120,7 @@ def setup_arg_parsing():
 
   parser.set_defaults(prefixes=None)
   parser.set_defaults(exp_type='memory')
+  parser.set_defaults(exp_project='memory')
   parser.set_defaults(use_docker=False)
   parser.set_defaults(export=False)
   parser.set_defaults(remote_type='local')  # i.e. not remote
@@ -203,14 +208,14 @@ def main():
       instance_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
 
       config = {
-        'name': 'agi-vm-' + instance_prefix,
-        'machineType': 'zones/' + args.zone + '/machineTypes/' + args.machine_type,
+          'name': 'agi-vm-' + instance_prefix,
+          'machineType': 'zones/' + args.zone + '/machineTypes/' + args.machine_type,
       }
       instance_template = 'projects/' + args.project + '/global/instanceTemplates/' + args.instance_template
 
       print('Launching instance...')
       operation = gcp_compute.instances().insert(zone=args.zone, project=args.project,
-        sourceInstanceTemplate=instance_template, body=config).execute()
+                                                 sourceInstanceTemplate=instance_template, body=config).execute()
       wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
 
       instance_id = config['name']
@@ -228,7 +233,8 @@ def main():
     compute_node.host_node.host = ips['ip_public']
 
     # Create new experiment
-    experiment = EXPERIMENTS[args.exp_type](export=args.export,
+    experiment = EXPERIMENTS[args.exp_type](project=args.exp_project,
+                                            export=args.export,
                                             use_docker=args.use_docker,
                                             docker_image=args.docker_image)
 

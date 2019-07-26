@@ -77,9 +77,9 @@ class MemoryExperiment(Experiment):
                           config_json, param_sweeps))
 
     if self.export:
-       utils.remote_run(
-        host_node,
-        self._upload_command(host_node, experiment_id, experiment_prefix))
+      utils.remote_run(
+          host_node,
+          self._upload_command(host_node, experiment_id, experiment_prefix))
 
   def _launch_docker(self, host_node):
     """Launch the Docker container on the remote machine."""
@@ -238,15 +238,18 @@ class MemoryExperiment(Experiment):
     return command
 
   def _upload_command(self, host_node, experiment_id, experiment_prefix):
+    del host_node
+
     command = '''
-      export DIR=$HOME/agief-remote-run/memory
+      export DIR=$HOME/agief-remote-run/{project}
 
       gsutil cp -r $DIR/run/{prefix} gs://project-agi/experiments
-      gsutil cp -r $DIR/experiment-definition.{prefix}.json gs://project-agi/experiments/{prefix}
+      gsutil cp -r /tmp/experiment-definition.{prefix}.json gs://project-agi/experiments/{prefix}
       gsutil cp -r $DIR/mlruns/{experiment_id} gs://project-agi/experiments/{prefix}/mlflow-summary
     '''.format(
         prefix=experiment_prefix,
-        experiment_id=experiment_id
+        experiment_id=experiment_id,
+        project=self.project
     )
 
     logging.info(command)
