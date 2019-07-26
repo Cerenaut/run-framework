@@ -7,7 +7,6 @@ from __future__ import print_function
 import sys
 import time
 import json
-import random
 import logging
 import datetime
 import traceback
@@ -100,9 +99,9 @@ def setup_arg_parsing():
                       help='Instance ID of the GCP container instance - to '
                            'start a GCP instance.')
   parser.add_argument('--instance_template', dest='instance_template', required=False,
-                    help='Instance template to create instance, e.g. docker-instance')
+                      help='Instance template to create instance, e.g. docker-instance')
   parser.add_argument('--machine_type', dest='machine_type', required=False,
-                    help='Instance machine type. (default=%(default)s).')
+                      help='Instance machine type. (default=%(default)s).')
   parser.add_argument('--zone', dest='zone', required=False,
                       help='The GCP instance region zone, e.g. us-east1-b.')
   parser.add_argument('--project', dest='project', required=False,

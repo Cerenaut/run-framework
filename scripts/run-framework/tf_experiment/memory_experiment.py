@@ -54,7 +54,8 @@ class MemoryExperiment(Experiment):
         experiment_opts_sweeps = config['parameter-sweeps']['experiment-options']
 
       if hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps:
-        for hparams, workflow_opts, experiment_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps, experiment_opts_sweeps):
+        for hparams, workflow_opts, experiment_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps,
+                                                                             experiment_opts_sweeps):
           self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
               'hparams': hparams,
               'workflow_opts': workflow_opts,
@@ -107,6 +108,7 @@ class MemoryExperiment(Experiment):
     experiment_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
 
     if self.use_docker:
+      # pylint: disable=anomalous-backslash-in-string
       command = '''
         docker exec -it {docker_id} bash -c "
           source activate {anaenv}
@@ -238,6 +240,7 @@ class MemoryExperiment(Experiment):
     return command
 
   def _upload_command(self, host_node, experiment_id, experiment_prefix):
+    """Uploads definitions file, summaries and mlflow outputs."""
     del host_node
 
     command = '''

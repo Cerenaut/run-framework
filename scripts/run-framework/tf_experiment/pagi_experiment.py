@@ -30,6 +30,7 @@ class PAGIExperiment(MemoryExperiment):
     experiment_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
 
     if self.use_docker:
+      # pylint: disable=anomalous-backslash-in-string
       command = '''
         docker exec -it {docker_id} bash -c "
           source activate {anaenv}
@@ -38,8 +39,8 @@ class PAGIExperiment(MemoryExperiment):
           export LANG=C.UTF-8
           export RUN_DIR=$HOME/agief-remote-run
 
-          pip install -e \$RUN_DIR\pagi
-          pip install -e \$RUN_DIR\{project}
+          pip install -e \$RUN_DIR/pagi
+          pip install -e \$RUN_DIR/{project}
 
           cd \$RUN_DIR/{project}
           mlflow experiments create {prefix}
@@ -56,8 +57,8 @@ class PAGIExperiment(MemoryExperiment):
 
         export RUN_DIR=$HOME/agief-remote-run
 
-        pip install -e $RUN_DIR\pagi
-        pip install -e $RUN_DIR\{project}
+        pip install -e $RUN_DIR/pagi
+        pip install -e $RUN_DIR/{project}
 
         cd $RUN_DIR/{project}
         mlflow experiments create {prefix}
@@ -112,7 +113,7 @@ class PAGIExperiment(MemoryExperiment):
           source activate {anaenv}
           pagi run --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
           --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}" \
-          --experiment_opts_sweep="{experiment_opts}
+          --experiment_opts_sweep="{experiment_opts}"
         '
       '''.format(
           anaenv='tensorflow',
@@ -123,7 +124,7 @@ class PAGIExperiment(MemoryExperiment):
           hparams=hparams,
           docker_id=self.docker_id,
           workflow_opts=workflow_opts,
-          experiemnt_opts=experiment_opts,
+          experiment_opts=experiment_opts,
           project=self.project
       )
     else:
@@ -135,11 +136,11 @@ class PAGIExperiment(MemoryExperiment):
         EXP_DEF="/tmp/experiment-definition.{prefix}.json"
         echo '{config_json}' > $EXP_DEF
 
-        cd $RUN_DIR\{project}
+        cd $RUN_DIR/{project}
 
         pagi run --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
         --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}" \
-        --experiment_opts_sweep="{experiment_opts}
+        --experiment_opts_sweep="{experiment_opts}"
       '''.format(
           remote_env=host_node.remote_env_path,
           anaenv='tensorflow',
@@ -149,7 +150,7 @@ class PAGIExperiment(MemoryExperiment):
           experiment_id=experiment_id,
           hparams=hparams,
           workflow_opts=workflow_opts,
-          experiemnt_opts=experiment_opts,
+          experiment_opts=experiment_opts,
           project=self.project
       )
 
