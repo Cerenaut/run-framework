@@ -39,8 +39,8 @@ class PAGIExperiment(MemoryExperiment):
           export LANG=C.UTF-8
           export RUN_DIR=$HOME/agief-remote-run
 
-          pip install -e \$RUN_DIR/pagi
-          pip install -e \$RUN_DIR/{project}
+          pip install -e \$RUN_DIR/pagi --force-reinstall
+          pip install -e \$RUN_DIR/{project} --force-reinstall
 
           cd \$RUN_DIR/{project}
           mlflow experiments create {prefix}
@@ -57,8 +57,8 @@ class PAGIExperiment(MemoryExperiment):
 
         export RUN_DIR=$HOME/agief-remote-run
 
-        pip install -e $RUN_DIR/pagi
-        pip install -e $RUN_DIR/{project}
+        pip install -e $RUN_DIR/pagi --force-reinstall
+        pip install -e $RUN_DIR/{project} --force-reinstall
 
         cd $RUN_DIR/{project}
         mlflow experiments create {prefix}
