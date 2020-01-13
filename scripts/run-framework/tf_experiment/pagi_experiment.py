@@ -106,6 +106,9 @@ class PAGIExperiment(MemoryExperiment):
         echo '{config_json}' > /tmp/experiment-definition.{prefix}.json
 
         docker exec -it {docker_id} bash -c '
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
+          
           export DIR=$HOME/agief-remote-run/{project}
           export SCRIPT=$DIR/experiment.py
           export EXP_DEF=$DIR/experiment-definition.{prefix}.json
