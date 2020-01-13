@@ -108,10 +108,10 @@ class PAGIExperiment(MemoryExperiment):
         docker exec -it {docker_id} bash -c '
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
-          
+
           export DIR=$HOME/agief-remote-run/{project}
           export SCRIPT=$DIR/experiment.py
-          export EXP_DEF=$DIR/experiment-definition.{prefix}.json
+          export EXP_DEF=/tmp/experiment-definition.{prefix}.json
 
           cd $DIR
           source activate {anaenv}
