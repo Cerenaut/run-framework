@@ -35,7 +35,8 @@ class MemoryExperiment(Experiment):
       self._launch_docker(host_node)
 
     experiment_id, experiment_prefix = self._create_experiment(host_node)
-
+    print(config)
+    exit()
     # Start experiment
     if 'parameter-sweeps' not in config or not config['parameter-sweeps']:
       self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
@@ -251,7 +252,7 @@ class MemoryExperiment(Experiment):
       export DIR=$HOME/agief-remote-run/{project}
 
       gsutil cp -r $DIR/run/{prefix} gs://project-agi/experiments
-      gsutil cp -r /tmp/experiment-definition.{prefix}.json gs://project-agi/experiments/{prefix}
+      gsutil cp -r $DIR/experiment-definition.{prefix}.json gs://project-agi/experiments/{prefix}
       gsutil cp -r $DIR/mlruns/{experiment_id} gs://project-agi/experiments/{prefix}/mlflow-summary
     '''.format(
         prefix=experiment_prefix,
