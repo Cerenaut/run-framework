@@ -53,6 +53,10 @@ class MemoryExperiment(Experiment):
       if 'experiment-options' in config['parameter-sweeps'] and config['parameter-sweeps']['experiment-options']:
         experiment_opts_sweeps = config['parameter-sweeps']['experiment-options']
 
+      print(hparams_sweeps)
+      print(workflow_opts_sweeps)
+      print(experiment_opts_sweeps)
+      exit()
       if hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps:
         for hparams, workflow_opts, experiment_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps,
                                                                              experiment_opts_sweeps):
