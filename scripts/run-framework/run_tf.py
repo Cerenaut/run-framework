@@ -174,9 +174,9 @@ def main():
   logging.debug('Arguments: %s', args)
 
   exps_filepath = args.exps_file if args.exps_file else ''
-  with open(exps_filepath) as config_file:
-    config_json = config_file.read()
-    config = json.loads(config_json)
+  with open(exps_filepath) as exp_config_file:
+    exp_config_json = exp_config_file.read()
+    exp_config = json.loads(exp_config_json)
 
   if args.remote_type != 'local':
     host_node = HostNode(args.host, args.user, args.ssh_keypath, args.remote_variables_file, args.ssh_port,
@@ -206,7 +206,7 @@ def main():
     else:
       instance_prefix = datetime.datetime.now().strftime('%y%m%d-%H%M')
 
-      config = {
+      gcp_config = {
           'name': 'agi-vm-' + instance_prefix,
           'machineType': 'zones/' + args.zone + '/machineTypes/' + args.machine_type,
       }
@@ -214,10 +214,10 @@ def main():
 
       print('Launching instance...')
       operation = gcp_compute.instances().insert(zone=args.zone, project=args.project,
-                                                 sourceInstanceTemplate=instance_template, body=config).execute()
+                                                 sourceInstanceTemplate=instance_template, body=gcp_config).execute()
       wait_for_operation(gcp_compute, args.project, args.zone, operation['name'])
 
-      instance_id = config['name']
+      instance_id = gcp_config['name']
 
     instance_data = gcp_compute.instances().get(
         zone=args.zone, project=args.project, instance=instance_id).execute()
@@ -242,7 +242,7 @@ def main():
       experiment.sync_experiment(compute_node.host_node)
 
     # Run sweeps
-    experiment.run_sweeps(config, config_json, args, host_node)
+    experiment.run_sweeps(exp_config, exp_config_json, args, host_node)
 
   except Exception as err:  # pylint: disable=W0703
     failed = True

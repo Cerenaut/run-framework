@@ -35,8 +35,7 @@ class MemoryExperiment(Experiment):
       self._launch_docker(host_node)
 
     experiment_id, experiment_prefix = self._create_experiment(host_node)
-    print(config)
-    exit()
+
     # Start experiment
     if 'parameter-sweeps' not in config or not config['parameter-sweeps']:
       self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
@@ -54,10 +53,6 @@ class MemoryExperiment(Experiment):
       if 'experiment-options' in config['parameter-sweeps'] and config['parameter-sweeps']['experiment-options']:
         experiment_opts_sweeps = config['parameter-sweeps']['experiment-options']
 
-      print(hparams_sweeps)
-      print(workflow_opts_sweeps)
-      print(experiment_opts_sweeps)
-      exit()
       if hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps:
         for hparams, workflow_opts, experiment_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps,
                                                                              experiment_opts_sweeps):
