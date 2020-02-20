@@ -41,6 +41,7 @@ class PAGIExperiment(MemoryExperiment):
 
           pip install -e \$RUN_DIR/pagi --quiet
           pagi --help
+          pip install -e \$RUN_DIR/rsm --quiet
           pip install -e \$RUN_DIR/{project} --quiet
 
           cd \$RUN_DIR/{project}
