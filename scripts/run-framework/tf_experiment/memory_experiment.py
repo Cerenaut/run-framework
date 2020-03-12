@@ -109,7 +109,7 @@ class MemoryExperiment(Experiment):
       if 'nest-order' in config['parameter-sweeps'] and config['parameter-sweeps']['nest-order']:
         nest_order = config['parameter-sweeps']['nest-order']
 
-      if nest_order and steps and (hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps):
+      if nest_order and num_steps and (hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps):
         for i in range(num_steps[0]):
           nested_params = {
               nest_order[0]: parse_values(i, param_sweeps[nest_order[0]])
