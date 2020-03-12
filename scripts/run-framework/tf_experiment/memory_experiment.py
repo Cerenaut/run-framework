@@ -26,7 +26,16 @@ from agief_experiment import utils
 from tf_experiment.experiment import Experiment
 
 def parse_range(param_sweeps):
+  """
+  Iterates through the parameter sweeps, and identifies any parameters
+  matching the `r(start, end, step)` format. Once a match is identified,
+  it parses the format into the proper Python method `range(start, end, step)`.
+  """
   def is_digit(x):
+    """
+    The Python built-in method str.isdigit(), only works on integer numbers.
+    This method extends that to floats.
+    """
     try:
       float(x)
       return True
@@ -34,6 +43,7 @@ def parse_range(param_sweeps):
       return False
 
   def num(s):
+    """Convert string into integer or float"""
     try:
       return int(s)
     except ValueError:
@@ -50,7 +60,7 @@ def parse_range(param_sweeps):
 
             # Validate range length and contents
             assert len(range_opts) == 3
-            assert all([is_digit(x) for x in range_opts]) == True
+            assert all([is_digit(x) for x in range_opts])
 
             # Convert strings to numbers
             range_opts = [num(x) for x in range_opts]
@@ -61,11 +71,19 @@ def parse_range(param_sweeps):
             param_sweeps[j][k] = parsed_range
 
 def parse_values(idx, params_struct):
+  """
+  Retrieve values for a sweep by parsing values by index. If an index is not
+  found, then fallback to the last item in the values list.
+
+  Note: All parameter values MUST be specified as a list.
+  """
   params = {}
   for k in params_struct.keys():
+    assert isinstance(params_struct[k], list)
+
     try:
       params[k] = params_struct[k][idx]
-    except:
+    except:  # pylint: disable=bare-except
       params[k] = params_struct[k][-1]
   return params
 
@@ -82,34 +100,44 @@ class MemoryExperiment(Experiment):
 
     experiment_id, experiment_prefix = self._create_experiment(host_node)
 
-    # Start experiment
+    # Run single experiment without sweeps
+    # --------------------------------------------------------------------------
     if 'parameter-sweeps' not in config or not config['parameter-sweeps']:
       self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
-    else:
-      param_sweeps = config['parameter-sweeps']
+      return
 
-      hparams_sweeps = []
-      workflow_opts_sweeps = []
-      experiment_opts_sweeps = []
-      nest_order = []
-      num_steps = []
+    # Parse parameter sweeps
+    # --------------------------------------------------------------------------
+    num_steps = []
+    nest_order = []
+    hparams_sweeps = []
+    workflow_opts_sweeps = []
+    experiment_opts_sweeps = []
 
-      if 'hparams' in config['parameter-sweeps'] and config['parameter-sweeps']['hparams']:
-        hparams_sweeps = config['parameter-sweeps']['hparams']
+    param_sweeps = config['parameter-sweeps']
 
-      if 'workflow-options' in config['parameter-sweeps'] and config['parameter-sweeps']['workflow-options']:
-        workflow_opts_sweeps = config['parameter-sweeps']['workflow-options']
+    if 'hparams' in config['parameter-sweeps'] and config['parameter-sweeps']['hparams']:
+      hparams_sweeps = config['parameter-sweeps']['hparams']
 
-      if 'experiment-options' in config['parameter-sweeps'] and config['parameter-sweeps']['experiment-options']:
-        experiment_opts_sweeps = config['parameter-sweeps']['experiment-options']
+    if 'workflow-options' in config['parameter-sweeps'] and config['parameter-sweeps']['workflow-options']:
+      workflow_opts_sweeps = config['parameter-sweeps']['workflow-options']
 
-      if 'steps' in config['parameter-sweeps'] and config['parameter-sweeps']['steps']:
-        num_steps = config['parameter-sweeps']['steps']
+    if 'experiment-options' in config['parameter-sweeps'] and config['parameter-sweeps']['experiment-options']:
+      experiment_opts_sweeps = config['parameter-sweeps']['experiment-options']
 
-      if 'nest-order' in config['parameter-sweeps'] and config['parameter-sweeps']['nest-order']:
-        nest_order = config['parameter-sweeps']['nest-order']
+    if 'steps' in config['parameter-sweeps'] and config['parameter-sweeps']['steps']:
+      num_steps = config['parameter-sweeps']['steps']
 
-      if nest_order and num_steps and (hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps):
+    if 'nest-order' in config['parameter-sweeps'] and config['parameter-sweeps']['nest-order']:
+      nest_order = config['parameter-sweeps']['nest-order']
+
+    # Run experiment with parameter sweeps
+    # --------------------------------------------------------------------------
+    if hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps:
+
+      # Run experiment with nested parameter sweeps
+      # --------------------------------------------------------------------------
+      if nest_order and num_steps:
         # Parses any parameters in `r(start, stop, step)` format into a
         # proper Python method `range(start, stop, step)`
         parse_range(param_sweeps)
@@ -134,17 +162,22 @@ class MemoryExperiment(Experiment):
                   'workflow_opts': nested_params['workflow-options'],
                   'experiment_opts': nested_params['experiment-options']
               })
+        return
 
-      elif hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps:
-        for hparams, workflow_opts, experiment_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps,
-                                                                             experiment_opts_sweeps):
-          self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
-              'hparams': hparams,
-              'workflow_opts': workflow_opts,
-              'experiment_opts': experiment_opts
-          })
-      else:
-        self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
+      # Run experiment with parameter sweeps
+      # --------------------------------------------------------------------------
+      for hparams, workflow_opts, experiment_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps,
+                                                                           experiment_opts_sweeps):
+        self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
+            'hparams': hparams,
+            'workflow_opts': workflow_opts,
+            'experiment_opts': experiment_opts
+        })
+      return
+
+    # Run single experiment without sweeps
+    # --------------------------------------------------------------------------
+    self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
 
   def _build_flags(self, exp_opts):
     flags = ''
