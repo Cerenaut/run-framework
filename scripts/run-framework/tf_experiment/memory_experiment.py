@@ -20,8 +20,54 @@ import logging
 import datetime
 import itertools
 
+import numpy as np
+
 from agief_experiment import utils
 from tf_experiment.experiment import Experiment
+
+def parse_range(param_sweeps):
+  def is_digit(x):
+    try:
+      float(x)
+      return True
+    except ValueError:
+      return False
+
+  def num(s):
+    try:
+      return int(s)
+    except ValueError:
+      return float(s)
+
+  for i in param_sweeps:
+    for j in param_sweeps[i]:
+      if j in param_sweeps:
+        for k, v in param_sweeps[j].items():
+          if isinstance(v, str) and (v.startswith('r(') and v.endswith(')')):
+            # Parse r() format into range options
+            v_ = v[2:-1]
+            range_opts = [x.strip() for x in v_.split(',')]
+
+            # Validate range length and contents
+            assert len(range_opts) == 3
+            assert all([is_digit(x) for x in range_opts]) == True
+
+            # Convert strings to numbers
+            range_opts = [num(x) for x in range_opts]
+            range_start, range_end, range_step = range_opts
+
+            parsed_range = np.arange(range_start, range_end, range_step)
+            parsed_range = [round(x, 2) for x in parsed_range]
+            param_sweeps[j][k] = parsed_range
+
+def parse_values(idx, params_struct):
+  params = {}
+  for k in params_struct.keys():
+    try:
+      params[k] = params_struct[k][idx]
+    except:
+      params[k] = params_struct[k][-1]
+  return params
 
 class MemoryExperiment(Experiment):
   """Experiment class for the Memory project."""
@@ -40,9 +86,13 @@ class MemoryExperiment(Experiment):
     if 'parameter-sweeps' not in config or not config['parameter-sweeps']:
       self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json)
     else:
+      param_sweeps = config['parameter-sweeps']
+
       hparams_sweeps = []
       workflow_opts_sweeps = []
       experiment_opts_sweeps = []
+      nest_order = []
+      num_steps = []
 
       if 'hparams' in config['parameter-sweeps'] and config['parameter-sweeps']['hparams']:
         hparams_sweeps = config['parameter-sweeps']['hparams']
@@ -53,7 +103,35 @@ class MemoryExperiment(Experiment):
       if 'experiment-options' in config['parameter-sweeps'] and config['parameter-sweeps']['experiment-options']:
         experiment_opts_sweeps = config['parameter-sweeps']['experiment-options']
 
-      if hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps:
+      if 'steps' in config['parameter-sweeps'] and config['parameter-sweeps']['steps']:
+        num_steps = config['parameter-sweeps']['steps']
+
+      if 'nest-order' in config['parameter-sweeps'] and config['parameter-sweeps']['nest-order']:
+        nest_order = config['parameter-sweeps']['nest-order']
+
+      if nest_order and steps and (hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps):
+        for i in range(num_steps[0]):
+          nested_params = {
+              nest_order[0]: parse_values(i, param_sweeps[nest_order[0]])
+          }
+
+          for j in range(num_steps[1]):
+            nested_params.update({
+                nest_order[1]: parse_values(j, param_sweeps[nest_order[1]])
+            })
+
+            for k in range(num_steps[2]):
+              nested_params.update({
+                  nest_order[2]: parse_values(k, param_sweeps[nest_order[2]])
+              })
+
+              self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
+                  'hparams': nested_params['hparams'],
+                  'workflow_opts': nested_params['workflow-options'],
+                  'experiment_opts': nested_params['experiment-options']
+              })
+
+      elif hparams_sweeps or workflow_opts_sweeps or experiment_opts_sweeps:
         for hparams, workflow_opts, experiment_opts in itertools.zip_longest(hparams_sweeps, workflow_opts_sweeps,
                                                                              experiment_opts_sweeps):
           self._exec_experiment(host_node, experiment_id, experiment_prefix, config_json, param_sweeps={
