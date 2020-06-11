@@ -20,11 +20,13 @@ from agief_experiment.host_node import HostNode
 from tf_experiment.pagi_experiment import PAGIExperiment
 from tf_experiment.memory_experiment import MemoryExperiment
 from tf_experiment.sparsecaps_experiment import SparseCapsExperiment
+from tf_experiment.selforg_experiment import SelfOrgExperiment
 
 EXPERIMENTS = {
     'pagi': PAGIExperiment,
     'memory': MemoryExperiment,
-    'sparse_caps': SparseCapsExperiment
+    'sparse_caps': SparseCapsExperiment,
+    'self_org': SelfOrgExperiment
 }
 
 def setup_arg_parsing():
