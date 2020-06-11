@@ -66,9 +66,8 @@ class SelfOrgExperiment(MemoryExperiment):
 
           cd $DIR
           source activate {anaenv}
-          pagi run --experiment_def=$EXP_DEF --summary_dir=$DIR/run/{summary_path} \
-          --experiment_id={experiment_id} --hparams_sweep="{hparams}" --workflow_opts_sweep="{workflow_opts}" \
-          --experiment_opts_sweep="{experiment_opts}"
+          
+          python run_nb.py --output_dir=$DIR/{summary_path} --hparams="{hparams}"
         '
       '''.format(
           anaenv='pytorch',
