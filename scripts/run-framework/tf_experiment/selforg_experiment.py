@@ -60,10 +60,10 @@ class SelfOrgExperiment(MemoryExperiment):
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
 
-          export DIR=$HOME/agief-remote-run/{project}
-          export SCRIPT=$DIR/experiment.py
+          export DIR=$HOME/agief-remote-run/{project}/meta-learning/run
           export EXP_DEF=$DIR/experiment-definition.{prefix}.json
 
+          echo $DIR
           cd $DIR
           source activate {anaenv}
           
@@ -86,11 +86,12 @@ class SelfOrgExperiment(MemoryExperiment):
         source {remote_env} {anaenv}
 
         export RUN_DIR=$HOME/agief-remote-run
-        export DIR=$RUN_DIR/{project}/meta-learning
+        export DIR=$RUN_DIR/{project}/meta-learning/run
 
         EXP_DEF="/tmp/experiment-definition.{prefix}.json"
         echo '{config_json}' > $EXP_DEF
 
+        echo $DIR
         cd $DIR
 
         python run_nb.py --output_dir=$DIR/{summary_path} --hparams="{hparams}"
