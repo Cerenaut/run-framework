@@ -66,7 +66,7 @@ class SelfOrgExperiment(MemoryExperiment):
           cd $DIR
           source activate {anaenv}
           
-          python run_nb.py --output_dir=$DIR/{summary_path} --hparams="{hparams}"
+          python run_nb.py --output_dir=$DIR/run/{summary_path} --hparams="{hparams}"
         '
       '''.format(
           anaenv='pytorch',
@@ -92,7 +92,7 @@ class SelfOrgExperiment(MemoryExperiment):
 
         cd $DIR
 
-        python run_nb.py --output_dir=$DIR/{summary_path} --hparams="{hparams}"
+        python run_nb.py --output_dir=$DIR/run/{summary_path} --hparams="{hparams}"
       '''.format(
           remote_env=host_node.remote_env_path,
           anaenv='pytorch',
