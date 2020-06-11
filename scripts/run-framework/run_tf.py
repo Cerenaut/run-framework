@@ -26,7 +26,7 @@ EXPERIMENTS = {
     'pagi': PAGIExperiment,
     'memory': MemoryExperiment,
     'sparse_caps': SparseCapsExperiment,
-    'self_org': SelfOrgExperiment
+    'self-organizing': SelfOrgExperiment
 }
 
 def setup_arg_parsing():
