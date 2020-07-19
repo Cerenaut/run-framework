@@ -361,9 +361,17 @@ class MemoryExperiment(Experiment):
     command = '''
       export DIR=$HOME/agief-remote-run/{project}
 
-      gsutil cp -r $DIR/run/{prefix} gs://project-agi/experiments
-      gsutil cp -r $DIR/experiment-definition.{prefix}.json gs://project-agi/experiments/{prefix}
-      gsutil cp -r $DIR/mlruns/{experiment_id} gs://project-agi/experiments/{prefix}/mlflow-summary
+      if [ -d "$DIR/run/{prefix}" ]; then
+        gsutil cp -r $DIR/run/{prefix} gs://project-agi/experiments
+      fi
+
+      if [ -f "$DIR/experiment-definition.{prefix}.json" ]; then
+        gsutil cp -r $DIR/experiment-definition.{prefix}.json gs://project-agi/experiments/{prefix}
+      fi
+
+      if [ -d "$DIR/mlruns/{experiment_id}" ]; then
+        gsutil cp -r $DIR/mlruns/{experiment_id} gs://project-agi/experiments/{prefix}/mlflow-summary
+      fi
     '''.format(
         prefix=experiment_prefix,
         experiment_id=experiment_id,
