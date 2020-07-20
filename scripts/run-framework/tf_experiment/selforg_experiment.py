@@ -66,7 +66,7 @@ class SelfOrgExperiment(MemoryExperiment):
           cd $DIR
           source activate {anaenv}
 
-          pip install -q -r $DIR/requirements.txt
+          pip install -q -r ../requirements.txt
           python run_nb.py --output_dir=$DIR/run/{summary_path} --hparams="{hparams}"
         '
       '''.format(
@@ -93,7 +93,7 @@ class SelfOrgExperiment(MemoryExperiment):
 
         cd $DIR
 
-        pip install -q -r $DIR/requirements.txt
+        pip install -q -r ../requirements.txt
         python run_nb.py --output_dir=$DIR/run/{summary_path} --hparams="{hparams}"
       '''.format(
           remote_env=host_node.remote_env_path,
