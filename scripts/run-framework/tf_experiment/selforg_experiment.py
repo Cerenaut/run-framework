@@ -114,3 +114,29 @@ class SelfOrgExperiment(MemoryExperiment):
     print("----------------------------------")
 
     return command
+
+  def _upload_command(self, host_node, experiment_id, experiment_prefix):
+    """Uploads definitions file, summaries and mlflow outputs."""
+    del host_node
+
+    command = '''
+      export DIR=$HOME/agief-remote-run/{project}/meta-learning
+
+      if [ -d "$DIR/run/{prefix}" ]; then
+        gsutil cp -r $DIR/run/{prefix} gs://project-agi/experiments
+      fi
+
+      if [ -f "$DIR/experiment-definition.{prefix}.json" ]; then
+        gsutil cp -r $DIR/experiment-definition.{prefix}.json gs://project-agi/experiments/{prefix}
+      fi
+    '''.format(
+        prefix=experiment_prefix,
+        experiment_id=experiment_id,
+        project=self.project
+    )
+
+    logging.info(command)
+
+    print('Uploading Experiment (prefix=' + experiment_prefix + ')...')
+
+    return command
