@@ -70,6 +70,9 @@ class CFSLExperiment(MemoryExperiment):
 
           source activate {anaenv}
 
+          cd $HOME/agief-remote-run/cerenaut-pt-core
+          python setup.py develop
+
           cd $DIR/cls_module
           python setup.py develop
 
@@ -103,6 +106,9 @@ class CFSLExperiment(MemoryExperiment):
         export CONTINUE_FROM_EPOCH=latest
         export DATASET_DIR="datasets/"
         export CUDA_VISIBLE_DEVICES=$GPU_ID
+
+        cd $HOME/agief-remote-run/cerenaut-pt-core
+        python setup.py develop
 
         cd $DIR/cls_module
         python setup.py develop
