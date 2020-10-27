@@ -59,16 +59,21 @@ class CFSLExperiment(MemoryExperiment):
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
 
-          export DIR=$HOME/agief-remote-run/{project}/frameworks/cfsl
-          export EXP_DEF=$DIR/experiment-definition.{prefix}.json
+          export DIR=$HOME/agief-remote-run/{project}/
+          export CFSL_DIR=$DIR/frameworks/cfsl
+          export EXP_DEF=$CFSL_DIR/experiment-definition.{prefix}.json
 
           export GPU_ID=0
           export CONTINUE_FROM_EPOCH=latest
           export DATASET_DIR="datasets/"
           export CUDA_VISIBLE_DEVICES=$GPU_ID
 
-          cd $DIR
           source activate {anaenv}
+
+          cd $DIR/cls_module
+          python setup.py develop
+
+          cd $CFSL_DIR
 
           bash install.sh
 
@@ -88,9 +93,10 @@ class CFSLExperiment(MemoryExperiment):
       command = '''
         source {remote_env} {anaenv}
 
-        export DIR=$HOME/agief-remote-run/{project}/frameworks/cfsl
+        export DIR=$HOME/agief-remote-run/{project}/
+        export CFSL_DIR=$DIR/frameworks/cfsl
 
-        EXP_DEF=$DIR/experiment-definition.{prefix}.json
+        EXP_DEF=$CFSL_DIR/experiment-definition.{prefix}.json
         echo '{config_json}' > $EXP_DEF
 
         export GPU_ID=0
@@ -98,7 +104,10 @@ class CFSLExperiment(MemoryExperiment):
         export DATASET_DIR="datasets/"
         export CUDA_VISIBLE_DEVICES=$GPU_ID
 
-        cd $DIR
+        cd $DIR/cls_module
+        python setup.py develop
+
+        cd $CFSL_DIR
 
         bash install.sh
 
@@ -131,7 +140,7 @@ class CFSLExperiment(MemoryExperiment):
       export DIR=$HOME/agief-remote-run/{project}/frameworks/cfsl
 
       if [ -d "$DIR/runs/{prefix}" ]; then
-        gsutil cp -r $DIR/run/{prefix} gs://project-agi/experiments
+        gsutil cp -r $DIR/runs/{prefix} gs://project-agi/experiments
       fi
 
       if [ -f "$DIR/experiment-definition.{prefix}.json" ]; then
