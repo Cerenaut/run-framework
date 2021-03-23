@@ -205,7 +205,7 @@ class MemoryExperiment(Experiment):
       export RUN_DIR=$HOME/agief-remote-run
 
       docker pull {docker_image}
-      docker run -d  -t --runtime=nvidia --mount type=bind,source=$RUN_DIR,target=$RUN_DIR \
+      docker run -d -t --runtime=nvidia --ipc=host --mount type=bind,source=$RUN_DIR,target=$RUN_DIR \
         {docker_image} bash
     '''.format(
         docker_image=self.docker_image
