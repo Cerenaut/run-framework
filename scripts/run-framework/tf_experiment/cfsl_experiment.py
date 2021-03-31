@@ -66,7 +66,6 @@ class CFSLExperiment(MemoryExperiment):
           export GPU_ID=0
           export CONTINUE_FROM_EPOCH=latest
           export DATASET_DIR="datasets/"
-          export CUDA_VISIBLE_DEVICES=$GPU_ID
 
           source activate {anaenv}
 
@@ -105,7 +104,6 @@ class CFSLExperiment(MemoryExperiment):
         export GPU_ID=0
         export CONTINUE_FROM_EPOCH=latest
         export DATASET_DIR="datasets/"
-        export CUDA_VISIBLE_DEVICES=$GPU_ID
 
         cd $HOME/agief-remote-run/cerenaut-pt-core
         python setup.py develop
